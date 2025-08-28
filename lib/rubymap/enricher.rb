@@ -328,14 +328,8 @@ module Rubymap
           )
         end
 
-        # High coupling hotspots
-        if klass.fan_out && klass.fan_out > 5
-          result.coupling_hotspots << CouplingHotspot.new(
-            class: klass.name,
-            reason: "high_fan_out",
-            fan_out: klass.fan_out
-          )
-        end
+        # High coupling hotspots - handled by dependency_metric
+        # Removed to avoid duplication
       end
     end
 
