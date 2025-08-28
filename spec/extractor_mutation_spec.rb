@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 RSpec.describe Rubymap::Extractor do
   let(:extractor) { described_class.new }
 
@@ -7,7 +9,7 @@ RSpec.describe Rubymap::Extractor do
     context "when file does not exist" do
       it "returns an error result for non-existent file" do
         result = extractor.extract_from_file("/non/existent/file.rb")
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq("/non/existent/file.rb")
         expect(result.errors).not_to be_empty
@@ -21,7 +23,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "reads the file and extracts symbols" do
         result = extractor.extract_from_file(test_file)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
         expect(result.classes).not_to be_empty
@@ -46,7 +48,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns an error result with the file path and error" do
         result = extractor.extract_from_file(test_file)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
         expect(result.errors).not_to be_empty
@@ -65,7 +67,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns result with parse errors" do
         result = extractor.extract_from_file(test_file)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
         expect(result.errors).not_to be_empty
@@ -79,14 +81,13 @@ RSpec.describe Rubymap::Extractor do
 
       it "parses and extracts symbols" do
         result = extractor.extract_from_code(code)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes).not_to be_empty
         expect(result.classes.first.name).to eq("TestClass")
         expect(result.methods).not_to be_empty
         expect(result.methods.first.name).to eq("test_method")
       end
-
     end
 
     context "with invalid Ruby code" do
@@ -94,7 +95,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns result with parse errors" do
         result = extractor.extract_from_code(invalid_code)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.errors).not_to be_empty
         expect(result.errors.first[:context]).to eq("Parse error")
@@ -102,7 +103,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns empty collections for invalid code" do
         result = extractor.extract_from_code(invalid_code)
-        
+
         expect(result.classes).to be_empty
         expect(result.methods).to be_empty
         expect(result.constants).to be_empty
@@ -112,7 +113,7 @@ RSpec.describe Rubymap::Extractor do
     context "with empty code" do
       it "returns empty result for empty string" do
         result = extractor.extract_from_code("")
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes).to be_empty
         expect(result.methods).to be_empty
@@ -121,7 +122,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns empty result for whitespace only" do
         result = extractor.extract_from_code("   \n\n  \t  ")
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes).to be_empty
         expect(result.methods).to be_empty
@@ -144,7 +145,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "handles comments in the code" do
         result = extractor.extract_from_code(code_with_comments)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes.first.doc).to eq("This is a comment")
         expect(result.methods.first.doc).to eq("Another comment")
@@ -175,14 +176,14 @@ RSpec.describe Rubymap::Extractor do
 
       it "processes all Ruby files in the directory" do
         result = extractor.extract_from_directory(test_dir)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes.map(&:name)).to include("TestClass", "SecondClass")
       end
 
       it "uses the provided pattern" do
         result = extractor.extract_from_directory(test_dir, "**/test_file.rb")
-        
+
         expect(result.classes.map(&:name)).to include("TestClass")
         expect(result.classes.map(&:name)).not_to include("SecondClass")
       end
@@ -190,7 +191,7 @@ RSpec.describe Rubymap::Extractor do
       it "skips non-file entries" do
         # Create a directory inside fixtures
         Dir.mkdir("spec/fixtures/subdir") unless Dir.exist?("spec/fixtures/subdir")
-        
+
         result = extractor.extract_from_directory(test_dir)
         expect(result).to be_a(Rubymap::Extractor::Result)
       ensure
@@ -199,7 +200,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "merges results from multiple files" do
         result = extractor.extract_from_directory(test_dir)
-        
+
         # All collections should be merged
         expect(result.classes.size).to be >= 2
       end
@@ -207,9 +208,9 @@ RSpec.describe Rubymap::Extractor do
       it "continues processing if one file has errors" do
         # Create a file with syntax error
         File.write("spec/fixtures/broken.rb", "class Broken\n  def no_end")
-        
+
         result = extractor.extract_from_directory(test_dir)
-        
+
         expect(result.classes.map(&:name)).to include("TestClass", "SecondClass")
         expect(result.errors).not_to be_empty
       ensure
@@ -230,11 +231,56 @@ RSpec.describe Rubymap::Extractor do
 
       it "returns empty result for directory with no Ruby files" do
         result = extractor.extract_from_directory(empty_dir)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.classes).to be_empty
         expect(result.methods).to be_empty
         expect(result.errors).to be_empty
+      end
+    end
+
+    context "when using default pattern" do
+      after do
+        # Cleanup any test directories
+        FileUtils.rm_rf("spec/fixtures/pattern_test") if Dir.exist?("spec/fixtures/pattern_test")
+        FileUtils.rm_rf("spec/fixtures/nested_test") if Dir.exist?("spec/fixtures/nested_test")
+        FileUtils.rm_rf("spec/fixtures/explicit_test") if Dir.exist?("spec/fixtures/explicit_test")
+      end
+
+      it "uses **/*.rb as the default pattern" do
+        # Create files with different extensions
+        FileUtils.mkdir_p("spec/fixtures/pattern_test/nested")
+        File.write("spec/fixtures/pattern_test/file.rb", "class RubyFile; end")
+        File.write("spec/fixtures/pattern_test/file.txt", "not ruby")
+        File.write("spec/fixtures/pattern_test/nested/deep.rb", "class DeepFile; end")
+
+        # Test without pattern (uses default)
+        result = extractor.extract_from_directory("spec/fixtures/pattern_test")
+
+        # Should find both .rb files but not .txt
+        expect(result.classes.map(&:name)).to contain_exactly("RubyFile", "DeepFile")
+      end
+
+      it "default pattern finds Ruby files in nested directories" do
+        FileUtils.mkdir_p("spec/fixtures/nested_test/level1/level2")
+
+        File.write("spec/fixtures/nested_test/top.rb", "class Top; end")
+        File.write("spec/fixtures/nested_test/level1/mid.rb", "class Mid; end")
+        File.write("spec/fixtures/nested_test/level1/level2/deep.rb", "class Deep; end")
+
+        result = extractor.extract_from_directory("spec/fixtures/nested_test")
+
+        expect(result.classes.map(&:name)).to contain_exactly("Top", "Mid", "Deep")
+      end
+
+      it "behaves identically with explicit **/*.rb pattern" do
+        FileUtils.mkdir_p("spec/fixtures/explicit_test")
+        File.write("spec/fixtures/explicit_test/test.rb", "class Test; end")
+
+        result_default = extractor.extract_from_directory("spec/fixtures/explicit_test")
+        result_explicit = extractor.extract_from_directory("spec/fixtures/explicit_test", "**/*.rb")
+
+        expect(result_default.classes.map(&:name)).to eq(result_explicit.classes.map(&:name))
       end
     end
   end
@@ -247,6 +293,10 @@ RSpec.describe Rubymap::Extractor do
     it "does not require any arguments" do
       expect { described_class.new }.not_to raise_error
     end
+
+    it "does not inherit from any parent class other than Object" do
+      expect(Rubymap::Extractor.superclass).to eq(Object)
+    end
   end
 
   describe "private methods" do
@@ -254,7 +304,7 @@ RSpec.describe Rubymap::Extractor do
       it "creates result with error and file_path" do
         error = StandardError.new("Test error")
         result = extractor.send(:create_error_result, error, "/path/to/file.rb")
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq("/path/to/file.rb")
         expect(result.errors).not_to be_empty
@@ -265,7 +315,7 @@ RSpec.describe Rubymap::Extractor do
       it "creates result with error and no file_path" do
         error = StandardError.new("Test error")
         result = extractor.send(:create_error_result, error)
-        
+
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to be_nil
         expect(result.errors).not_to be_empty
@@ -293,7 +343,7 @@ RSpec.describe Rubymap::Extractor do
 
       it "merges all collections from source to target" do
         extractor.send(:merge_results, target, source)
-        
+
         expect(target.classes.map(&:name)).to include("SourceClass")
         expect(target.modules.map(&:name)).to include("SourceModule")
         expect(target.methods.map(&:name)).to include("source_method")
@@ -309,9 +359,9 @@ RSpec.describe Rubymap::Extractor do
 
       it "appends to existing collections" do
         target.classes << Rubymap::Extractor::ClassInfo.new(name: "TargetClass")
-        
+
         extractor.send(:merge_results, target, source)
-        
+
         expect(target.classes.size).to eq(2)
         expect(target.classes.map(&:name)).to include("TargetClass", "SourceClass")
       end
