@@ -44,7 +44,7 @@ module Rubymap
         when Prism::ClassVariableWriteNode
           @class_variable_extractor.extract(node)
           visit_children(node)
-        when Prism::AliasNode
+        when Prism::AliasMethodNode
           @alias_extractor.extract(node)
           visit_children(node)
         else
