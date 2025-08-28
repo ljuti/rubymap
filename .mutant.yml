@@ -1,0 +1,13 @@
+---
+usage: opensource
+includes:
+  - lib
+requires:
+  - rubymap
+integration:
+  name: rspec
+  arguments:
+    - spec
+matcher:
+  subjects:
+    - Rubymap::Configuration*

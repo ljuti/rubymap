@@ -1,9 +1,0 @@
----
-integration:
-  name: rspec
-  arguments:
-    - --fail-fast
-    - --seed
-    - "0"
-    - spec
-usage: opensource

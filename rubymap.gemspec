@@ -36,6 +36,7 @@ Gem::Specification.new do |spec|
 
   # Core dependencies for parsing and analysis
   spec.add_dependency "prism", "~> 1.0"  # Ruby parser
+  spec.add_dependency "anyway_config", "~> 2.6"  # Configuration management
 
   # CLI dependencies
   spec.add_dependency "tty-prompt", "~> 0.23"
