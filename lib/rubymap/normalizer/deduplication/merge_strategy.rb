@@ -14,12 +14,12 @@ module Rubymap
           # Sort by precedence (highest first)
           sorted_methods = methods.sort_by { |m| -get_highest_source_precedence(m.provenance) }
           primary = sorted_methods.first
-          
+
           # Merge provenance from all sources
           merged_provenance = methods.reduce(primary.provenance) do |acc, method|
             provenance_tracker.merge_provenance(acc, method.provenance)
           end
-          
+
           # Use primary method as base, but update with merged provenance
           primary.dup.tap do |merged|
             merged.provenance = merged_provenance
@@ -32,12 +32,12 @@ module Rubymap
           # Sort by precedence (highest first)
           sorted_classes = classes.sort_by { |c| -get_highest_source_precedence(c.provenance) }
           primary = sorted_classes.first
-          
+
           # Merge provenance from all sources
           merged_provenance = classes.reduce(primary.provenance) do |acc, klass|
             provenance_tracker.merge_provenance(acc, klass.provenance)
           end
-          
+
           # Use primary class as base, but update with merged provenance
           primary.dup.tap do |merged|
             merged.provenance = merged_provenance
@@ -47,15 +47,15 @@ module Rubymap
         end
 
         def merge_modules(modules)
-          # Sort by precedence (highest first)  
+          # Sort by precedence (highest first)
           sorted_modules = modules.sort_by { |m| -get_highest_source_precedence(m.provenance) }
           primary = sorted_modules.first
-          
+
           # Merge provenance from all sources
           merged_provenance = modules.reduce(primary.provenance) do |acc, mod|
             provenance_tracker.merge_provenance(acc, mod.provenance)
           end
-          
+
           # Use primary module as base, but update with merged provenance
           primary.dup.tap do |merged|
             merged.provenance = merged_provenance
@@ -67,8 +67,8 @@ module Rubymap
         attr_reader :provenance_tracker, :visibility_normalizer
 
         def get_highest_source_precedence(provenance)
-          return 0 unless provenance && provenance.sources
-          
+          return 0 unless provenance&.sources
+
           provenance.sources.map { |source| Normalizer::SOURCE_PRECEDENCE[source] || 0 }.max
         end
 
@@ -80,10 +80,10 @@ module Rubymap
         def get_most_reliable_superclass(classes)
           superclasses = classes.map(&:superclass).compact.uniq
           return nil if superclasses.empty?
-          
+
           # Prefer superclass from highest precedence source
           classes.sort_by { |c| -get_highest_source_precedence(c.provenance) }
-                 .find(&:superclass)&.superclass
+            .find(&:superclass)&.superclass
         end
       end
     end

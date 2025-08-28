@@ -23,8 +23,8 @@ module Rubymap
 
       def find_parent_class(class_name)
         symbol = find(class_name)
-        return nil unless symbol && symbol.respond_to?(:superclass)
-        
+        return nil unless symbol&.respond_to?(:superclass)
+
         symbol.superclass
       end
 

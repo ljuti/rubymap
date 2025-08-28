@@ -14,13 +14,13 @@ module Rubymap
         def build_namespace_hierarchies(result)
           # Group by namespace levels
           all_symbols = result.classes + result.modules
-          
+
           all_symbols.each do |symbol|
             next unless symbol.fqname.include?("::")
-            
+
             parent_name = symbol.namespace_path.join("::")
             parent = all_symbols.find { |s| s.fqname == parent_name }
-            
+
             if parent
               parent.children << symbol.fqname
             end

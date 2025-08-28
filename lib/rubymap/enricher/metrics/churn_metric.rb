@@ -8,29 +8,29 @@ module Rubymap
       # Calculates git churn metrics
       class ChurnMetric < BaseMetric
         def calculate(result, config)
-          churn_threshold = config_value(config, :churn_threshold, 10)
-          
+          config_value(config, :churn_threshold, 10)
+
           result.classes.each do |klass|
             calculate_churn_score(klass)
           end
         end
-        
+
         private
-        
+
         def calculate_churn_score(klass)
           commits = klass.git_commits || 0
           last_modified = klass.last_modified
-          
+
           # Calculate age if last_modified is available
           if last_modified
             age_in_days = calculate_age_in_days(last_modified)
             klass.age_in_days = age_in_days
           end
-          
+
           # Calculate churn score based on commits and recency
           # Higher score = more churn (more problematic)
           base_score = commits.to_f
-          
+
           # Adjust based on recency (recent changes = higher score)
           if klass.age_in_days
             recency_factor = if klass.age_in_days < 7
@@ -40,19 +40,19 @@ module Rubymap
             elsif klass.age_in_days < 90
               1.2  # Somewhat recent
             else
-              1.0  # Older changes
+              0.5  # Older changes (reduce churn score)
             end
-            
-            klass.churn_score = (base_score * recency_factor / 10.0).round(2)
+
+            klass.churn_score = (base_score * recency_factor).round(2)
           else
             # Simple normalization without time factor
-            klass.churn_score = (base_score / 10.0).round(2)
+            klass.churn_score = base_score.round(2)
           end
         end
-        
+
         def calculate_age_in_days(last_modified)
           return 0 unless last_modified
-          
+
           if last_modified.is_a?(Time)
             ((Time.now - last_modified) / 86400).to_i
           elsif last_modified.respond_to?(:to_time)

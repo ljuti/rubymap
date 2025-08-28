@@ -7,7 +7,7 @@ module Rubymap
       class LocationNormalizer
         def normalize(location)
           return nil unless location
-          
+
           NormalizedLocation.new(
             file: location[:file] || location["file"],
             line: (location[:line] || location["line"]).to_i

@@ -21,13 +21,13 @@ module Rubymap
         def build_inheritance_chain(klass, all_classes)
           chain = [klass.fqname]
           current = klass
-          
+
           while current.superclass
             chain << current.superclass
             current = all_classes.find { |c| c.fqname == current.superclass }
             break unless current
           end
-          
+
           chain
         end
       end

@@ -8,7 +8,7 @@ module Rubymap
         def process(methods, result, errors)
           methods.each do |method_data|
             next unless validate(method_data, errors)
-            
+
             normalized = normalize_method(method_data, errors)
             result.methods << normalized
           end
@@ -28,24 +28,24 @@ module Rubymap
           owner = data[:class] || data[:owner]
           scope = determine_method_scope(data)
           fqname = generate_method_fqname(data[:name], owner, scope)
-          
+
           normalized_params = normalizers.parameter_normalizer.normalize(data[:parameters])
           arity = normalizers.arity_calculator.calculate(normalized_params)
-          
+
           symbol_id = symbol_id_generator.generate_method_id(
             fqname: fqname,
-            receiver: scope == "class" ? "class" : "instance", 
+            receiver: (scope == "class") ? "class" : "instance",
             arity: arity
           )
-          
+
           visibility = normalizers.visibility_normalizer.normalize(data[:visibility], errors)
           inferred_visibility = normalizers.visibility_normalizer.infer_from_name(data[:name])
-          
+
           provenance = provenance_tracker.create_provenance(
             sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
             confidence: normalizers.confidence_calculator.calculate(data)
           )
-          
+
           NormalizedMethod.new(
             symbol_id: symbol_id,
             name: data[:name],
@@ -70,8 +70,8 @@ module Rubymap
 
         def generate_method_fqname(method_name, owner, scope)
           return method_name unless owner
-          
-          separator = scope == "class" ? "." : "#"
+
+          separator = (scope == "class") ? "." : "#"
           "#{owner}#{separator}#{method_name}"
         end
       end

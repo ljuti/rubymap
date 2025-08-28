@@ -8,7 +8,7 @@ module Rubymap
         def process(modules, result, errors)
           modules.each do |module_data|
             next unless validate(module_data, errors)
-            
+
             normalized = normalize_module(module_data)
             result.modules << normalized
           end
@@ -27,12 +27,12 @@ module Rubymap
         def normalize_module(data)
           fqname = normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
           symbol_id = symbol_id_generator.generate_module_id(fqname)
-          
+
           provenance = provenance_tracker.create_provenance(
             sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
             confidence: normalizers.confidence_calculator.calculate(data)
           )
-          
+
           NormalizedModule.new(
             symbol_id: symbol_id,
             name: data[:name],

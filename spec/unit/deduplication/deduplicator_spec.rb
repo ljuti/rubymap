@@ -216,7 +216,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
       before do
         result.methods = [method1, method2, method3]
         result.classes = [class1, class2]
-        
+
         allow(merge_strategy).to receive(:merge_methods).with([method1, method2]).and_return(merged_method)
         allow(merge_strategy).to receive(:merge_classes).with([class1, class2]).and_return(merged_class)
       end
@@ -226,7 +226,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
 
         expect(result.methods.size).to eq(2)  # 1 merged + 1 unique
         expect(result.classes.size).to eq(1)  # 1 merged
-        
+
         expect(merge_strategy).to have_received(:merge_methods).once
         expect(merge_strategy).to have_received(:merge_classes).once
       end
@@ -249,7 +249,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
 
       before do
         result.methods = [method1a, method1b, method2a, method2b]
-        
+
         allow(merge_strategy).to receive(:merge_methods).with([method1a, method1b]).and_return(merged_method1)
         allow(merge_strategy).to receive(:merge_methods).with([method2a, method2b]).and_return(merged_method2)
       end
@@ -259,7 +259,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
 
         expect(result.methods.size).to eq(2)
         expect(result.methods).to include(merged_method1, merged_method2)
-        
+
         expect(merge_strategy).to have_received(:merge_methods).twice
       end
     end
@@ -297,7 +297,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
       it "groups symbols with nil IDs together" do
         # This tests that nil keys are handled properly by group_by
         expect { deduplicator.deduplicate_symbols(result) }.not_to raise_error
-        
+
         # Should still have one method (no merging for single item group)
         expect(result.methods.size).to eq(1)
         expect(result.methods.first).to eq(method_with_nil_id)

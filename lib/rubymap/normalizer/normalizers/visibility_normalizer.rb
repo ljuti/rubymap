@@ -13,7 +13,7 @@ module Rubymap
           when nil then "public"  # Handle missing visibility
           else
             # Invalid visibility type
-            if errors && (!visibility.is_a?(String) && !visibility.is_a?(Symbol))
+            if errors && !visibility.is_a?(String) && !visibility.is_a?(Symbol)
               error = Normalizer::NormalizedError.new(
                 type: "validation",
                 message: "invalid visibility: #{visibility}",
@@ -32,7 +32,7 @@ module Rubymap
 
         def get_most_restrictive(visibilities)
           visibilities = visibilities.compact.uniq
-          
+
           # Order by restrictiveness: private > protected > public
           if visibilities.include?("private")
             "private"

@@ -12,7 +12,7 @@ module Rubymap
         def deduplicate_symbols(result)
           # Merge duplicate methods with precedence rules
           result.methods = deduplicate_and_merge_methods(result.methods)
-          
+
           # Merge duplicate classes/modules with precedence rules
           result.classes = deduplicate_and_merge_classes(result.classes)
           result.modules = deduplicate_and_merge_modules(result.modules)
@@ -24,7 +24,7 @@ module Rubymap
 
         def deduplicate_and_merge_methods(methods)
           grouped = methods.group_by(&:symbol_id)
-          
+
           grouped.map do |symbol_id, method_group|
             if method_group.size == 1
               method_group.first
@@ -36,7 +36,7 @@ module Rubymap
 
         def deduplicate_and_merge_classes(classes)
           grouped = classes.group_by(&:symbol_id)
-          
+
           grouped.map do |symbol_id, class_group|
             if class_group.size == 1
               class_group.first
@@ -48,7 +48,7 @@ module Rubymap
 
         def deduplicate_and_merge_modules(modules)
           grouped = modules.group_by(&:symbol_id)
-          
+
           grouped.map do |symbol_id, module_group|
             if module_group.size == 1
               module_group.first

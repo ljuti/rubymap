@@ -17,22 +17,22 @@ module Rubymap
           result.modules.sort_by! { |m| [m.fqname, m.symbol_id] }
           result.methods.sort_by! { |m| [m.fqname, m.symbol_id] }
           result.method_calls.sort_by! { |mc| [mc.from, mc.to] }
-          
+
           # Sort nested collections
           result.classes.each do |klass|
-            klass.children.sort! if klass.children
-            klass.instance_methods.sort! if klass.instance_methods
-            klass.class_methods.sort! if klass.class_methods
-            klass.available_instance_methods.sort! if klass.available_instance_methods
-            klass.available_class_methods.sort! if klass.available_class_methods
+            klass.children&.sort!
+            klass.instance_methods&.sort!
+            klass.class_methods&.sort!
+            klass.available_instance_methods&.sort!
+            klass.available_class_methods&.sort!
           end
-          
+
           result.modules.each do |mod|
-            mod.children.sort! if mod.children
+            mod.children&.sort!
           end
-          
+
           result.methods.each do |method|
-            method.available_in.sort! if method.available_in
+            method.available_in&.sort!
           end
         end
       end

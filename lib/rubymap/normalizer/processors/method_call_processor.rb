@@ -21,10 +21,10 @@ module Rubymap
 
         def normalize_method_call(data)
           return nil unless data[:caller] && data[:calls]
-          
+
           target = resolve_method_call_target(data[:calls], data[:caller])
           call_type = determine_call_type(data[:calls], target)
-          
+
           NormalizedMethodCall.new(
             from: data[:caller],
             to: target,
@@ -56,13 +56,13 @@ module Rubymap
             if caller_context =~ /^(.+)(#|\.)(.+)$/
               class_name = $1
               method_name = $3
-              
+
               # Find parent class and construct target
               parent = find_parent_class(class_name)
               return "#{parent}##{method_name}" if parent
             end
             target
-          elsif target !~ /#|\./
+          elsif !/#|\./.match?(target)
             # If it's just a method name, append it to the caller's class
             if caller_context =~ /^(.+)(#|\.)/
               class_name = $1

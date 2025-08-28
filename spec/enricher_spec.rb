@@ -39,7 +39,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           expect(simple_method.cyclomatic_complexity).to eq(1)  # Base complexity
           expect(complex_method.cyclomatic_complexity).to be > 5  # Multiple branches add complexity
-          skip "Implementation pending"
         end
 
         it "assigns complexity categories" do
@@ -50,7 +49,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           expect(simple_method.complexity_category).to eq("simple")
           expect(complex_method.complexity_category).to eq("complex")
-          skip "Implementation pending"
         end
 
         it "calculates method length metrics" do
@@ -58,7 +56,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           simple_method = result.methods.find { |m| m.name == "simple_method" }
           expect(simple_method.lines_of_code).to eq(3)
-          skip "Implementation pending"
         end
       end
 
@@ -85,7 +82,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           expect(user_class.fan_out).to eq(3)  # User depends on 3 other classes
           expect(user_class.fan_in).to eq(1)   # 1 other class depends on User
-          skip "Implementation pending"
         end
 
         it "calculates coupling strength" do
@@ -94,7 +90,6 @@ RSpec.describe "Rubymap::Enricher" do
           user_class = result.classes.find { |c| c.name == "User" }
           expect(user_class.coupling_strength).to be_a(Float)
           expect(user_class.coupling_strength).to be > 0
-          skip "Implementation pending"
         end
 
         it "identifies tightly coupled components" do
@@ -103,7 +98,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(result.coupling_hotspots).to include(
             have_attributes(class: "User", reason: "high_fan_out")
           )
-          skip "Implementation pending"
         end
       end
 
@@ -129,7 +123,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(object_class.inheritance_depth).to eq(0)
           expect(user_class.inheritance_depth).to eq(3)
           expect(admin_class.inheritance_depth).to eq(4)
-          skip "Implementation pending"
         end
 
         it "identifies deep inheritance hierarchies" do
@@ -139,7 +132,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(deep_hierarchies).to include(
             have_attributes(class: "AdminUser", depth: 4)
           )
-          skip "Implementation pending"
         end
       end
 
@@ -169,7 +161,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           user_class = result.classes.find { |c| c.name == "User" }
           expect(user_class.public_api_surface).to eq(5)  # 3 public instance + 2 class methods
-          skip "Implementation pending"
         end
 
         it "identifies classes with large public APIs" do
@@ -179,7 +170,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(large_apis).to include(
             have_attributes(class: "User", api_size: 5)
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -204,7 +194,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           expect(well_tested.coverage_category).to eq("well_covered")
           expect(untested.coverage_category).to eq("untested")
-          skip "Implementation pending"
         end
 
         it "identifies testing gaps" do
@@ -213,7 +202,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(result.quality_issues).to include(
             have_attributes(type: "low_test_coverage", method: "untested_method")
           )
-          skip "Implementation pending"
         end
       end
 
@@ -221,8 +209,8 @@ RSpec.describe "Rubymap::Enricher" do
         let(:churn_data) do
           {
             classes: [
-              {name: "StableClass", file: "lib/stable.rb", git_commits: 3, last_modified: 6.months.ago},
-              {name: "ChurnClass", file: "app/models/churn.rb", git_commits: 47, last_modified: 2.days.ago}
+              {name: "StableClass", file: "lib/stable.rb", git_commits: 3, last_modified: Time.now - (6 * 30 * 24 * 60 * 60)},
+              {name: "ChurnClass", file: "app/models/churn.rb", git_commits: 47, last_modified: Time.now - (2 * 24 * 60 * 60)}
             ]
           }
         end
@@ -234,7 +222,6 @@ RSpec.describe "Rubymap::Enricher" do
           churn_class = result.classes.find { |c| c.name == "ChurnClass" }
 
           expect(stable_class.churn_score).to be < churn_class.churn_score
-          skip "Implementation pending"
         end
 
         it "identifies hotspot classes" do
@@ -244,7 +231,6 @@ RSpec.describe "Rubymap::Enricher" do
           expect(hotspots).to include(
             have_attributes(class: "ChurnClass", commits: 47)
           )
-          skip "Implementation pending"
         end
       end
 
@@ -277,7 +263,6 @@ RSpec.describe "Rubymap::Enricher" do
           new_class = result.classes.find { |c| c.name == "NewClass" }
 
           expect(mature_class.stability_score).to be > new_class.stability_score
-          skip "Implementation pending"
         end
 
         it "identifies stable vs unstable components" do
@@ -285,7 +270,6 @@ RSpec.describe "Rubymap::Enricher" do
 
           expect(result.stability_analysis.stable_classes).to include("MatureClass")
           expect(result.stability_analysis.unstable_classes).to include("NewClass")
-          skip "Implementation pending"
         end
       end
     end
@@ -325,7 +309,6 @@ RSpec.describe "Rubymap::Enricher" do
               confidence: be > 0.8
             )
           )
-          skip "Implementation pending"
         end
 
         it "detects singleton patterns" do
@@ -337,7 +320,6 @@ RSpec.describe "Rubymap::Enricher" do
               class: "DatabaseConnection"
             )
           )
-          skip "Implementation pending"
         end
 
         it "detects observer patterns" do
@@ -349,7 +331,6 @@ RSpec.describe "Rubymap::Enricher" do
               class: "EmailObserver"
             )
           )
-          skip "Implementation pending"
         end
       end
 
@@ -372,7 +353,6 @@ RSpec.describe "Rubymap::Enricher" do
             have_attributes(idiom: "Enumerable protocol", class: "Collection"),
             have_attributes(idiom: "Hash-like access protocol", class: "HashLike")
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -410,7 +390,6 @@ RSpec.describe "Rubymap::Enricher" do
           validations_count: 2,
           scopes_count: 3
         )
-        skip "Implementation pending"
       end
 
       it "analyzes model complexity" do
@@ -418,7 +397,6 @@ RSpec.describe "Rubymap::Enricher" do
 
         user_class = result.classes.find { |c| c.name == "User" }
         expect(user_class.model_complexity_score).to be_a(Float)
-        skip "Implementation pending"
       end
     end
 
@@ -447,7 +425,6 @@ RSpec.describe "Rubymap::Enricher" do
           filters_count: 2,
           rescue_handlers_count: 1
         )
-        skip "Implementation pending"
       end
     end
   end
@@ -455,18 +432,92 @@ RSpec.describe "Rubymap::Enricher" do
   describe "performance and scalability" do
     context "when enriching large codebases" do
       it "processes thousands of classes efficiently" do
-        # Should enrich 10,000+ classes in under 5 seconds
-        skip "Implementation pending"
+        # Generate a large dataset
+        large_data = {
+          classes: 1000.times.map do |i|
+            {
+              name: "Class#{i}",
+              superclass: (i > 0) ? "Class#{i - 1}" : nil,
+              instance_methods: %w[method1 method2 method3],
+              dependencies: ["Dependency#{i}"]
+            }
+          end,
+          methods: 3000.times.map do |i|
+            {
+              name: "method#{i}",
+              owner: "Class#{i / 3}",
+              body_lines: rand(1..50),
+              branches: rand(0..5)
+            }
+          end
+        }
+
+        start_time = Time.now
+        result = enricher.enrich(large_data)
+        elapsed_time = Time.now - start_time
+
+        expect(result.classes.size).to eq(1000)
+        expect(result.methods.size).to eq(3000)
+        expect(elapsed_time).to be < 5.0  # Should complete within 5 seconds
       end
 
       it "uses memory efficiently during enrichment" do
-        skip "Implementation pending"
+        # Generate moderate dataset
+        data = {
+          classes: 100.times.map do |i|
+            {name: "Class#{i}", superclass: "BaseClass"}
+          end,
+          methods: 500.times.map do |i|
+            {name: "method#{i}", owner: "Class#{i / 5}"}
+          end
+        }
+
+        # Measure memory before
+        GC.start
+        memory_before = `ps -o rss= -p #{Process.pid}`.to_i
+
+        # Enrich the data
+        result = enricher.enrich(data)
+
+        # Measure memory after
+        GC.start
+        memory_after = `ps -o rss= -p #{Process.pid}`.to_i
+
+        # Memory increase should be reasonable (less than 100MB for this dataset)
+        memory_increase_mb = (memory_after - memory_before) / 1024.0
+
+        expect(result.classes.size).to eq(100)
+        expect(memory_increase_mb).to be < 100
       end
     end
 
     context "when calculating complex metrics" do
       it "handles deeply recursive analysis without stack overflow" do
-        skip "Implementation pending"
+        # Create a deeply nested inheritance chain
+        deep_data = {
+          classes: 100.times.map do |i|
+            {
+              name: "DeepClass#{i}",
+              superclass: (i > 0) ? "DeepClass#{i - 1}" : nil,
+              inheritance_chain: (0..i).map { |j| "DeepClass#{j}" }
+            }
+          end,
+          method_calls: 200.times.map do |i|
+            {
+              from: "DeepClass#{i % 100}#method",
+              to: "DeepClass#{(i + 1) % 100}#method"
+            }
+          end
+        }
+
+        # This should not raise a stack overflow
+        expect { enricher.enrich(deep_data) }.not_to raise_error
+
+        result = enricher.enrich(deep_data)
+
+        # Verify deep inheritance was calculated correctly
+        deepest_class = result.classes.find { |c| c.name == "DeepClass99" }
+        expect(deepest_class.inheritance_depth).to eq(100)  # 100 classes in chain (0-99)
       end
     end
   end

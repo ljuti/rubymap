@@ -3,7 +3,7 @@
 RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
   let(:provenance_tracker) { instance_double(Rubymap::Normalizer::ProvenanceTracker) }
   let(:visibility_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::VisibilityNormalizer) }
-  
+
   subject(:merge_strategy) do
     described_class.new(provenance_tracker, visibility_normalizer)
   end
@@ -106,7 +106,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
 
       let(:method2) do
         Rubymap::Normalizer::NormalizedMethod.new(
-          symbol_id: "method123", 
+          symbol_id: "method123",
           name: "process",
           visibility: "protected",
           provenance: static_provenance
@@ -227,7 +227,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
         Rubymap::Normalizer::NormalizedClass.new(
           symbol_id: "class123",
           name: "User",
-          fqname: "App::User", 
+          fqname: "App::User",
           superclass: "ApplicationRecord",
           provenance: static_provenance
         )

@@ -7,10 +7,10 @@ module Rubymap
       class ClassProcessor < BaseProcessor
         def process(classes, result, errors)
           processed_classes = []
-          
+
           classes.each do |class_data|
             next unless validate(class_data, errors)
-            
+
             # Check if it's actually a module
             if class_data[:type] == "module" || class_data[:kind] == "module"
               normalized = normalize_as_module(class_data)
@@ -19,12 +19,12 @@ module Rubymap
               normalized = normalize_class(class_data)
               processed_classes << normalized
               result.classes << normalized
-              
+
               # Handle mixins if present - assign directly
               assign_mixins(class_data, normalized)
             end
           end
-          
+
           processed_classes
         end
 
@@ -41,12 +41,12 @@ module Rubymap
         def normalize_class(data)
           fqname = normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
           symbol_id = symbol_id_generator.generate_class_id(fqname, data[:type] || "class")
-          
+
           provenance = provenance_tracker.create_provenance(
             sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
             confidence: normalizers.confidence_calculator.calculate(data)
           )
-          
+
           NormalizedClass.new(
             symbol_id: symbol_id,
             name: data[:name],
@@ -69,12 +69,12 @@ module Rubymap
         def normalize_as_module(data)
           fqname = normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
           symbol_id = symbol_id_generator.generate_module_id(fqname)
-          
+
           provenance = provenance_tracker.create_provenance(
             sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
             confidence: normalizers.confidence_calculator.calculate(data)
           )
-          
+
           NormalizedModule.new(
             symbol_id: symbol_id,
             name: data[:name],
@@ -89,7 +89,7 @@ module Rubymap
 
         def assign_mixins(class_data, normalized_class)
           return unless class_data[:mixins]
-          
+
           class_data[:mixins].each do |mixin|
             normalized_class.mixins << {
               type: mixin[:type],

@@ -7,7 +7,7 @@ module Rubymap
       class ParameterNormalizer
         def normalize(params)
           return [] unless params
-          
+
           params.map do |param|
             case param
             when String

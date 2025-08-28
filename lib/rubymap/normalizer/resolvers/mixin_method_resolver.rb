@@ -15,14 +15,14 @@ module Rubymap
           # Resolve methods from included/extended modules
           result.classes.each do |klass|
             next unless klass.respond_to?(:mixins) && klass.mixins
-            
+
             klass.mixins.each do |mixin|
               module_obj = find_symbol(mixin[:module], result)
               next unless module_obj
-              
+
               # Find methods from the mixed-in module
               module_methods = result.methods.select { |m| m.owner == mixin[:module] }
-              
+
               module_methods.each do |method|
                 if mixin[:type] == "include"
                   handle_include_mixin(method, klass)
@@ -61,7 +61,7 @@ module Rubymap
 
         def find_symbol(name, result)
           result.classes.find { |c| c.fqname == name || c.name == name } ||
-          result.modules.find { |m| m.fqname == name || m.name == name }
+            result.modules.find { |m| m.fqname == name || m.name == name }
         end
       end
     end
