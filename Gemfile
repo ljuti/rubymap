@@ -11,3 +11,6 @@ gem "rake", "~> 13.0"
 gem "rspec", "~> 3.0"
 
 gem "standard", "~> 1.3"
+
+# Mutation testing
+gem "mutant-rspec", "~> 0.13.0"
