@@ -725,20 +725,42 @@ module Rubymap
           markdown << "# Codebase Documentation Index"
           markdown << ""
 
-          # Models section
-          markdown << "## Models"
-          markdown << "- [User Model](models/user.md)"
-          markdown << ""
+          # Group chunks by type
+          class_chunks = chunks.select { |c| c[:type] == "class" }
+          module_chunks = chunks.select { |c| c[:type] == "module" }
+          
+          # Classes section
+          if class_chunks.any?
+            markdown << "## Classes"
+            class_chunks.sort_by { |c| c[:metadata][:fqname] || "" }.each do |chunk|
+              name = chunk[:metadata][:fqname] || chunk[:chunk_id]
+              filename = format_chunk_filename(chunk, 0)
+              markdown << "- [#{name}](chunks/#{filename})"
+            end
+            markdown << ""
+          end
 
-          # Controllers section
-          markdown << "## Controllers"
-          markdown << "- [UsersController](controllers/users_controller.md)"
-          markdown << ""
+          # Modules section  
+          if module_chunks.any?
+            markdown << "## Modules"
+            module_chunks.sort_by { |c| c[:metadata][:fqname] || "" }.each do |chunk|
+              name = chunk[:metadata][:fqname] || chunk[:chunk_id]
+              filename = format_chunk_filename(chunk, 0)
+              markdown << "- [#{name}](chunks/#{filename})"
+            end
+            markdown << ""
+          end
 
           # Relationships section
           markdown << "## Relationships"
           markdown << "- [Class Hierarchy](relationships/hierarchy.md)"
           markdown << "- [Dependencies](relationships/dependencies.md)"
+          markdown << ""
+
+          # Other Documentation
+          markdown << "## Analysis"
+          markdown << "- [Overview](overview.md)"
+          markdown << "- [Manifest](manifest.json)"
           markdown << ""
 
           markdown.join("\n")

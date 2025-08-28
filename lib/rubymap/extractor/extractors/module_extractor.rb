@@ -14,7 +14,7 @@ module Rubymap
         full_name = (context.current_namespace && !context.current_namespace.empty?) ? "#{context.current_namespace}::#{name}" : name
 
         module_info = ModuleInfo.new(
-          name: full_name,
+          name: name,  # Use simple name, namespace is separate
           location: node.location,
           doc: doc,
           namespace: context.current_namespace,
