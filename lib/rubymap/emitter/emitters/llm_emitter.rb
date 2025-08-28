@@ -728,7 +728,7 @@ module Rubymap
           # Group chunks by type
           class_chunks = chunks.select { |c| c[:type] == "class" }
           module_chunks = chunks.select { |c| c[:type] == "module" }
-          
+
           # Classes section
           if class_chunks.any?
             markdown << "## Classes"
@@ -740,7 +740,7 @@ module Rubymap
             markdown << ""
           end
 
-          # Modules section  
+          # Modules section
           if module_chunks.any?
             markdown << "## Modules"
             module_chunks.sort_by { |c| c[:metadata][:fqname] || "" }.each do |chunk|

@@ -132,6 +132,26 @@ module Rubymap
           methods: []
         )
       end
+
+      def to_h
+        {
+          name: name,
+          fqname: fqname,
+          type: kind,
+          superclass: superclass,
+          file: file,
+          line: location&.start_line,
+          namespace: namespace_path&.join("::"),
+          documentation: nil,  # Could be added if we extract docs
+          instance_methods: instance_methods,
+          class_methods: class_methods,
+          metrics: {
+            complexity_score: complexity_score,
+            maintainability_score: maintainability_score,
+            test_coverage: test_coverage
+          }.compact
+        }.compact
+      end
     end
 
     # Enhanced module with metrics
@@ -154,6 +174,21 @@ module Rubymap
           children: normalized_module.children,
           provenance: normalized_module.provenance
         )
+      end
+
+      def to_h
+        {
+          name: name,
+          fqname: fqname,
+          type: "module",
+          file: nil,  # EnrichedModule doesn't have file attribute
+          line: location&.start_line,
+          namespace: namespace_path&.join("::"),
+          documentation: nil,
+          instance_methods: instance_methods || [],
+          class_methods: [],  # Modules typically don't have class methods in our model
+          metrics: {}
+        }.compact
       end
     end
 
@@ -195,6 +230,46 @@ module Rubymap
           body_lines: normalized_method.respond_to?(:body_lines) ? normalized_method.body_lines : nil,
           test_coverage: normalized_method.respond_to?(:test_coverage) ? normalized_method.test_coverage : nil
         )
+      end
+
+      def to_h
+        # EnrichedMethod is already used as a hash in most places,
+        # but we can provide a cleaner hash representation if needed
+        {
+          symbol_id: symbol_id,
+          name: name,
+          fqname: fqname,
+          visibility: visibility,
+          owner: owner,
+          scope: scope,
+          parameters: parameters,
+          arity: arity,
+          canonical_name: canonical_name,
+          available_in: available_in,
+          inferred_visibility: inferred_visibility,
+          source: source,
+          provenance: provenance,
+          cyclomatic_complexity: cyclomatic_complexity,
+          complexity_category: complexity_category,
+          complexity: complexity,
+          lines_of_code: lines_of_code,
+          body_lines: body_lines,
+          branches: branches,
+          loops: loops,
+          conditionals: conditionals,
+          line_count: line_count,
+          test_coverage: test_coverage,
+          coverage_category: coverage_category,
+          implements_protocol: implements_protocol,
+          yields: yields,
+          dependencies: dependencies,
+          calls_made: calls_made,
+          owner_type: owner_type,
+          quality_score: quality_score,
+          has_quality_issues: has_quality_issues,
+          uses_instance_variables: uses_instance_variables,
+          has_commented_code: has_commented_code
+        }.compact
       end
     end
 

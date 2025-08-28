@@ -137,9 +137,9 @@ module Rubymap
 
       # Convert EnrichmentResult to hash format expected by emitters
       {
-        classes: enrichment_result.classes.map { |c| class_to_hash(c) },
-        modules: enrichment_result.modules.map { |m| module_to_hash(m) },
-        methods: enrichment_result.methods,
+        classes: enrichment_result.classes.map(&:to_h),
+        modules: enrichment_result.modules.map(&:to_h),
+        methods: enrichment_result.methods.map(&:to_h),
         metadata: {
           enriched_at: enrichment_result.enriched_at,
           project_name: "Ruby Project",
@@ -148,41 +148,6 @@ module Rubymap
           total_methods: enrichment_result.methods.size
         },
         graphs: @graphs_cache || {}
-      }
-    end
-
-    def class_to_hash(enriched_class)
-      {
-        name: enriched_class.name,
-        fqname: enriched_class.fqname,
-        type: enriched_class.kind,
-        superclass: enriched_class.superclass,
-        file: enriched_class.respond_to?(:file) ? enriched_class.file : nil,
-        line: nil, # enriched_class doesn't have line info
-        namespace: enriched_class.namespace_path.join("::"),
-        documentation: nil,
-        instance_methods: enriched_class.instance_methods,
-        class_methods: enriched_class.class_methods,
-        metrics: {
-          complexity_score: enriched_class.complexity_score,
-          maintainability_score: enriched_class.maintainability_score,
-          test_coverage: enriched_class.test_coverage
-        }
-      }
-    end
-
-    def module_to_hash(enriched_module)
-      {
-        name: enriched_module.name,
-        fqname: enriched_module.fqname,
-        type: "module",
-        file: enriched_module.respond_to?(:file) ? enriched_module.file : nil,
-        line: nil,
-        namespace: enriched_module.namespace_path.join("::"),
-        documentation: nil,
-        instance_methods: enriched_module.respond_to?(:instance_methods) ? (enriched_module.instance_methods || []) : [],
-        class_methods: enriched_module.respond_to?(:class_methods) ? (enriched_module.class_methods || []) : [],
-        metrics: {}
       }
     end
 
