@@ -42,7 +42,6 @@ RSpec.describe "Rubymap::Extractor" do
               superclass: nil
             )
           )
-          skip "Implementation pending"
         end
 
         it "extracts instance methods" do
@@ -53,7 +52,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "full_name", visibility: "public"),
             have_attributes(name: "validate_email", visibility: "private")
           )
-          skip "Implementation pending"
         end
 
         it "extracts attribute declarations" do
@@ -63,7 +61,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "name", type: "reader"),
             have_attributes(name: "email", type: "reader")
           )
-          skip "Implementation pending"
         end
       end
 
@@ -88,7 +85,6 @@ RSpec.describe "Rubymap::Extractor" do
             name: "AdminUser",
             superclass: "User"
           )
-          skip "Implementation pending"
         end
 
         it "captures mixin relationships" do
@@ -98,7 +94,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(type: "include", module: "Authenticatable"),
             have_attributes(type: "extend", module: "ClassMethods")
           )
-          skip "Implementation pending"
         end
       end
 
@@ -131,7 +126,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.modules).to include(
             have_attributes(name: "Searchable", type: "module")
           )
-          skip "Implementation pending"
         end
 
         it "extracts nested modules" do
@@ -140,7 +134,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.modules).to include(
             have_attributes(name: "Searchable::ClassMethods", type: "module")
           )
-          skip "Implementation pending"
         end
 
         it "identifies concern patterns" do
@@ -149,7 +142,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.patterns).to include(
             have_attributes(type: "concern", indicators: ["ActiveSupport::Concern"])
           )
-          skip "Implementation pending"
         end
       end
 
@@ -174,7 +166,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "DEFAULT_TIMEOUT", value: "30"),
             have_attributes(name: "SUPPORTED_FORMATS", type: "array")
           )
-          skip "Implementation pending"
         end
 
         it "identifies class variables" do
@@ -183,7 +174,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.class_variables).to include(
             have_attributes(name: "@@instance_count", initial_value: "0")
           )
-          skip "Implementation pending"
         end
       end
 
@@ -216,7 +206,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "post", scope: "instance"),
             have_attributes(name: "process", scope: "instance")
           )
-          skip "Implementation pending"
         end
 
         it "captures method signatures" do
@@ -227,7 +216,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "path", type: "required"),
             have_attributes(name: "options", type: "optional", default: "{}")
           )
-          skip "Implementation pending"
         end
 
         it "tracks method aliases" do
@@ -236,7 +224,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.aliases).to include(
             have_attributes(new_name: "send_request", original_name: "post")
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -247,25 +234,20 @@ RSpec.describe "Rubymap::Extractor" do
           # Given: A directory containing multiple .rb files
           # When: Extracting from the directory
           # Then: All Ruby files should be processed
-          skip "Implementation pending"
         end
 
         it "handles subdirectories correctly" do
-          skip "Implementation pending"
         end
 
         it "ignores non-Ruby files" do
-          skip "Implementation pending"
         end
       end
 
       context "when encountering parse errors" do
         it "logs parse errors but continues processing" do
-          skip "Implementation pending"
         end
 
         it "includes error information in the result" do
-          skip "Implementation pending"
         end
       end
     end
@@ -290,7 +272,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.dependencies).to include(
             have_attributes(type: "require", name: "json", external: true)
           )
-          skip "Implementation pending"
         end
 
         it "tracks relative file dependencies" do
@@ -299,7 +280,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.dependencies).to include(
             have_attributes(type: "require_relative", path: "../lib/helper")
           )
-          skip "Implementation pending"
         end
 
         it "tracks autoload declarations" do
@@ -308,7 +288,6 @@ RSpec.describe "Rubymap::Extractor" do
           expect(result.dependencies).to include(
             have_attributes(type: "autoload", constant: "Parser", path: "parser/ruby")
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -341,7 +320,6 @@ RSpec.describe "Rubymap::Extractor" do
           
           user_class = result.classes.first
           expect(user_class.documentation).to include("Represents a user in the system")
-          skip "Implementation pending"
         end
 
         it "extracts method documentation with parameters" do
@@ -352,7 +330,6 @@ RSpec.describe "Rubymap::Extractor" do
             have_attributes(name: "name", type_hint: "String"),
             have_attributes(name: "email", type_hint: "String")
           )
-          skip "Implementation pending"
         end
       end
     end
