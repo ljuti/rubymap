@@ -5,6 +5,7 @@ require_relative "rubymap/extractor"
 require_relative "rubymap/normalizer"
 require_relative "rubymap/enricher"
 require_relative "rubymap/indexer"
+require_relative "rubymap/emitter"
 
 module Rubymap
   class Error < StandardError; end
