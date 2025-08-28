@@ -8,7 +8,7 @@ module EmitterTestData
       {
         metadata: {
           project_name: "TestApp",
-          ruby_version: "3.2.0", 
+          ruby_version: "3.2.0",
           mapping_date: "2023-12-01T10:00:00Z",
           total_classes: 3,
           total_methods: 8,
@@ -63,7 +63,7 @@ module EmitterTestData
         classes: [
           {
             fqname: "BaseClass",
-            type: "class", 
+            type: "class",
             superclass: nil,
             file: "lib/base_class.rb",
             line: 1,
@@ -71,10 +71,10 @@ module EmitterTestData
             documentation: "Base class for the hierarchy"
           },
           {
-            fqname: "MiddleClass", 
+            fqname: "MiddleClass",
             type: "class",
             superclass: "BaseClass",
-            file: "lib/middle_class.rb", 
+            file: "lib/middle_class.rb",
             line: 1,
             instance_methods: ["middle_method"],
             documentation: "Middle tier class"
@@ -82,7 +82,7 @@ module EmitterTestData
           {
             fqname: "LeafClassA",
             type: "class",
-            superclass: "MiddleClass", 
+            superclass: "MiddleClass",
             file: "lib/leaf_a.rb",
             line: 1,
             instance_methods: ["leaf_a_method"],
@@ -90,10 +90,10 @@ module EmitterTestData
           },
           {
             fqname: "LeafClassB",
-            type: "class", 
+            type: "class",
             superclass: "MiddleClass",
             file: "lib/leaf_b.rb",
-            line: 1, 
+            line: 1,
             instance_methods: ["leaf_b_method"],
             documentation: "Second leaf class"
           }
@@ -114,7 +114,7 @@ module EmitterTestData
           {
             fqname: "User",
             type: "class",
-            superclass: "ApplicationRecord", 
+            superclass: "ApplicationRecord",
             file: "/home/developer/secret_project/app/models/user.rb",
             line: 1,
             instance_methods: ["save", "set_password", "api_secret_token", "validate"],
@@ -123,7 +123,7 @@ module EmitterTestData
           },
           {
             fqname: "InternalService",
-            type: "class", 
+            type: "class",
             file: "/Users/dev/company/app/services/internal_service.rb",
             line: 1,
             instance_methods: ["internal_api_call", "process_user_token"],
@@ -195,7 +195,7 @@ module EmitterTestData
             # Missing required fields like fqname
             type: "class",
             instance_methods: nil, # Null instead of array
-            file: "", # Empty file path
+            file: "" # Empty file path
           }
         ],
         graphs: nil # Null graphs
@@ -219,7 +219,7 @@ module EmitterTestData
         fqname: "User",
         type: "class",
         superclass: "ApplicationRecord",
-        file: "app/models/user.rb", 
+        file: "app/models/user.rb",
         line: 1,
         instance_methods: ["save", "full_name", "active?"],
         class_methods: ["find_by_email"],
@@ -230,7 +230,7 @@ module EmitterTestData
     def basic_controller_class
       {
         fqname: "Admin::UsersController",
-        type: "class", 
+        type: "class",
         superclass: "ApplicationController",
         file: "app/controllers/admin/users_controller.rb",
         line: 3,
@@ -244,7 +244,7 @@ module EmitterTestData
         fqname: "UserService",
         type: "class",
         file: "app/services/user_service.rb",
-        line: 1, 
+        line: 1,
         instance_methods: ["create_user", "update_user"],
         documentation: "Service for user operations"
       }
@@ -253,7 +253,7 @@ module EmitterTestData
     def basic_helper_module
       {
         fqname: "ApplicationHelper",
-        type: "module", 
+        type: "module",
         file: "app/helpers/application_helper.rb",
         line: 1,
         instance_methods: ["format_date", "truncate_text"],
@@ -264,13 +264,13 @@ module EmitterTestData
     def detailed_user_model
       basic_user_class.merge(
         instance_methods: [
-          "save", "update", "destroy", "valid?", "full_name", 
+          "save", "update", "destroy", "valid?", "full_name",
           "email_confirmed?", "active?", "admin?", "reset_password"
         ],
         class_methods: ["find_by_email", "active_users", "admins", "create_with_defaults"],
         associations: {
           has_many: ["posts", "comments"],
-          belongs_to: ["organization"] 
+          belongs_to: ["organization"]
         },
         validations: ["presence :email", "uniqueness :email", "format :email"],
         callbacks: ["before_save :normalize_email", "after_create :send_welcome_email"],
@@ -285,7 +285,7 @@ module EmitterTestData
 
     def users_controller
       {
-        fqname: "UsersController", 
+        fqname: "UsersController",
         type: "class",
         superclass: "ApplicationController",
         file: "app/controllers/users_controller.rb",
@@ -306,11 +306,11 @@ module EmitterTestData
     def user_service
       {
         fqname: "UserService",
-        type: "class", 
+        type: "class",
         file: "app/services/user_service.rb",
         line: 1,
         instance_methods: [
-          "create_user", "update_user", "deactivate_user", 
+          "create_user", "update_user", "deactivate_user",
           "send_password_reset", "confirm_email"
         ],
         documentation: "Business logic for user operations",
@@ -322,7 +322,7 @@ module EmitterTestData
       {
         fqname: "UserSerializer",
         type: "class",
-        superclass: "ApplicationSerializer", 
+        superclass: "ApplicationSerializer",
         file: "app/serializers/user_serializer.rb",
         line: 1,
         instance_methods: ["attributes", "relationships"],
@@ -331,7 +331,7 @@ module EmitterTestData
       }
     end
 
-    def authentication_module  
+    def authentication_module
       {
         fqname: "Authentication",
         type: "module",
@@ -344,9 +344,9 @@ module EmitterTestData
 
     def authorization_module
       {
-        fqname: "Authorization", 
+        fqname: "Authorization",
         type: "module",
-        file: "app/modules/authorization.rb", 
+        file: "app/modules/authorization.rb",
         line: 1,
         instance_methods: ["authorize!", "can?", "cannot?", "admin_required"],
         documentation: "Handles user authorization and permissions"

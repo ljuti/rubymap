@@ -19,9 +19,9 @@ RSpec.describe Rubymap do
           test_dir = "spec/tmp/test_project"
           FileUtils.mkdir_p(test_dir)
           File.write("#{test_dir}/test.rb", "class TestClass; end")
-          
+
           result = Rubymap.map(test_dir, format: :llm)
-          
+
           expect(result).to be_a(Hash)
           expect(result[:format]).to eq(:llm)
         ensure
@@ -44,7 +44,7 @@ RSpec.describe Rubymap do
           config.format = :json
           config.verbose = true
         end
-        
+
         expect(Rubymap.configuration.format).to eq(:json)
         expect(Rubymap.configuration.verbose).to be(true)
       ensure

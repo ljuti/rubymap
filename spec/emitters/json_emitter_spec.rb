@@ -51,7 +51,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
 
         inheritance_graph = parsed["graphs"]["inheritance"]
         user_inheritance = inheritance_graph.find { |rel| rel["from"] == "User" }
-        
+
         expect(user_inheritance["to"]).to eq("ApplicationRecord")
         expect(user_inheritance["type"]).to eq("inherits")
       end
@@ -78,7 +78,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
       end
 
       it "preserves service layer dependencies" do
-        json_output = subject.emit(codebase_data) 
+        json_output = subject.emit(codebase_data)
         parsed = JSON.parse(json_output)
 
         service = parsed["classes"].find { |c| c["fqname"] == "UserService" }
@@ -93,7 +93,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
 
         user_model = parsed["classes"].find { |c| c["fqname"] == "User" }
         metrics = user_model["metrics"]
-        
+
         expect(metrics["complexity_score"]).to eq(4.2)
         expect(metrics["test_coverage"]).to eq(95.0)
         expect(metrics["lines_of_code"]).to eq(150)
@@ -173,7 +173,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
 
   describe "file organization and partitioning" do
     let(:temp_directory) { "spec/tmp/json_emitter" }
-    
+
     before { FileUtils.mkdir_p(temp_directory) }
     after { FileUtils.rm_rf(temp_directory) }
 
@@ -182,7 +182,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         subject.emit_to_files(codebase_data, temp_directory)
 
         expect(File).to exist("#{temp_directory}/rubymap.json")
-        expect(File).to exist("#{temp_directory}/classes.json") 
+        expect(File).to exist("#{temp_directory}/classes.json")
         expect(File).to exist("#{temp_directory}/graphs.json")
         expect(File).to exist("#{temp_directory}/metadata.json")
       end
@@ -208,7 +208,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         expect(manifest).to have_key("files")
         expect(manifest).to have_key("schema_version")
         expect(manifest).to have_key("generation_info")
-        
+
         expect(manifest["files"]).to include(
           hash_including("filename" => "classes.json", "type" => "classes")
         )
@@ -234,7 +234,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         changed_files = subject.emit_to_files(updated_data, temp_directory, incremental: true)
 
         expect(changed_files).to include("classes.json")
-        expect(changed_files).to include("metadata.json") 
+        expect(changed_files).to include("metadata.json")
         expect(File.mtime("#{temp_directory}/classes.json")).to be > initial_mtime
       end
 
@@ -300,7 +300,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         end
 
         outputs = threads.map(&:value)
-        
+
         # All outputs should be identical
         expect(outputs.uniq.size).to eq(1)
         expect { JSON.parse(outputs.first) }.not_to raise_error
@@ -311,24 +311,24 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
   describe "error handling and validation" do
     context "when encountering invalid input data" do
       it "handles missing required fields gracefully" do
-        invalid_data = { classes: [{ type: "class" }] } # Missing fqname
+        invalid_data = {classes: [{type: "class"}]} # Missing fqname
 
         expect { subject.emit(invalid_data) }.not_to raise_error
-        
+
         json_output = subject.emit(invalid_data)
         parsed = JSON.parse(json_output)
-        
+
         expect(parsed["errors"]).to include("Missing required field: fqname")
       end
 
       it "validates data structure before emission" do
-        invalid_data = { classes: "not_an_array" }
+        invalid_data = {classes: "not_an_array"}
 
         expect { subject.emit(invalid_data) }.not_to raise_error
-        
+
         json_output = subject.emit(invalid_data)
         parsed = JSON.parse(json_output)
-        
+
         expect(parsed["errors"]).to include(match(/Invalid data structure/))
       end
 
@@ -336,7 +336,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         mixed_data = {
           classes: [
             EmitterTestData.basic_user_class,
-            { type: "class" }, # Invalid - missing fqname
+            {type: "class"}, # Invalid - missing fqname
             EmitterTestData.basic_service_class
           ]
         }
@@ -347,7 +347,7 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
         # Should include valid classes
         expect(parsed["classes"].size).to eq(2)
         expect(parsed["classes"].map { |c| c["fqname"] }).to include("User", "UserService")
-        
+
         # Should report errors for invalid records
         expect(parsed["errors"]).not_to be_empty
       end
@@ -355,12 +355,12 @@ RSpec.describe "JSON Emitter", skip: "JSON emitter implementation deferred" do
 
     context "when encountering file system issues" do
       let(:readonly_directory) { "spec/tmp/readonly" }
-      
+
       before do
         FileUtils.mkdir_p(readonly_directory)
-        File.chmod(0444, readonly_directory) # Read-only
+        File.chmod(0o444, readonly_directory) # Read-only
       end
-      
+
       after { FileUtils.rm_rf(readonly_directory) }
 
       it "provides clear error messages for write permission issues" do

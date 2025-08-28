@@ -61,7 +61,7 @@ module Rubymap
         def emit_to_directory(indexed_data, output_dir, include_makefile: false, include_readme: false)
           ensure_directory_exists(output_dir)
           written_files = []
-          
+
           # Generate different graph types
           graphs = {
             "inheritance.dot" => emit_inheritance_graph(indexed_data),
@@ -69,27 +69,27 @@ module Rubymap
             "modules.dot" => emit_module_graph(indexed_data),
             "complete.dot" => emit(indexed_data)
           }
-          
+
           graphs.each do |filename, content|
             file_path = File.join(output_dir, filename)
             File.write(file_path, content)
             written_files << create_file_info(filename, file_path)
           end
-          
+
           # Generate Makefile if requested
           if include_makefile
             makefile_path = File.join(output_dir, "Makefile")
             File.write(makefile_path, generate_makefile)
             written_files << create_file_info("Makefile", makefile_path)
           end
-          
-          # Generate README if requested  
+
+          # Generate README if requested
           if include_readme
             readme_path = File.join(output_dir, "README.md")
             File.write(readme_path, generate_graphviz_readme)
             written_files << create_file_info("README.md", readme_path)
           end
-          
+
           generate_manifest(output_dir, written_files, indexed_data)
           written_files
         end
@@ -108,212 +108,212 @@ module Rubymap
 
         def generate_complete_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph CodeStructure {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           # Add nodes
           add_class_nodes(dot, indexed_data[:classes]) if indexed_data[:classes]
           add_module_nodes(dot, indexed_data[:modules]) if indexed_data[:modules]
-          
+
           dot << ""
-          
+
           # Add edges
           add_inheritance_edges(dot, indexed_data.dig(:graphs, :inheritance))
           add_dependency_edges(dot, indexed_data.dig(:graphs, :dependencies))
           add_module_edges(dot, indexed_data.dig(:graphs, :modules))
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_inheritance_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph Inheritance {"
           dot << apply_graph_attributes
           dot << '  rankdir="BT";  // Bottom-Top for inheritance'
           dot << ""
-          
+
           inheritance_data = indexed_data.dig(:graphs, :inheritance) || []
-          
+
           # Collect all nodes involved in inheritance
           nodes = Set.new
           inheritance_data.each do |rel|
             nodes << rel[:from]
             nodes << rel[:to]
           end
-          
+
           # Add nodes with appropriate styling
           nodes.each do |node|
             klass = find_class(indexed_data, node)
-            if klass
-              dot << format_class_node(node, klass)
+            dot << if klass
+              format_class_node(node, klass)
             else
-              dot << "  \"#{escape_name(node)}\" [shape=#{@node_shape}, color=gray];"
+              "  \"#{escape_name(node)}\" [shape=#{@node_shape}, color=gray];"
             end
           end
-          
+
           dot << ""
-          
+
           # Add inheritance edges
           inheritance_data.each do |rel|
             dot << "  \"#{escape_name(rel[:from])}\" -> \"#{escape_name(rel[:to])}\" [label=\"inherits\", color=blue];"
           end
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_dependency_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph Dependencies {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           dependencies = indexed_data.dig(:graphs, :dependencies) || []
-          
+
           # Add dependency edges with different styles
           dependencies.each do |dep|
-            style = dep[:type] == "hard" ? "solid" : "dashed"
+            style = (dep[:type] == "hard") ? "solid" : "dashed"
             dot << "  \"#{escape_name(dep[:from])}\" -> \"#{escape_name(dep[:to])}\" [label=\"depends_on\", style=#{style}];"
           end
-          
+
           # Handle circular dependencies
           if @options[:show_circular]
             add_circular_dependency_detection(dot, dependencies)
           end
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_module_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph Modules {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           # Different edge colors for different mixin types
           includes_data = indexed_data.dig(:graphs, :includes) || []
           extends_data = indexed_data.dig(:graphs, :extends) || []
           prepends_data = indexed_data.dig(:graphs, :prepends) || []
-          
+
           # Add module nodes
           if indexed_data[:modules]
             indexed_data[:modules].each do |mod|
               dot << "  \"#{escape_name(mod[:fqname])}\" [shape=ellipse, color=green, label=\"#{mod[:fqname]}\"];"
             end
           end
-          
+
           dot << ""
-          
+
           # Add different mixin relationships
           includes_data.each do |rel|
             dot << "  \"#{escape_name(rel[:from])}\" -> \"#{escape_name(rel[:to])}\" [label=\"includes\", color=green];"
           end
-          
+
           extends_data.each do |rel|
             dot << "  \"#{escape_name(rel[:from])}\" -> \"#{escape_name(rel[:to])}\" [label=\"extends\", color=red];"
           end
-          
+
           prepends_data.each do |rel|
             dot << "  \"#{escape_name(rel[:from])}\" -> \"#{escape_name(rel[:to])}\" [label=\"prepends\", color=blue];"
           end
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_call_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph CallGraph {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           # Method call relationships
           calls = indexed_data.dig(:graphs, :calls) || []
-          
+
           calls.each do |call|
             from_method = "#{call[:from_class]}##{call[:from_method]}"
             to_method = "#{call[:to_class]}##{call[:to_method]}"
             dot << "  \"#{escape_name(from_method)}\" -> \"#{escape_name(to_method)}\" [label=\"calls\"];"
           end
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_complexity_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph Complexity {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           # Use color gradients for complexity
           if indexed_data[:classes]
             indexed_data[:classes].each do |klass|
               complexity = klass.dig(:metrics, :complexity_score) || 0
               color = complexity_to_color(complexity)
-              
+
               dot << "  \"#{escape_name(klass[:fqname])}\" [shape=#{@node_shape}, style=filled, fillcolor=\"#{color}\", label=\"#{klass[:fqname]}\\ncomplexity: #{complexity}\"];"
             end
           end
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
         def generate_rails_graph(indexed_data)
           dot = []
-          
+
           dot << "digraph RailsStructure {"
           dot << apply_graph_attributes
           dot << ""
-          
+
           # Create clusters for MVC
           dot << "  subgraph cluster_models {"
           dot << "    label=\"Models\";"
           dot << "    color=blue;"
           add_rails_nodes(dot, indexed_data[:classes], "app/models")
           dot << "  }"
-          
+
           dot << ""
           dot << "  subgraph cluster_controllers {"
           dot << "    label=\"Controllers\";"
           dot << "    color=green;"
           add_rails_nodes(dot, indexed_data[:classes], "app/controllers")
           dot << "  }"
-          
+
           dot << ""
           dot << "  subgraph cluster_views {"
           dot << "    label=\"Views\";"
           dot << "    color=red;"
           # Views would be handled differently
           dot << "  }"
-          
+
           dot << ""
-          
+
           # Highlight Rails base classes
           dot << "  \"ApplicationRecord\" [style=bold, color=blue];"
           dot << "  \"ApplicationController\" [style=bold, color=green];"
-          
+
           # Add relationships
           add_inheritance_edges(dot, indexed_data.dig(:graphs, :inheritance))
-          
+
           dot << "}"
-          
+
           apply_redaction(dot.join("\n"))
         end
 
@@ -350,7 +350,7 @@ module Rubymap
 
         def add_inheritance_edges(dot, inheritance_data)
           return unless inheritance_data
-          
+
           inheritance_data.each do |rel|
             dot << "  \"#{escape_name(rel[:from])}\" -> \"#{escape_name(rel[:to])}\" [label=\"inherits\"];"
           end
@@ -358,9 +358,9 @@ module Rubymap
 
         def add_dependency_edges(dot, dependencies)
           return unless dependencies
-          
+
           dependencies.each do |dep|
-            style = dep[:type] == "hard" ? "solid" : "dashed"
+            style = (dep[:type] == "hard") ? "solid" : "dashed"
             dot << "  \"#{escape_name(dep[:from])}\" -> \"#{escape_name(dep[:to])}\" [label=\"depends_on\", style=#{style}];"
           end
         end
@@ -371,7 +371,7 @@ module Rubymap
 
         def add_rails_nodes(dot, classes, path_prefix)
           return unless classes
-          
+
           classes.select { |c| c[:file]&.start_with?(path_prefix) }.each do |klass|
             dot << "    \"#{escape_name(klass[:fqname])}\";"
           end
@@ -380,11 +380,11 @@ module Rubymap
         def add_circular_dependency_detection(dot, dependencies)
           # Simple circular dependency detection
           graph = Hash.new { |h, k| h[k] = [] }
-          
+
           dependencies.each do |dep|
             graph[dep[:from]] << dep[:to]
           end
-          
+
           # Find cycles (simplified)
           graph.each do |node, deps|
             deps.each do |dep|

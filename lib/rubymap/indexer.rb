@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
 require_relative "indexer/indexed_result"
 require_relative "indexer/graph"
 require_relative "indexer/symbol_index"
@@ -20,33 +19,33 @@ module Rubymap
     # Main entry point - builds indexes from enriched data
     def build(enriched_data)
       validate_input!(enriched_data)
-      
+
       result = IndexedResult.new
       result.source_data = enriched_data
-      
+
       # Build symbol index for fast lookups
       build_symbol_index(result, enriched_data)
-      
+
       # Build relationship graphs
       build_inheritance_graph(result, enriched_data)
       build_dependency_graph(result, enriched_data)
       build_method_call_graph(result, enriched_data)
       build_mixin_graph(result, enriched_data)
-      
+
       # Detect issues
       detect_circular_dependencies(result)
       detect_missing_references(result, enriched_data)
-      
+
       # Set up query interface
       result.setup_query_interface
-      
+
       result
     end
 
     # Load a previously saved index
     def self.load(file_path)
       raise "File not found: #{file_path}" unless File.exist?(file_path)
-      
+
       data = File.read(file_path)
       IndexedResult.deserialize(data)
     end
@@ -76,7 +75,7 @@ module Rubymap
       if data.is_a?(Hash)
         valid_keys = [:classes, :methods, :modules, :method_calls]
         has_valid_key = valid_keys.any? { |key| data.key?(key) }
-        
+
         unless has_valid_key
           raise InvalidDataError, "Missing required keys: must have at least one of classes, methods, modules, or method_calls"
         end
@@ -87,9 +86,9 @@ module Rubymap
 
     def build_symbol_index(result, data)
       classes = extract_classes(data)
-      methods = extract_methods(data) 
+      methods = extract_methods(data)
       modules = extract_modules(data)
-      
+
       # Index all symbols for fast lookup
       (classes + methods + modules).each do |symbol|
         # Only add symbols that have a name and are not empty hashes
@@ -101,11 +100,11 @@ module Rubymap
 
     def build_inheritance_graph(result, data)
       classes = extract_classes(data)
-      
+
       classes.each do |klass|
         name = klass[:fqname] || klass[:name]
         result.inheritance_graph.add_node(name, klass)
-        
+
         if klass[:superclass]
           # Note: In Ruby inheritance, child inherits from parent
           # So edge goes from child to parent
@@ -116,18 +115,18 @@ module Rubymap
           )
         end
       end
-      
+
       # Calculate depths
       result.inheritance_graph.calculate_depths
     end
 
     def build_dependency_graph(result, data)
       classes = extract_classes(data)
-      
+
       classes.each do |klass|
         name = klass[:fqname] || klass[:name]
         result.dependency_graph.add_node(name, klass)
-        
+
         dependencies = klass[:dependencies] || []
         dependencies.each do |dep|
           result.dependency_graph.add_edge(name, dep, type: "depends_on")
@@ -137,39 +136,38 @@ module Rubymap
 
     def build_method_call_graph(result, data)
       method_calls = data[:method_calls] || []
-      
+
       method_calls.each do |call|
         from = call[:from]
         to = call[:to]
         frequency = call[:frequency] || 1
-        
+
         result.method_call_graph.add_node(from, {type: "method"})
         result.method_call_graph.add_node(to, {type: "method"})
-        result.method_call_graph.add_edge(from, to, 
+        result.method_call_graph.add_edge(from, to,
           type: "calls",
-          weight: frequency
-        )
+          weight: frequency)
       end
     end
 
     def build_mixin_graph(result, data)
       classes = extract_classes(data)
-      
+
       classes.each do |klass|
         name = klass[:fqname] || klass[:name]
         mixins = klass[:mixins] || []
-        
+
         mixins.each do |mixin|
           module_name = mixin[:module] || mixin["module"]
           mixin_type = mixin[:type] || mixin["type"] || "include"
-          
+
           edge_type = case mixin_type
-                      when "include" then "includes"
-                      when "extend" then "extends"
-                      when "prepend" then "prepends"
-                      else mixin_type
-                      end
-          
+          when "include" then "includes"
+          when "extend" then "extends"
+          when "prepend" then "prepends"
+          else mixin_type
+          end
+
           result.mixin_graph.add_edge(name, module_name, type: edge_type)
         end
       end
@@ -181,7 +179,7 @@ module Rubymap
 
     def detect_missing_references(result, data)
       all_symbols = result.symbol_index.all_names
-      
+
       # Check superclasses
       extract_classes(data).each do |klass|
         if klass[:superclass] && !all_symbols.include?(klass[:superclass])
@@ -191,7 +189,7 @@ module Rubymap
             reference_type: "superclass"
           )
         end
-        
+
         # Check dependencies
         (klass[:dependencies] || []).each do |dep|
           unless all_symbols.include?(dep)
@@ -236,7 +234,7 @@ module Rubymap
     def normalize_symbol(symbol)
       # Handle nil input
       return {} if symbol.nil?
-      
+
       # If it's already a hash with the expected structure, return it
       if symbol.is_a?(Hash)
         # Only return if it has expected symbol keys
@@ -247,7 +245,7 @@ module Rubymap
           return {}
         end
       end
-      
+
       # Convert struct to hash if possible
       if symbol.respond_to?(:to_h)
         begin
@@ -260,7 +258,7 @@ module Rubymap
           # Fall through if to_h fails
         end
       end
-      
+
       # Extract fields manually from objects
       result = {}
       [:name, :fqname, :type, :superclass, :dependencies, :mixins, :file, :line, :owner].each do |field|
@@ -268,9 +266,9 @@ module Rubymap
           result[field] = symbol.send(field)
         end
       end
-      
+
       # Only return if we actually got a name
-      result[:name] || result[:fqname] ? result : {}
+      (result[:name] || result[:fqname]) ? result : {}
     end
   end
 end

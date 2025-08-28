@@ -9,8 +9,8 @@ module Rubymap
     # Result object containing indexed data and query interface
     class IndexedResult
       attr_accessor :symbol_index, :inheritance_graph, :dependency_graph,
-                    :method_call_graph, :mixin_graph, :circular_dependencies,
-                    :missing_references, :source_data
+        :method_call_graph, :mixin_graph, :circular_dependencies,
+        :missing_references, :source_data
 
       def initialize
         @symbol_index = SymbolIndex.new
@@ -130,7 +130,7 @@ module Rubymap
       def definition_of(symbol_name)
         symbol = find_symbol(symbol_name)
         return nil unless symbol
-        
+
         OpenStruct.new(
           file: symbol[:file],
           line: symbol[:line],
@@ -175,7 +175,7 @@ module Rubymap
 
       # Persistence
       def save(file_path)
-        require 'fileutils'
+        require "fileutils"
         FileUtils.mkdir_p(File.dirname(file_path))
         data = serialize
         File.write(file_path, data)
@@ -196,7 +196,7 @@ module Rubymap
       def self.deserialize(data)
         parsed = JSON.parse(data, symbolize_names: true)
         result = new
-        
+
         result.symbol_index = SymbolIndex.from_h(parsed[:symbol_index])
         result.inheritance_graph = Graph.from_h(parsed[:inheritance_graph])
         result.dependency_graph = Graph.from_h(parsed[:dependency_graph])
@@ -206,7 +206,7 @@ module Rubymap
         result.missing_references = parsed[:missing_references].map do |ref|
           MissingReference.new(**ref)
         end
-        
+
         result.setup_query_interface
         result
       end
@@ -224,12 +224,12 @@ module Rubymap
 
       def update_class_in_graphs(klass)
         name = klass[:fqname] || klass[:name]
-        
+
         # Update inheritance
         if klass[:superclass]
           @inheritance_graph.add_edge(name, klass[:superclass], type: "inherits")
         end
-        
+
         # Update dependencies
         (klass[:dependencies] || []).each do |dep|
           @dependency_graph.add_edge(name, dep, type: "depends_on")

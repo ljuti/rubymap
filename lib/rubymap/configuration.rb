@@ -4,8 +4,8 @@ module Rubymap
   # Configuration for Rubymap mapping process
   class Configuration
     attr_accessor :output_dir, :format, :verbose, :include_private, :include_protected,
-                  :max_depth, :exclude_patterns, :include_patterns, :follow_symlinks,
-                  :parallel, :progress, :runtime_introspection
+      :max_depth, :exclude_patterns, :include_patterns, :follow_symlinks,
+      :parallel, :progress, :runtime_introspection
 
     def initialize
       set_defaults

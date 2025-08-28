@@ -9,7 +9,7 @@ module Rubymap
         def emit(indexed_data)
           filtered_data = filter_data(indexed_data)
           formatted_data = apply_deterministic_formatting(filtered_data)
-          
+
           yaml_output = generate_yaml(formatted_data)
           apply_redaction(yaml_output)
         end
@@ -17,7 +17,7 @@ module Rubymap
         def emit_to_directory(indexed_data, output_dir)
           ensure_directory_exists(output_dir)
           written_files = []
-          
+
           if @options[:split_files]
             # Split into multiple YAML files
             written_files.concat(emit_split_files(indexed_data, output_dir))
@@ -32,7 +32,7 @@ module Rubymap
               checksum: Digest::SHA256.hexdigest(File.read(file_path))
             }
           end
-          
+
           generate_manifest(output_dir, written_files, indexed_data)
           written_files
         end
@@ -55,12 +55,12 @@ module Rubymap
           else
             data
           end
-          
+
           yaml_options = {}
           yaml_options[:line_width] = @options[:line_width] || -1 # -1 means no line wrapping
-          
+
           yaml_string = ::YAML.dump(yaml_content, yaml_options)
-          
+
           if @options[:pretty_print]
             prettify_yaml(yaml_string)
           else
@@ -70,7 +70,7 @@ module Rubymap
 
         def emit_split_files(indexed_data, output_dir)
           written_files = []
-          
+
           # Metadata file
           if indexed_data[:metadata]
             metadata_path = File.join(output_dir, "metadata.yml")
@@ -82,40 +82,40 @@ module Rubymap
             File.write(metadata_path, metadata_content)
             written_files << create_file_info("metadata.yml", metadata_path)
           end
-          
+
           # Classes file
           if indexed_data[:classes] && !indexed_data[:classes].empty?
             classes_path = File.join(output_dir, "classes.yml")
             classes_content = generate_yaml({
               "# Class definitions" => nil,
-              classes: indexed_data[:classes]
+              :classes => indexed_data[:classes]
             })
             File.write(classes_path, classes_content)
             written_files << create_file_info("classes.yml", classes_path)
           end
-          
-          # Modules file  
+
+          # Modules file
           if indexed_data[:modules] && !indexed_data[:modules].empty?
             modules_path = File.join(output_dir, "modules.yml")
             modules_content = generate_yaml({
               "# Module definitions" => nil,
-              modules: indexed_data[:modules]
+              :modules => indexed_data[:modules]
             })
             File.write(modules_path, modules_content)
             written_files << create_file_info("modules.yml", modules_path)
           end
-          
+
           # Graphs file
           if indexed_data[:graphs]
             graphs_path = File.join(output_dir, "graphs.yml")
             graphs_content = generate_yaml({
               "# Relationship graphs" => nil,
-              graphs: indexed_data[:graphs]
+              :graphs => indexed_data[:graphs]
             })
             File.write(graphs_path, graphs_content)
             written_files << create_file_info("graphs.yml", graphs_path)
           end
-          
+
           written_files
         end
 
@@ -126,34 +126,34 @@ module Rubymap
             "# Schema version: 1.0" => nil,
             "---" => nil
           }
-          
+
           if data[:metadata]
             commented_data["# Metadata section"] = nil
             commented_data[:metadata] = data[:metadata]
           end
-          
+
           if data[:classes]
-            commented_data["# Class definitions"] = nil  
+            commented_data["# Class definitions"] = nil
             commented_data[:classes] = data[:classes]
           end
-          
+
           if data[:modules]
             commented_data["# Module definitions"] = nil
             commented_data[:modules] = data[:modules]
           end
-          
+
           if data[:graphs]
             commented_data["# Relationship graphs"] = nil
             commented_data[:graphs] = data[:graphs]
           end
-          
+
           commented_data
         end
 
         def prettify_yaml(yaml_string)
           lines = yaml_string.split("\n")
           prettified = []
-          
+
           lines.each do |line|
             # Add spacing between major sections
             if line.match?(/^(metadata|classes|modules|graphs):/)
@@ -161,12 +161,12 @@ module Rubymap
             end
             prettified << line
           end
-          
+
           # Sort keys consistently if deterministic mode
           if @options[:deterministic]
             prettified = sort_yaml_lines(prettified)
           end
-          
+
           prettified.join("\n")
         end
 
@@ -175,7 +175,7 @@ module Rubymap
           # more sophisticated YAML-aware sorting
           sections = []
           current_section = []
-          
+
           lines.each do |line|
             if line.empty?
               sections << current_section unless current_section.empty?
@@ -186,7 +186,7 @@ module Rubymap
             end
           end
           sections << current_section unless current_section.empty?
-          
+
           sections.flatten
         end
 

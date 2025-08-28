@@ -11,9 +11,11 @@ require_relative "rubymap/pipeline"
 
 module Rubymap
   class Error < StandardError; end
+
   class NotFoundError < Error; end
+
   class ConfigurationError < Error; end
-  
+
   class << self
     # Main entry point for mapping a Ruby codebase
     # @param paths [String, Array<String>] Path(s) to map
@@ -21,17 +23,17 @@ module Rubymap
     # @return [Hash] The mapping result
     def map(paths = Dir.pwd, **options)
       paths = Array(paths)
-      
+
       # Validate paths exist
       paths.each do |path|
         raise NotFoundError, "Path does not exist: #{path}" unless File.exist?(path)
       end
-      
+
       # Create and run the pipeline
       pipeline = Pipeline.new(configuration.merge(options))
       pipeline.run(paths)
     end
-    
+
     # Configure Rubymap
     # @yield [Configuration] configuration object
     # @return [Configuration] The configuration object
@@ -39,12 +41,12 @@ module Rubymap
       yield configuration if block_given?
       configuration
     end
-    
+
     # Reset configuration to defaults
     def reset_configuration!
       @configuration = nil
     end
-    
+
     # Access the current configuration
     # @return [Configuration] Current configuration
     def configuration

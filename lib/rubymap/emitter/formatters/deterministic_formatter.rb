@@ -20,14 +20,14 @@ module Rubymap
         def format_hash(hash)
           # Sort keys deterministically
           sorted = hash.sort_by { |k, _v| k.to_s }.to_h
-          
+
           # Recursively format values
           sorted.transform_values do |value|
             format(value)
           end.tap do |formatted|
             # Normalize timestamps if present
             normalize_timestamps!(formatted)
-            
+
             # Sort arrays within hash
             sort_nested_arrays!(formatted)
           end
@@ -36,7 +36,7 @@ module Rubymap
         def format_array(array)
           # Format each element
           formatted = array.map { |item| format(item) }
-          
+
           # Sort if array contains comparable elements
           if should_sort_array?(formatted)
             sort_array(formatted)
@@ -47,7 +47,7 @@ module Rubymap
 
         def should_sort_array?(array)
           return false if array.empty?
-          
+
           # Only sort arrays of hashes with consistent structure
           if array.all? { |item| item.is_a?(Hash) }
             # Check if all hashes have a sortable key
@@ -60,29 +60,29 @@ module Rubymap
 
         def sort_array(array)
           return array unless array.all? { |item| item.is_a?(Hash) }
-          
+
           # Find the best key to sort by
           sort_key = find_sort_key(array)
           return array unless sort_key
-          
+
           array.sort_by { |item| item[sort_key].to_s }
         end
 
         def find_sort_key(array)
           return nil if array.empty?
-          
+
           # Priority order for sorting keys
           priority_keys = [:fqname, :name, :id, :chunk_id, :path,
-                          "fqname", "name", "id", "chunk_id", "path"]
-          
+            "fqname", "name", "id", "chunk_id", "path"]
+
           first_item = array.first
           priority_keys.find { |key| first_item.key?(key) }
         end
 
         def normalize_timestamps!(hash)
           timestamp_keys = [:created_at, :updated_at, :generated_at, :mapping_date,
-                           "created_at", "updated_at", "generated_at", "mapping_date"]
-          
+            "created_at", "updated_at", "generated_at", "mapping_date"]
+
           timestamp_keys.each do |key|
             if hash.key?(key)
               hash[key] = normalize_timestamp(hash[key])
@@ -92,7 +92,7 @@ module Rubymap
 
         def normalize_timestamp(timestamp)
           return nil if timestamp.nil?
-          
+
           # Convert to ISO8601 format for consistency
           case timestamp
           when Time

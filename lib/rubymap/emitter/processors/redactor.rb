@@ -45,9 +45,9 @@ module Rubymap
 
         def redact(content)
           return content if content.nil? || content.empty?
-          
+
           redacted = content.dup
-          
+
           @rules.each do |rule|
             if rule.is_a?(Regexp)
               redacted = redact_pattern(redacted, rule)
@@ -55,16 +55,16 @@ module Rubymap
               redacted = redact_with_rule(redacted, rule)
             end
           end
-          
+
           # Sanitize file paths
           redacted = sanitize_paths(redacted) if @security_level == :aggressive
-          
+
           redacted
         end
 
         def redact_hash(data)
           return data unless data.is_a?(Hash)
-          
+
           data.transform_values do |value|
             case value
             when String
@@ -81,7 +81,7 @@ module Rubymap
 
         def redact_array(data)
           return data unless data.is_a?(Array)
-          
+
           data.map do |item|
             case item
             when String
@@ -107,7 +107,7 @@ module Rubymap
             # Preserve the structure but redact the value
             if match.include?("=") || match.include?(":")
               parts = match.split(/[:=]/, 2)
-              "#{parts[0]}#{match.include?(':') ? ':' : '='} \"#{@replacement}\""
+              "#{parts[0]}#{match.include?(":") ? ":" : "="} \"#{@replacement}\""
             else
               @replacement
             end
@@ -117,7 +117,7 @@ module Rubymap
         def redact_with_rule(content, rule)
           pattern = rule[:pattern]
           replacement = rule[:replacement] || @replacement
-          
+
           if rule[:preserve_structure]
             content.gsub(pattern) do |match|
               # Keep the key, replace the value
@@ -131,9 +131,9 @@ module Rubymap
         def sanitize_paths(content)
           # Remove absolute paths, keep relative
           content.gsub(/\/Users\/[^\/\s]+/, "/Users/[USER]")
-                 .gsub(/\/home\/[^\/\s]+/, "/home/[USER]")
-                 .gsub(/C:\\Users\\[^\\]+/, "C:\\Users\\[USER]")
-                 .gsub(/\\/, "/")  # Normalize path separators
+            .gsub(/\/home\/[^\/\s]+/, "/home/[USER]")
+            .gsub(/C:\\Users\\[^\\]+/, "C:\\Users\\[USER]")
+            .tr("\\", "/")  # Normalize path separators
         end
       end
     end

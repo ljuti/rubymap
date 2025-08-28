@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
 require "ostruct"
 
 module Rubymap
@@ -25,7 +24,7 @@ module Rubymap
       def add_edge(from, to, attributes = {})
         add_node(from)
         add_node(to)
-        
+
         edge = Edge.new(from, to, attributes)
         @edges << edge
         @adjacency_list[from] << to
@@ -79,12 +78,12 @@ module Rubymap
         visited = Set.new
         queue = [node]
         result = []
-        
-        while !queue.empty?
+
+        until queue.empty?
           current = queue.shift
           next if visited.include?(current)
           visited.add(current)
-          
+
           # For inheritance, ancestors are found by following edges up (successors in our graph)
           # because child -> parent edges
           parents = successors_of(current)
@@ -93,7 +92,7 @@ module Rubymap
             queue << parent unless visited.include?(parent)
           end
         end
-        
+
         result
       end
 
@@ -101,12 +100,12 @@ module Rubymap
         visited = Set.new
         queue = [node]
         result = []
-        
-        while !queue.empty?
+
+        until queue.empty?
           current = queue.shift
           next if visited.include?(current)
           visited.add(current)
-          
+
           # For inheritance, descendants are found by following edges down (predecessors in our graph)
           # because child -> parent edges means parent has incoming edges from children
           children = predecessors_of(current)
@@ -115,7 +114,7 @@ module Rubymap
             queue << child unless visited.include?(child)
           end
         end
-        
+
         result
       end
 
@@ -123,18 +122,18 @@ module Rubymap
         visited = Set.new
         queue = [node]
         result = []
-        
-        while !queue.empty?
+
+        until queue.empty?
           current = queue.shift
           next if visited.include?(current)
           visited.add(current)
-          
+
           successors_of(current).each do |succ|
             result << succ unless result.include?(succ)
             queue << succ unless visited.include?(succ)
           end
         end
-        
+
         result
       end
 
@@ -142,19 +141,19 @@ module Rubymap
         visited = Set.new
         path = []
         queue = [start_node]
-        
-        while !queue.empty?
+
+        until queue.empty?
           node = queue.shift
           next if visited.include?(node)
-          
+
           visited.add(node)
           path << node
-          
+
           successors_of(node).each do |succ|
             queue << succ unless visited.include?(succ)
           end
         end
-        
+
         path
       end
 
@@ -163,13 +162,13 @@ module Rubymap
         cycles = []
         visited = Set.new
         rec_stack = Set.new
-        
+
         @nodes.keys.each do |node|
           if !visited.include?(node)
             detect_cycle(node, visited, rec_stack, [], cycles)
           end
         end
-        
+
         cycles.map do |cycle|
           OpenStruct.new(cycle: cycle + [cycle.first])
         end
@@ -177,25 +176,25 @@ module Rubymap
 
       def calculate_depths
         return unless @type == "inheritance"
-        
+
         # For inheritance, root nodes have no outgoing edges (no parent)
         # because edges go from child to parent
         roots = @nodes.keys.select { |n| out_degree(n) == 0 }
-        
+
         @depths = {}
         visited = Set.new
-        
+
         # Use iterative BFS to avoid stack overflow
         roots.each do |root|
           queue = [[root, 0]]
-          
-          while !queue.empty?
+
+          until queue.empty?
             node, depth = queue.shift
             next if visited.include?(node)
-            
+
             visited.add(node)
             @depths[node] = depth
-            
+
             # Get children (nodes that have this node as parent)
             predecessors_of(node).each do |child|
               queue << [child, depth + 1] unless visited.include?(child)
@@ -231,7 +230,7 @@ module Rubymap
 
       def self.from_h(data)
         graph = new(data[:type])
-        
+
         data[:nodes].each { |name, node_data| graph.add_node(name, node_data) }
         data[:edges].each do |edge|
           attributes = edge.dup
@@ -240,7 +239,7 @@ module Rubymap
           graph.add_edge(edge[:from], edge[:to], attributes)
         end
         graph.instance_variable_set(:@depths, data[:depths] || {})
-        
+
         graph
       end
 
@@ -250,7 +249,7 @@ module Rubymap
         visited.add(node)
         rec_stack.add(node)
         path.push(node)
-        
+
         successors_of(node).each do |neighbor|
           if !visited.include?(neighbor)
             detect_cycle(neighbor, visited, rec_stack, path.dup, cycles)
@@ -260,11 +259,10 @@ module Rubymap
             cycles << path[cycle_start..-1] if cycle_start
           end
         end
-        
+
         path.pop
         rec_stack.delete(node)
       end
-
 
       # Edge representation
       class Edge

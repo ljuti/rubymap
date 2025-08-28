@@ -15,7 +15,7 @@ module Rubymap
     class << self
       def emit(indexed_data, format: :json, output_dir: nil, **options)
         emitter = create_emitter(format, **options)
-        
+
         if output_dir
           emitter.emit_to_directory(indexed_data, output_dir)
         else

@@ -45,9 +45,9 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
       it "maintains consistent encoding throughout" do
         unicode_data = sample_data.dup
         unicode_data[:classes].first[:documentation] = "Handles UTF-8: 中文, émojis: 🚀, symbols: ∀x∈ℝ"
-        
+
         output = subject.emit(unicode_data)
-        
+
         expect(output.encoding).to eq(Encoding::UTF_8)
         expect(output.valid_encoding?).to be true
         expect(output).to include("中文")
@@ -56,7 +56,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
 
       it "generates consistent line endings" do
         output = subject.emit(sample_data)
-        
+
         # Should use Unix line endings consistently
         expect(output).not_to include("\r\n")
         expect(output).to match(/\n/)
@@ -95,16 +95,16 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
           parsed = JSON.parse(output)
           doc = parsed["classes"].first["documentation"]
           expect(doc).to include('"quotes"')
-          expect(doc).to include('<tags>')
+          expect(doc).to include("<tags>")
         when "yaml"
           parsed = YAML.safe_load(output)
           doc = parsed["classes"].first["documentation"]
           expect(doc).to include('"quotes"')
-          expect(doc).to include('<tags>')
+          expect(doc).to include("<tags>")
         when "markdown"
           expect(output).not_to include("<script>") # Should escape HTML
           expect(output).to include("&quot;") if output.include?("&")
-        when "dot", "graphviz" 
+        when "dot", "graphviz"
           expect(output).to include('\\"') if output.include?('"')
         end
       end
@@ -141,7 +141,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
             lines = output.split("\n")
             indented_lines = lines.select { |line| line.start_with?("  ") }
             expect(indented_lines).not_to be_empty
-            
+
             # Check consistent indentation (multiples of 2 spaces)
             indented_lines.each do |line|
               leading_spaces = line.match(/^(\s*)/)[1].length
@@ -152,7 +152,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
           # Check consistent header levels
           headers = output.scan(/^(#+)\s+(.+)$/)
           expect(headers).not_to be_empty
-          
+
           header_levels = headers.map { |h| h.first.length }
           expect(header_levels.max - header_levels.min).to be <= 4 # Reasonable depth
         end
@@ -164,13 +164,13 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
 
         case format_type.to_s
         when "json", "yaml"
-          parsed = format_type.to_s == "json" ? JSON.parse(output) : YAML.safe_load(output)
-          
+          parsed = (format_type.to_s == "json") ? JSON.parse(output) : YAML.safe_load(output)
+
           # Should preserve class hierarchy information
           classes = parsed["classes"]
           base_class = classes.find { |c| c["fqname"] == "BaseClass" }
           middle_class = classes.find { |c| c["fqname"] == "MiddleClass" }
-          
+
           expect(base_class["superclass"]).to be_nil
           expect(middle_class["superclass"]).to eq("BaseClass")
         end

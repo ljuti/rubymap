@@ -16,32 +16,32 @@ module Rubymap
     # @return [Hash] The final mapping result
     def run(paths)
       log "Starting Rubymap pipeline..."
-      
+
       # Step 1: Extract data from source files
       log "Step 1/5: Extracting data from Ruby files..."
       extracted_data = extract(paths)
       log "  → Extracted #{extracted_data[:classes]&.size || 0} classes, #{extracted_data[:modules]&.size || 0} modules"
-      
+
       # Step 2: Index the extracted data
       log "Step 2/5: Indexing extracted data..."
       indexed_data = index(extracted_data)
       log "  → Created index with #{indexed_data[:index]&.size || 0} symbols"
-      
+
       # Step 3: Normalize the data
       log "Step 3/5: Normalizing data..."
       normalized_data = normalize(indexed_data)
       log "  → Normalized and deduplicated data"
-      
+
       # Step 4: Enrich with additional metadata
       log "Step 4/5: Enriching with metadata..."
       enriched_data = enrich(normalized_data)
       log "  → Added metrics and relationships"
-      
+
       # Step 5: Emit output in requested format
       log "Step 5/5: Emitting output..."
       result = emit(enriched_data)
       log "  → Generated output in #{configuration.format} format"
-      
+
       log "Pipeline completed successfully!"
       result
     end
@@ -50,7 +50,7 @@ module Rubymap
 
     def extract(paths)
       extractor = Extractor.new
-      
+
       all_data = {
         classes: [],
         modules: [],
@@ -62,13 +62,13 @@ module Rubymap
           source_paths: paths
         }
       }
-      
+
       paths.each do |path|
         if File.directory?(path)
           ruby_files = Dir.glob(File.join(path, "**", "*.rb"))
           ruby_files.each do |file|
             next if should_exclude?(file)
-            
+
             log "  Processing: #{file}" if configuration.verbose
             begin
               result = extractor.extract_from_file(file)
@@ -83,17 +83,17 @@ module Rubymap
           merge_result!(all_data, result)
         end
       end
-      
+
       all_data
     end
 
     def index(data)
       indexer = Indexer.new
       indexed_result = indexer.build(data)
-      
+
       # Merge indexed data into original data structure
       data[:index] = indexed_result.symbols if indexed_result.respond_to?(:symbols)
-      
+
       # Convert Graph objects to array format expected by emitters
       if indexed_result.respond_to?(:inheritance_graph)
         data[:graphs] = {
@@ -103,13 +103,13 @@ module Rubymap
           mixins: graph_to_array(indexed_result.mixin_graph)
         }
       end
-      
+
       data
     end
-    
+
     def graph_to_array(graph)
       return [] unless graph && graph.respond_to?(:edges)
-      
+
       graph.edges.map do |edge|
         {
           from: edge.from,
@@ -122,10 +122,10 @@ module Rubymap
     def normalize(data)
       normalizer = Normalizer.new
       normalized_result = normalizer.normalize(data)
-      
+
       # Keep graphs from indexed data if available
       graphs = data[:graphs] if data.is_a?(Hash) && data[:graphs]
-      
+
       # Return the NormalizedResult but store graphs for later
       @graphs_cache = graphs
       normalized_result
@@ -134,7 +134,7 @@ module Rubymap
     def enrich(normalized_result)
       enricher = Enricher.new
       enrichment_result = enricher.enrich(normalized_result)
-      
+
       # Convert EnrichmentResult to hash format expected by emitters
       {
         classes: enrichment_result.classes.map { |c| class_to_hash(c) },
@@ -150,7 +150,7 @@ module Rubymap
         graphs: @graphs_cache || {}
       }
     end
-    
+
     def class_to_hash(enriched_class)
       {
         name: enriched_class.name,
@@ -170,7 +170,7 @@ module Rubymap
         }
       }
     end
-    
+
     def module_to_hash(enriched_module)
       {
         name: enriched_module.name,
@@ -189,7 +189,7 @@ module Rubymap
     def emit(data)
       # Ensure output directory exists
       FileUtils.mkdir_p(configuration.output_dir)
-      
+
       case configuration.format
       when :json
         emitter = Emitters::JSON.new
@@ -202,7 +202,7 @@ module Rubymap
       when :llm
         emitter = Emitters::LLM.new
         emitter.emit_to_directory(data, configuration.output_dir)
-        { format: :llm, output_dir: configuration.output_dir }
+        {format: :llm, output_dir: configuration.output_dir}
       when :graphviz, :dot
         emitter = Emitters::GraphViz.new
         output = emitter.emit(data)
@@ -233,7 +233,7 @@ module Rubymap
           }
         end
       end
-      
+
       if result.modules
         result.modules.each do |mod_info|
           target[:modules] << {
@@ -246,7 +246,7 @@ module Rubymap
           }
         end
       end
-      
+
       # Add methods
       if result.methods&.any?
         result.methods.each do |method_info|
@@ -263,8 +263,8 @@ module Rubymap
           }
         end
       end
-      
-      # Add constants  
+
+      # Add constants
       if result.constants&.any?
         result.constants.each do |const_info|
           target[:constants] << {
@@ -282,7 +282,7 @@ module Rubymap
     def write_output(filename, content)
       output_path = File.join(configuration.output_dir, filename)
       File.write(output_path, content)
-      { format: configuration.format, path: output_path }
+      {format: configuration.format, path: output_path}
     end
 
     def log(message)

@@ -18,15 +18,15 @@ module Rubymap
         return unless name
 
         symbol = create_symbol(symbol_data)
-        
+
         @symbols[name] = symbol
         @by_type[symbol.type] << symbol
-        
+
         if symbol.namespace && !symbol.namespace.empty?
           namespace_key = Array(symbol.namespace).join("::")
           @by_namespace[namespace_key] << symbol
         end
-        
+
         if symbol.file
           @by_file[symbol.file] << symbol
         end
@@ -41,14 +41,14 @@ module Rubymap
       def remove(name)
         symbol = @symbols.delete(name)
         return unless symbol
-        
+
         @by_type[symbol.type].delete(symbol)
-        
+
         if symbol.namespace
           namespace_key = Array(symbol.namespace).join("::")
           @by_namespace[namespace_key].delete(symbol)
         end
-        
+
         if symbol.file
           @by_file[symbol.file].delete(symbol)
         end
@@ -68,23 +68,23 @@ module Rubymap
 
       def search(pattern, options = {})
         results = case pattern
-                  when Regexp
-                    search_by_regexp(pattern)
-                  when String
-                    if options[:case_sensitive] == false
-                      search_case_insensitive(pattern)
-                    else
-                      search_by_string(pattern)
-                    end
-                  else
-                    all
-                  end
+        when Regexp
+          search_by_regexp(pattern)
+        when String
+          if options[:case_sensitive] == false
+            search_case_insensitive(pattern)
+          else
+            search_by_string(pattern)
+          end
+        else
+          all
+        end
 
         # Apply filters
         results = filter_by_type(results, options[:type]) if options[:type]
         results = filter_by_namespace(results, options[:namespace]) if options[:namespace]
         results = filter_by_file_pattern(results, options[:file_pattern]) if options[:file_pattern]
-        
+
         results
       end
 
@@ -99,11 +99,11 @@ module Rubymap
 
       def self.from_h(data)
         index = new
-        
+
         data[:symbols].each do |name, symbol_hash|
           index.add(symbol_hash)
         end
-        
+
         index
       end
 
@@ -111,16 +111,16 @@ module Rubymap
 
       def create_symbol(data)
         name = data[:fqname] || data[:name]
-        
+
         # Extract namespace from fully qualified name
         namespace = if data[:namespace]
-                      data[:namespace]
-                    elsif name&.include?("::")
-                      parts = name.split("::")
-                      parts[0...-1]
-                    else
-                      []
-                    end
+          data[:namespace]
+        elsif name&.include?("::")
+          parts = name.split("::")
+          parts[0...-1]
+        else
+          []
+        end
 
         OpenStruct.new(
           name: data[:name] || name&.split("::")&.last || name,
@@ -144,7 +144,7 @@ module Rubymap
 
       def search_by_string(str)
         return all if str.empty?
-        
+
         @symbols.values.select do |s|
           s.name&.include?(str) || s.fully_qualified_name&.include?(str)
         end
@@ -152,11 +152,11 @@ module Rubymap
 
       def search_case_insensitive(str)
         return all if str.empty?
-        
+
         lower_str = str.downcase
         @symbols.values.select do |s|
-          s.name&.downcase&.include?(lower_str) || 
-          s.fully_qualified_name&.downcase&.include?(lower_str)
+          s.name&.downcase&.include?(lower_str) ||
+            s.fully_qualified_name&.downcase&.include?(lower_str)
         end
       end
 
@@ -167,8 +167,8 @@ module Rubymap
 
       def filter_by_namespace(symbols, namespace)
         symbols.select do |s|
-          s.namespace == namespace || 
-          Array(s.namespace).join("::") == namespace
+          s.namespace == namespace ||
+            Array(s.namespace).join("::") == namespace
         end
       end
 

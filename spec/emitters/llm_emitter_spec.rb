@@ -43,7 +43,7 @@ RSpec.describe "LLM Emitter" do
 
       it "maintains cross-references between related chunks" do
         chunks = subject.emit(codebase_data)
-        
+
         user_chunk = chunks.find { |c| c.title.include?("User") }
         controller_chunk = chunks.find { |c| c.title.include?("UsersController") }
 
@@ -60,7 +60,7 @@ RSpec.describe "LLM Emitter" do
         class_chunks = chunks.select { |c| c.title.include?("LargeClass") }
 
         expect(class_chunks.size).to be > 1
-        
+
         # Each chunk should have a clear focus
         expect(class_chunks.map(&:subtitle)).to include(
           "Overview and Constants",
@@ -75,7 +75,7 @@ RSpec.describe "LLM Emitter" do
         class_chunks = chunks.select { |c| c.title.include?("LargeClass") }
 
         class_chunks.each do |chunk|
-          expect(chunk.content).to include("Part X of Y") 
+          expect(chunk.content).to include("Part X of Y")
           expect(chunk.content).to include("Related sections:")
         end
       end
@@ -97,7 +97,7 @@ RSpec.describe "LLM Emitter" do
       it "links hierarchy members to their detail chunks" do
         chunks = subject.emit(hierarchy_data)
         hierarchy_chunk = chunks.find { |c| c.title.include?("Class Hierarchy") }
-        
+
         expect(hierarchy_chunk.content).to include("[BaseClass](")
         expect(hierarchy_chunk.content).to include("[ChildClass](")
       end
@@ -112,7 +112,7 @@ RSpec.describe "LLM Emitter" do
         # Check for proper Markdown structure
         expect(chunk.content).to match(/^# /) # Has main heading
         expect(chunk.content).to match(/^## /) # Has subheadings
-        
+
         # Code blocks should be properly formatted
         code_blocks = chunk.content.scan(/```\w*\n.*?\n```/m)
         expect(code_blocks).to all(match(/```\w*\n.*\n```/m))
@@ -158,7 +158,7 @@ RSpec.describe "LLM Emitter" do
       expect(index_content).to include("# Codebase Documentation Index")
       expect(index_content).to include("## Models")
       expect(index_content).to include("- [User Model](models/user.md)")
-      expect(index_content).to include("## Controllers") 
+      expect(index_content).to include("## Controllers")
       expect(index_content).to include("## Relationships")
     end
 
@@ -170,7 +170,7 @@ RSpec.describe "LLM Emitter" do
       expect(manifest_content).to have_key("generation_timestamp")
       expect(manifest_content).to have_key("total_tokens")
       expect(manifest_content["chunks"]).to be_an(Array)
-      
+
       chunk_info = manifest_content["chunks"].first
       expect(chunk_info).to include("filename", "title", "estimated_tokens", "primary_symbols")
     end
@@ -232,7 +232,7 @@ RSpec.describe "LLM Emitter" do
       it "handles missing class information gracefully" do
         data_without_classes = codebase_data.dup
         data_without_classes.delete(:classes)
-        
+
         chunks = subject.emit(data_without_classes)
 
         expect(chunks).not_to be_empty
@@ -245,7 +245,7 @@ RSpec.describe "LLM Emitter" do
         # TODO: Fix progress percentage calculation
         large_dataset = EmitterTestData.massive_codebase
         progress_updates = []
-        
+
         subject.on_progress { |update| progress_updates << update }
         subject.emit(large_dataset)
 

@@ -37,6 +37,14 @@ Gem::Specification.new do |spec|
   # Core dependencies for parsing and analysis
   spec.add_dependency "prism", "~> 1.0"  # Ruby parser
 
+  # CLI dependencies
+  spec.add_dependency "tty-prompt", "~> 0.23"
+  spec.add_dependency "tty-progressbar", "~> 0.18"
+  spec.add_dependency "tty-spinner", "~> 0.9"
+  spec.add_dependency "tty-table", "~> 0.12"
+  spec.add_dependency "pastel", "~> 0.8"
+  spec.add_dependency "thor", "~> 1.3"
+
   # Development dependencies are in Gemfile
 
   # For more information and examples about making a new gem, check out our

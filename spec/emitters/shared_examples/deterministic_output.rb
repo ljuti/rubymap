@@ -15,7 +15,7 @@ RSpec.shared_examples "a deterministic emitter" do
         # Compare content rather than object instances
         first_content = first_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }
         second_content = second_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }
-        
+
         expect(first_content).to eq(second_content)
       end
 
@@ -29,14 +29,14 @@ RSpec.shared_examples "a deterministic emitter" do
         # Sort and compare content
         original_content = original_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }.sort
         shuffled_content = shuffled_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }.sort
-        
+
         expect(original_content).to eq(shuffled_content)
       end
 
       it "generates consistent file paths and names" do
         # Skip this test if emit_to_files is not implemented
         skip "emit_to_files not yet implemented for this emitter" unless subject.respond_to?(:emit_to_files)
-        
+
         output_files = subject.emit_to_files(sample_data, temp_directory)
         expect(output_files.map(&:filename).sort).to eq(output_files.map(&:filename).sort)
       end
@@ -58,7 +58,7 @@ RSpec.shared_examples "a deterministic emitter" do
         # Compare content, not object instances
         first_content = first_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }
         second_content = second_output.map { |c| c.respond_to?(:content) ? c.content : c.to_s }
-        
+
         expect(first_content).to eq(second_content)
       end
     end

@@ -14,7 +14,7 @@ RSpec.describe "Rubymap::Indexer" do
         # Given: An enriched codebase with various symbols
         # When: Building indexes
         result = indexer.build(enriched_data)
-        
+
         # Then: Should find symbols quickly by name
         user_class = result.find_symbol("User")
         expect(user_class).to have_attributes(
@@ -22,18 +22,18 @@ RSpec.describe "Rubymap::Indexer" do
           fully_qualified_name: "User",
           location: instance_of(String)
         )
-        
+
         # Performance requirement: lookup should be fast
         expect { result.find_symbol("User") }.to perform_under(10).ms
       end
 
       it "enables navigation through inheritance hierarchy" do
         result = indexer.build(enriched_data)
-        
+
         # Should navigate up the inheritance chain
         ancestors = result.ancestors_of("AdminUser")
         expect(ancestors).to eq(["User", "ApplicationRecord", "ActiveRecord::Base", "Object"])
-        
+
         # Should navigate down to descendants
         descendants = result.descendants_of("User")
         expect(descendants).to include("AdminUser", "GuestUser")
@@ -41,11 +41,11 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "reveals dependencies between components" do
         result = indexer.build(enriched_data)
-        
+
         # Should show what a class depends on
         user_deps = result.dependencies_of("UsersController")
         expect(user_deps).to include("User", "UserService", "ApplicationController")
-        
+
         # Should show what depends on a class
         user_dependents = result.dependents_of("User")
         expect(user_dependents).to include("UsersController", "UserService")
@@ -53,11 +53,11 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "tracks how methods are called throughout the codebase" do
         result = indexer.build(enriched_data)
-        
+
         # Should find all callers of a method
         save_callers = result.callers_of("User#save")
         expect(save_callers).to include("UserService#create_user")
-        
+
         # Should trace call chains
         call_chain = result.trace_calls_from("UsersController#create")
         expect(call_chain).to include("UserService#create_user", "User#save")
@@ -97,7 +97,7 @@ RSpec.describe "Rubymap::Indexer" do
         # Should find symbols with similar names
         suggestions = indexed_codebase.fuzzy_search("usr")
         expect(suggestions.map(&:name)).to include("User", "UserService", "UsersController")
-        
+
         # Should rank by similarity
         expect(suggestions.first.name).to eq("User")
       end
@@ -116,9 +116,9 @@ RSpec.describe "Rubymap::Indexer" do
             build_enriched_method(name: "save", owner: "User")
           ]
         }
-        
+
         result = indexer.build(enriched_data)
-        
+
         expect(result).to respond_to(:find_symbol)
         expect(result).to respond_to(:ancestors_of)
         expect(result).to respond_to(:dependencies_of)
@@ -126,14 +126,14 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "handles empty enriched data gracefully" do
         result = indexer.build({classes: [], methods: [], modules: []})
-        
+
         expect(result.find_symbol("NonExistent")).to be_nil
         expect(result.all_symbols).to be_empty
       end
 
       it "validates input data structure" do
         invalid_data = {invalid_key: "invalid_value"}
-        
+
         expect {
           indexer.build(invalid_data)
         }.to raise_error(Rubymap::Indexer::InvalidDataError, /Missing required keys/)
@@ -149,13 +149,13 @@ RSpec.describe "Rubymap::Indexer" do
             build_enriched_class(name: "C", dependencies: ["A"])
           ]
         }
-        
+
         result = indexer.build(circular_data)
-        
+
         expect(result.circular_dependencies).to include(
           have_attributes(cycle: ["A", "B", "C", "A"])
         )
-        
+
         # Should still be queryable despite circular dependencies
         expect(result.find_symbol("A")).not_to be_nil
       end
@@ -170,9 +170,9 @@ RSpec.describe "Rubymap::Indexer" do
             )
           ]
         }
-        
+
         result = indexer.build(data_with_missing_refs)
-        
+
         expect(result.missing_references).to include(
           have_attributes(
             symbol: "NonExistentBase",
@@ -184,16 +184,16 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "manages memory efficiently for large codebases" do
         large_dataset = build_large_enriched_dataset(classes: 10_000, methods: 50_000)
-        
+
         memory_before = get_memory_usage
         result = indexer.build(large_dataset)
         memory_after = get_memory_usage
-        
+
         memory_increase_mb = (memory_after - memory_before) / 1024.0 / 1024.0
-        
+
         # Should use reasonable memory (less than 500MB for 10k classes)
         expect(memory_increase_mb).to be < 500
-        
+
         # Should still be performant
         expect { result.find_symbol("Class5000") }.to perform_under(10).ms
       end
@@ -206,7 +206,7 @@ RSpec.describe "Rubymap::Indexer" do
     context "inheritance graph" do
       it "builds a directed acyclic graph for inheritance" do
         graph = indexed_data.inheritance_graph
-        
+
         expect(graph).to have_attributes(
           node_count: be > 0,
           edge_count: be > 0,
@@ -216,7 +216,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "calculates inheritance depth for each class" do
         depths = indexed_data.inheritance_depths
-        
+
         expect(depths["Object"]).to eq(0)
         expect(depths["ApplicationRecord"]).to eq(2)
         expect(depths["User"]).to eq(3)
@@ -225,7 +225,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "identifies classes with deep inheritance" do
         deep_classes = indexed_data.deep_inheritance_classes(threshold: 3)
-        
+
         expect(deep_classes).to include(
           have_attributes(name: "AdminUser", depth: 4)
         )
@@ -235,7 +235,7 @@ RSpec.describe "Rubymap::Indexer" do
     context "dependency graph" do
       it "builds a directed graph of dependencies" do
         graph = indexed_data.dependency_graph
-        
+
         expect(graph.out_edges_of("UsersController")).to include(
           have_attributes(to: "User", type: "depends_on"),
           have_attributes(to: "UserService", type: "depends_on")
@@ -244,7 +244,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "calculates fan-in and fan-out metrics" do
         metrics = indexed_data.dependency_metrics_for("User")
-        
+
         expect(metrics).to have_attributes(
           fan_in: be >= 2,  # UserController and UserService depend on it
           fan_out: be >= 1  # User depends on ApplicationRecord
@@ -253,7 +253,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "identifies dependency hotspots" do
         hotspots = indexed_data.dependency_hotspots
-        
+
         # With our test data, no class has fan-in > 5
         # User has fan-in of 2 (UsersController, UserService depend on it)
         expect(hotspots).to be_empty
@@ -263,7 +263,7 @@ RSpec.describe "Rubymap::Indexer" do
     context "method call graph" do
       it "builds a weighted graph of method calls" do
         graph = indexed_data.method_call_graph
-        
+
         edge = graph.edge_between("UserService#create_user", "User#save")
         expect(edge).to have_attributes(
           weight: be > 0,  # Call frequency
@@ -273,7 +273,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "identifies frequently called methods" do
         hot_methods = indexed_data.hot_methods(threshold: 10)
-        
+
         expect(hot_methods).to include(
           have_attributes(
             method: "User#save",
@@ -284,7 +284,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "traces complete call paths" do
         path = indexed_data.call_path_from("UsersController#create")
-        
+
         expect(path).to eq([
           "UsersController#create",
           "UserService#create_user",
@@ -322,7 +322,7 @@ RSpec.describe "Rubymap::Indexer" do
     context "pattern matching" do
       it "finds symbols matching a pattern" do
         results = indexed_data.search_symbols(/User/)
-        
+
         expect(results.map(&:name)).to include(
           "User",
           "UserService",
@@ -333,7 +333,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "supports case-insensitive search" do
         results = indexed_data.search_symbols("user", case_sensitive: false)
-        
+
         expect(results.map(&:name)).to include("User", "UserService")
       end
     end
@@ -341,7 +341,7 @@ RSpec.describe "Rubymap::Indexer" do
     context "fuzzy matching" do
       it "finds symbols with similar names" do
         results = indexed_data.fuzzy_search("usr", threshold: 0.5)
-        
+
         expect(results).to include(
           have_attributes(name: "User", score: be > 0.6)
         )
@@ -349,7 +349,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "ranks results by similarity" do
         results = indexed_data.fuzzy_search("use")
-        
+
         expect(results.first.name).to eq("User")
         expect(results.map(&:name)).to include("UserService", "UsersController")
       end
@@ -359,14 +359,14 @@ RSpec.describe "Rubymap::Indexer" do
       it "filters by symbol type" do
         classes = indexed_data.search_symbols("", type: :class)
         expect(classes).to all(have_attributes(type: "class"))
-        
+
         methods = indexed_data.search_symbols("", type: :method)
         expect(methods).to all(have_attributes(type: "method"))
       end
 
       it "filters by namespace" do
         api_symbols = indexed_data.search_symbols("", namespace: "API::V1")
-        
+
         expect(api_symbols).to all(
           have_attributes(namespace: include("API", "V1"))
         )
@@ -374,7 +374,7 @@ RSpec.describe "Rubymap::Indexer" do
 
       it "filters by file location" do
         model_symbols = indexed_data.search_symbols("", file_pattern: /app\/models/)
-        
+
         expect(model_symbols).to all(
           have_attributes(file: match(/app\/models/))
         )
@@ -389,10 +389,10 @@ RSpec.describe "Rubymap::Indexer" do
     it "performs symbol lookup in constant time" do
       # Warm up
       indexed_data.find_symbol("Class1")
-      
+
       time_for_first = Benchmark.realtime { indexed_data.find_symbol("Class1") }
       time_for_last = Benchmark.realtime { indexed_data.find_symbol("Class9999") }
-      
+
       # Times should be similar (within 2x) regardless of position
       expect(time_for_last / time_for_first).to be < 2.0
     end
@@ -423,9 +423,9 @@ RSpec.describe "Rubymap::Indexer" do
     context "serialization" do
       it "can serialize indexes to a file" do
         file_path = "tmp/test_index.rubymap_idx"
-        
+
         indexed_data.save(file_path)
-        
+
         expect(File).to exist(file_path)
         expect(File.size(file_path)).to be > 0
       end
@@ -433,9 +433,9 @@ RSpec.describe "Rubymap::Indexer" do
       it "can deserialize indexes from a file" do
         file_path = "tmp/test_index.rubymap_idx"
         indexed_data.save(file_path)
-        
+
         loaded = Rubymap::Indexer.load(file_path)
-        
+
         # Should have same query capabilities
         expect(loaded.find_symbol("User")).to have_attributes(
           name: "User",
@@ -447,7 +447,7 @@ RSpec.describe "Rubymap::Indexer" do
         file_path = "tmp/test_index.rubymap_idx"
         indexed_data.save(file_path)
         loaded = Rubymap::Indexer.load(file_path)
-        
+
         expect {
           loaded.find_symbol("User")
         }.to perform_under(10).ms
@@ -457,9 +457,9 @@ RSpec.describe "Rubymap::Indexer" do
     context "incremental updates" do
       it "can add new symbols to existing index" do
         new_class = build_enriched_class(name: "NewFeature")
-        
+
         indexed_data.add_symbol(new_class)
-        
+
         expect(indexed_data.find_symbol("NewFeature")).not_to be_nil
       end
 
@@ -468,22 +468,22 @@ RSpec.describe "Rubymap::Indexer" do
           name: "User",
           superclass: "NewBase"
         )
-        
+
         indexed_data.update_symbol(updated_class)
-        
+
         user = indexed_data.find_symbol("User")
         expect(user.superclass).to eq("NewBase")
       end
 
       it "can remove symbols from index" do
         indexed_data.remove_symbol("ObsoleteClass")
-        
+
         expect(indexed_data.find_symbol("ObsoleteClass")).to be_nil
       end
 
       it "updates graph relationships on symbol changes" do
         indexed_data.remove_symbol("MiddleClass")
-        
+
         # Dependencies should be updated
         deps = indexed_data.dependencies_of("DependentClass")
         expect(deps).not_to include("MiddleClass")
@@ -606,8 +606,8 @@ RSpec.describe "Rubymap::Indexer" do
       classes: (1..classes).map do |i|
         build_enriched_class(
           name: "Class#{i}",
-          superclass: i > 1 ? "Class#{i - 1}" : nil,
-          dependencies: i > 10 ? ["Class#{i - 5}", "Class#{i - 10}"] : []
+          superclass: (i > 1) ? "Class#{i - 1}" : nil,
+          dependencies: (i > 10) ? ["Class#{i - 5}", "Class#{i - 10}"] : []
         )
       end,
       methods: (1..methods).map do |i|
@@ -646,6 +646,6 @@ RSpec::Matchers.define :perform_under do |expected|
   chain :ms do
     # Just for readability
   end
-  
+
   supports_block_expectations
 end

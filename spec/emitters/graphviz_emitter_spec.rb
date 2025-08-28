@@ -58,11 +58,11 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
         # Should handle circular deps without creating invalid DOT
         circular_data = codebase_data.dup
         circular_data[:graphs][:dependencies] << {from: "Order", to: "OrdersController", type: "depends_on"}
-        
+
         output = subject.emit_dependency_graph(circular_data)
         expect(output).to include("Order")
         expect(output).to include("OrdersController")
-        expect(output.scan(/->/).count).to be >= 2
+        expect(output.scan("->").count).to be >= 2
       end
     end
 
@@ -95,10 +95,10 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
       it "limits graph depth to prevent overwhelming visuals" do
         subject_with_limit = Rubymap::Emitters::GraphViz.new(max_depth: 3)
         limited_output = subject_with_limit.emit(codebase_data)
-        
+
         # Should have fewer edges than unlimited
-        unlimited_edges = output.scan(/->/).count
-        limited_edges = limited_output.scan(/->/).count
+        unlimited_edges = output.scan("->").count
+        limited_edges = limited_output.scan("->").count
         expect(limited_edges).to be < unlimited_edges
       end
 
@@ -127,14 +127,14 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
 
   describe "file output" do
     let(:output_dir) { "spec/tmp/graphs" }
-    
+
     before { FileUtils.mkdir_p(output_dir) }
     after { FileUtils.rm_rf(output_dir) }
 
     context "when generating multiple graph files" do
       it "creates separate files for different graph types" do
         subject.emit_to_directory(codebase_data, output_dir)
-        
+
         expect(File).to exist("#{output_dir}/inheritance.dot")
         expect(File).to exist("#{output_dir}/dependencies.dot")
         expect(File).to exist("#{output_dir}/modules.dot")
@@ -142,7 +142,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
 
       it "generates a master graph combining all relationships" do
         subject.emit_to_directory(codebase_data, output_dir)
-        
+
         expect(File).to exist("#{output_dir}/complete.dot")
         complete = File.read("#{output_dir}/complete.dot")
         expect(complete).to include("inherits")
@@ -153,7 +153,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
     context "when generating supporting files" do
       it "creates a Makefile for rendering graphs" do
         subject.emit_to_directory(codebase_data, output_dir, include_makefile: true)
-        
+
         expect(File).to exist("#{output_dir}/Makefile")
         makefile = File.read("#{output_dir}/Makefile")
         expect(makefile).to include("dot -Tsvg")
@@ -162,7 +162,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
 
       it "includes a README with viewing instructions" do
         subject.emit_to_directory(codebase_data, output_dir, include_readme: true)
-        
+
         expect(File).to exist("#{output_dir}/README.md")
         readme = File.read("#{output_dir}/README.md")
         expect(readme).to include("GraphViz")
@@ -268,7 +268,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
       it "highlights Rails conventions" do
         expect(rails_graph).to include("ApplicationRecord")
         expect(rails_graph).to include("ApplicationController")
-        expect(rails_graph).to include('[style=bold]')  # Rails base classes
+        expect(rails_graph).to include("[style=bold]")  # Rails base classes
       end
     end
   end

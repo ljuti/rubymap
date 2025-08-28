@@ -529,9 +529,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           methods: [{name: "test", owner: "TestClass", branches: 5, loops: 3}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         method = result.methods.first
         expect(method.cyclomatic_complexity).to be_nil
       end
@@ -541,9 +541,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           classes: [{name: "UserFactory", methods: ["create", "build"]}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         expect(result.design_patterns).to be_empty
       end
 
@@ -556,9 +556,9 @@ RSpec.describe "Rubymap::Enricher" do
             associations: [{type: "has_many", name: "posts"}]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         user_class = result.classes.first
         expect(user_class.activerecord_metrics).to be_nil
       end
@@ -584,9 +584,9 @@ RSpec.describe "Rubymap::Enricher" do
             loops: 1
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # With threshold of 5, complexity of 6 should be flagged
         method = result.methods.first
         expect(method.cyclomatic_complexity).to eq(6)
@@ -601,9 +601,9 @@ RSpec.describe "Rubymap::Enricher" do
             visibility: {"m1" => "public", "m2" => "public", "c1" => "public"}
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # With threshold of 3, API surface of 3 should trigger issue
         expect(result.design_issues).to include(
           have_attributes(
@@ -621,9 +621,9 @@ RSpec.describe "Rubymap::Enricher" do
             inheritance_chain: ["DeepClass", "Parent1", "Parent2", "Object"]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # With threshold of 2, depth of 3 should trigger issue
         expect(result.design_issues).to include(
           have_attributes(
@@ -642,9 +642,9 @@ RSpec.describe "Rubymap::Enricher" do
             test_coverage: 85.0
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # With threshold of 90, coverage of 85 should trigger issue
         expect(result.quality_issues).to include(
           have_attributes(
@@ -662,9 +662,9 @@ RSpec.describe "Rubymap::Enricher" do
             churn_score: 6
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # With threshold of 5, churn of 6 should trigger hotspot
         expect(result.hotspots).to include(
           have_attributes(
@@ -680,9 +680,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           methods: [{name: "untested", owner: "TestClass", test_coverage: 0.0}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         method = result.methods.first
         expect(method.coverage_category).to eq("untested")
         expect(result.quality_issues).to include(
@@ -703,14 +703,14 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "boundary_80", owner: "Test", test_coverage: 80.0}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Check severity transitions at boundaries
         issues = result.quality_issues
         issue_30 = issues.find { |i| i.method == "boundary_30" }
         issue_60 = issues.find { |i| i.method == "boundary_60" }
-        
+
         expect(issue_30.severity).to eq("medium")
         expect(issue_60.severity).to eq("low")
         expect(issues.find { |i| i.method == "boundary_80" }).to be_nil
@@ -733,12 +733,12 @@ RSpec.describe "Rubymap::Enricher" do
             test_coverage: nil
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         method = result.methods.first
-        
+
         expect(klass.stability_score).to be_a(Float)
         expect(method.cyclomatic_complexity).to eq(1)
       end
@@ -750,9 +750,9 @@ RSpec.describe "Rubymap::Enricher" do
           methods: [],
           method_calls: []
         }
-        
+
         result = enricher.enrich(data)
-        
+
         expect(result.classes).to be_empty
         expect(result.modules).to be_empty
         expect(result.methods).to be_empty
@@ -771,9 +771,9 @@ RSpec.describe "Rubymap::Enricher" do
             churn_score: 0.0
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         expect(klass.stability_score).to be_between(0.9, 1.0)
       end
@@ -785,9 +785,9 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "UnstableClass", age_in_days: 1, test_coverage: 10.0, churn_score: 50.0, documentation_coverage: 5.0}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         expect(result.stability_analysis.stable_classes).to include("StableClass")
         expect(result.stability_analysis.unstable_classes).to include("UnstableClass")
       end
@@ -806,9 +806,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           classes: [{name: "User", superclass: "ApplicationRecord"}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Should have run Rails enrichment
         expect(result.rails_models).not_to be_nil
       end
@@ -817,9 +817,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           classes: [{name: "UsersController", superclass: "ApplicationController"}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Should have run Rails enrichment
         expect(result.rails_controllers).not_to be_nil
       end
@@ -828,9 +828,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           classes: [{name: "PlainClass", superclass: "Object"}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         expect(klass.activerecord_metrics).to be_nil
       end
@@ -839,7 +839,7 @@ RSpec.describe "Rubymap::Enricher" do
     context "when testing helper methods" do
       it "correctly categorizes coverage severity" do
         enricher = Rubymap::Enricher.new
-        
+
         # Test private method behavior through public interface
         data = {
           methods: [
@@ -851,10 +851,10 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "test79", owner: "Test", test_coverage: 79}
           ]
         }
-        
+
         result = enricher.enrich(data)
         issues = result.quality_issues
-        
+
         expect(issues.find { |i| i.method == "test0" }.severity).to eq("high")
         expect(issues.find { |i| i.method == "test29" }.severity).to eq("high")
         expect(issues.find { |i| i.method == "test30" }.severity).to eq("medium")
@@ -872,9 +872,9 @@ RSpec.describe "Rubymap::Enricher" do
             dependencies: ["Dep1", "Dep2", "Dep3", "Dep4", "Dep5", "Dep6"]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Default fan_out_threshold is 3
         expect(result.coupling_hotspots).to include(
           have_attributes(
@@ -892,9 +892,9 @@ RSpec.describe "Rubymap::Enricher" do
             dependencies: ["Dep1", "Dep2", "Dep3"]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Default threshold is 3, uses >= comparison
         expect(result.coupling_hotspots).to include(
           have_attributes(
@@ -912,9 +912,9 @@ RSpec.describe "Rubymap::Enricher" do
             dependencies: ["Dep1", "Dep2"]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         expect(result.coupling_hotspots).not_to include(
           have_attributes(class: "NormalCoupling")
         )
@@ -928,9 +928,9 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "HighDeps", dependencies: Array.new(11) { |i| "Dep#{i}" }}
           ]
         }
-        
+
         result = custom_enricher.enrich(data)
-        
+
         # With threshold 10 and >= comparison, 9 should not be flagged, 11 should be
         expect(result.coupling_hotspots).not_to include(
           have_attributes(class: "LowDeps")
@@ -956,14 +956,14 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "AncientClass", age_in_days: 730}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         new_class = result.classes.find { |c| c.name == "NewClass" }
         young_class = result.classes.find { |c| c.name == "YoungClass" }
         old_class = result.classes.find { |c| c.name == "OldClass" }
         ancient_class = result.classes.find { |c| c.name == "AncientClass" }
-        
+
         # Stability score should increase with age
         expect(new_class.stability_score).to be < young_class.stability_score
         expect(young_class.stability_score).to be < old_class.stability_score
@@ -980,14 +980,14 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "ExtremeChurn", churn_score: 100, age_in_days: 100}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         no_churn = result.classes.find { |c| c.name == "NoChurn" }
         low_churn = result.classes.find { |c| c.name == "LowChurn" }
         high_churn = result.classes.find { |c| c.name == "HighChurn" }
         extreme_churn = result.classes.find { |c| c.name == "ExtremeChurn" }
-        
+
         # Stability should decrease with higher churn
         expect(no_churn.stability_score).to be >= low_churn.stability_score
         expect(low_churn.stability_score).to be >= high_churn.stability_score
@@ -1001,12 +1001,12 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "UnmaintainableClass", stability_score: 0.2, complexity_score: 0.8, coupling_strength: 8}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         maintainable = result.classes.find { |c| c.name == "MaintainableClass" }
         unmaintainable = result.classes.find { |c| c.name == "UnmaintainableClass" }
-        
+
         # Maintainability scores will be recalculated by enricher
         expect(maintainable.maintainability_score).to be_a(Float)
         expect(unmaintainable.maintainability_score).to be_a(Float)
@@ -1018,9 +1018,9 @@ RSpec.describe "Rubymap::Enricher" do
         data = {
           classes: [{name: "EmptyClass", methods: []}]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         expect(klass.complexity_score).to eq(0.0)
       end
@@ -1035,9 +1035,9 @@ RSpec.describe "Rubymap::Enricher" do
             conditionals: ["if"] * 30
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         method = result.methods.first
         expect(method.cyclomatic_complexity).to eq(101) # 1 + 50 + 20 + 30
         expect(method.complexity_category).to eq("very_complex")
@@ -1048,9 +1048,9 @@ RSpec.describe "Rubymap::Enricher" do
           classes: [{name: "NoMethodsClass"}],
           methods: []
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         expect(klass.complexity_score).to eq(0.0)
       end
@@ -1059,7 +1059,7 @@ RSpec.describe "Rubymap::Enricher" do
     context "when testing specific thresholds and boundaries" do
       it "correctly applies all default thresholds" do
         default_enricher = Rubymap::Enricher.new
-        
+
         data = {
           classes: [
             {
@@ -1079,9 +1079,9 @@ RSpec.describe "Rubymap::Enricher" do
             }
           ]
         }
-        
+
         result = default_enricher.enrich(data)
-        
+
         # Check all thresholds are applied (inheritance chain has 5 elements = depth 4)
         expect(result.design_issues).to include(
           have_attributes(type: "deep_inheritance", depth: 5)
@@ -1106,9 +1106,9 @@ RSpec.describe "Rubymap::Enricher" do
             test_coverage: -50  # negative coverage
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         # Should handle negative values gracefully
         expect(klass.stability_score).to be_a(Float)
@@ -1124,9 +1124,9 @@ RSpec.describe "Rubymap::Enricher" do
             methods: ["create"]  # Has create but missing build
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Factory pattern may be detected with partial evidence at lower confidence
         factory_patterns = result.design_patterns.select { |p| p.pattern == "Factory" }
         if factory_patterns.any?
@@ -1141,9 +1141,9 @@ RSpec.describe "Rubymap::Enricher" do
             methods: ["do_something", "do_another_thing"]
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Should not detect any patterns
         expect(result.design_patterns).to be_empty
       end
@@ -1160,9 +1160,9 @@ RSpec.describe "Rubymap::Enricher" do
             churn_score: nil
           }]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         klass = result.classes.first
         # With nil churn, it's treated as 0 (good), so stability is 0.3
         expect(klass.stability_score).to eq(0.3)
@@ -1201,15 +1201,15 @@ RSpec.describe "Rubymap::Enricher" do
             }
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         # Each component should contribute according to its weight
         only_age = result.classes.find { |c| c.name == "OnlyAge" }
         only_coverage = result.classes.find { |c| c.name == "OnlyCoverage" }
         only_docs = result.classes.find { |c| c.name == "OnlyDocs" }
         only_low_churn = result.classes.find { |c| c.name == "OnlyLowChurn" }
-        
+
         # Test coverage has 0.3 weight, should be highest
         expect(only_coverage.stability_score).to be > only_age.stability_score
         expect(only_coverage.stability_score).to be > only_docs.stability_score
@@ -1245,13 +1245,13 @@ RSpec.describe "Rubymap::Enricher" do
             }
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         only_branches = result.methods.find { |m| m.name == "only_branches" }
         only_loops = result.methods.find { |m| m.name == "only_loops" }
         only_conditionals = result.methods.find { |m| m.name == "only_conditionals" }
-        
+
         expect(only_branches.cyclomatic_complexity).to eq(6)  # 1 + 5
         expect(only_loops.cyclomatic_complexity).to eq(6)     # 1 + 5
         expect(only_conditionals.cyclomatic_complexity).to eq(6) # 1 + 5
@@ -1266,14 +1266,14 @@ RSpec.describe "Rubymap::Enricher" do
             {name: "very_complex", owner: "Test", branches: 20}
           ]
         }
-        
+
         result = enricher.enrich(data)
-        
+
         simple = result.methods.find { |m| m.name == "simple" }
         moderate = result.methods.find { |m| m.name == "moderate" }
         complex = result.methods.find { |m| m.name == "complex" }
         very_complex = result.methods.find { |m| m.name == "very_complex" }
-        
+
         expect(simple.complexity_category).to eq("simple")
         expect(moderate.complexity_category).to eq("simple") # 5 is still simple
         expect(complex.complexity_category).to eq("moderate") # 10 is moderate

@@ -22,10 +22,10 @@ module Rubymap
 
       def emit_to_file(indexed_data, file_path)
         ensure_directory_exists(File.dirname(file_path))
-        
+
         output = emit(indexed_data)
         File.write(file_path, output)
-        
+
         {
           path: file_path,
           size: File.size(file_path),
@@ -35,14 +35,14 @@ module Rubymap
 
       def emit_to_directory(indexed_data, output_dir)
         ensure_directory_exists(output_dir)
-        
+
         files = generate_files(indexed_data)
         written_files = []
-        
+
         files.each do |file_info|
           file_path = File.join(output_dir, file_info[:path])
           ensure_directory_exists(File.dirname(file_path))
-          
+
           File.write(file_path, file_info[:content])
           written_files << {
             path: file_path,
@@ -51,7 +51,7 @@ module Rubymap
             checksum: Digest::SHA256.hexdigest(file_info[:content])
           }
         end
-        
+
         generate_manifest(output_dir, written_files, indexed_data)
         written_files
       end
@@ -99,18 +99,18 @@ module Rubymap
 
       def filter_data(indexed_data)
         filtered = indexed_data.dup
-        
+
         unless @options[:include_private]
           filtered[:classes] = filter_private_symbols(filtered[:classes])
           filtered[:modules] = filter_private_symbols(filtered[:modules])
         end
-        
+
         filtered
       end
 
       def filter_private_symbols(symbols)
         return [] unless symbols
-        
+
         symbols.select do |symbol|
           visibility = symbol[:visibility] || symbol["visibility"]
           visibility != "private" && visibility != :private
@@ -139,7 +139,7 @@ module Rubymap
           files: files.map { |f| f[:relative_path] },
           checksums: files.each_with_object({}) { |f, h| h[f[:relative_path]] = f[:checksum] }
         }
-        
+
         manifest_path = File.join(output_dir, "manifest.json")
         File.write(manifest_path, JSON.pretty_generate(manifest))
         manifest_path
