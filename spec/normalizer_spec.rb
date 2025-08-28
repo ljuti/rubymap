@@ -31,7 +31,6 @@ RSpec.describe "Rubymap::Normalizer" do
             kind: "class",
             location: have_attributes(file: be_a(String), line: be_a(Integer))
           ))
-          skip "Implementation pending"
         end
 
         it "generates fully qualified names consistently" do
@@ -42,7 +41,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           expect(user_class.fqname).to eq("User")
           expect(admin_user_class.fqname).to eq("Admin::User")
-          skip "Implementation pending"
         end
 
         it "standardizes method representations" do
@@ -54,7 +52,6 @@ RSpec.describe "Rubymap::Normalizer" do
             owner: be_a(String),
             parameters: be_an(Array)
           ))
-          skip "Implementation pending"
         end
       end
 
@@ -74,7 +71,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           controller_class = result.classes.find { |c| c.name.include?("UsersController") }
           expect(controller_class.namespace_path).to eq(["API", "V1"])
-          skip "Implementation pending"
         end
 
         it "creates parent-child relationships" do
@@ -82,7 +78,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           api_module = result.modules.find { |m| m.fqname == "API" }
           expect(api_module.children).to include("API::V1")
-          skip "Implementation pending"
         end
       end
 
@@ -101,8 +96,7 @@ RSpec.describe "Rubymap::Normalizer" do
           result = normalizer.normalize(duplicate_data)
 
           save_methods = result.methods.select { |m| m.name == "save" && m.owner == "User" }
-          expect(save_methods).to have(1).item
-          skip "Implementation pending"
+          expect(save_methods.size).to eq(1)
         end
 
         it "preserves genuinely different symbols with same names" do
@@ -112,7 +106,6 @@ RSpec.describe "Rubymap::Normalizer" do
           method_names = user_methods.map(&:name)
 
           expect(method_names).to include("save", "save!")
-          skip "Implementation pending"
         end
       end
 
@@ -135,7 +128,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           user_class = result.classes.find { |c| c.fqname == "User" }
           expect(user_class.inheritance_chain).to eq(["User", "ApplicationRecord", "ActiveRecord::Base"])
-          skip "Implementation pending"
         end
 
         it "resolves method call references" do
@@ -148,7 +140,6 @@ RSpec.describe "Rubymap::Normalizer" do
               type: "private_method_call"
             )
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -169,14 +160,12 @@ RSpec.describe "Rubymap::Normalizer" do
           expect(result.errors).to include(
             have_attributes(type: "validation", message: match(/missing required field.*name/i))
           )
-          skip "Implementation pending"
         end
 
         it "excludes invalid entries from normalized output" do
           result = normalizer.normalize(invalid_data)
 
           expect(result.classes).to be_empty
-          skip "Implementation pending"
         end
       end
 
@@ -194,9 +183,8 @@ RSpec.describe "Rubymap::Normalizer" do
         it "standardizes compatible type variations" do
           result = normalizer.normalize(inconsistent_data)
 
-          normalized_methods = result.methods.select { |m| m.name.in?(%w[test test2]) }
+          normalized_methods = result.methods.select { |m| %w[test test2].include?(m.name) }
           expect(normalized_methods).to all(have_attributes(visibility: be_a(String)))
-          skip "Implementation pending"
         end
 
         it "reports errors for incompatible types" do
@@ -205,7 +193,6 @@ RSpec.describe "Rubymap::Normalizer" do
           expect(result.errors).to include(
             have_attributes(message: match(/invalid visibility.*42/i))
           )
-          skip "Implementation pending"
         end
       end
     end
@@ -235,7 +222,6 @@ RSpec.describe "Rubymap::Normalizer" do
           expect(user_class.instance_methods).to include("save")
           expect(admin_class.instance_methods).to include("admin?")
           expect(admin_class.class_methods).to include("find_admins")
-          skip "Implementation pending"
         end
 
         it "builds complete method inheritance chains" do
@@ -245,7 +231,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           # AdminUser should have access to inherited methods from User
           expect(admin_class.available_instance_methods).to include("save", "admin?")
-          skip "Implementation pending"
         end
       end
 
@@ -272,7 +257,6 @@ RSpec.describe "Rubymap::Normalizer" do
           user_class = result.classes.find { |c| c.fqname == "User" }
           expect(user_class.available_instance_methods).to include("<=>")
           expect(user_class.available_class_methods).to include("search")
-          skip "Implementation pending"
         end
 
         it "tracks mixin sources for methods" do
@@ -280,7 +264,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           spaceship_method = result.methods.find { |m| m.name == "<=>" && m.available_in.include?("User") }
           expect(spaceship_method.source).to eq("Comparable")
-          skip "Implementation pending"
         end
       end
     end
@@ -295,7 +278,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           # Both should be normalized to snake_case for Ruby conventions
           expect(result.methods.first.canonical_name).to eq("get_user_name")
-          skip "Implementation pending"
         end
 
         it "preserves intentional naming patterns" do
@@ -305,7 +287,6 @@ RSpec.describe "Rubymap::Normalizer" do
           # Special Ruby method names should be preserved exactly
           method_names = result.methods.map(&:name)
           expect(method_names).to contain_exactly("to_s", "[]", "==")
-          skip "Implementation pending"
         end
       end
     end
@@ -327,7 +308,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           init_method = result.methods.find { |m| m.name == "initialize" }
           expect(init_method.visibility).to eq("public")
-          skip "Implementation pending"
         end
 
         it "infers private visibility from naming conventions" do
@@ -335,7 +315,6 @@ RSpec.describe "Rubymap::Normalizer" do
 
           internal_method = result.methods.find { |m| m.name == "_internal_method" }
           expect(internal_method.inferred_visibility).to eq("private")
-          skip "Implementation pending"
         end
       end
     end
