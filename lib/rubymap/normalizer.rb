@@ -271,6 +271,8 @@ module Rubymap
       :symbol_id, :name, :fqname, :visibility, :owner, :scope,
       :parameters, :arity, :canonical_name, :available_in,
       :inferred_visibility, :source, :provenance,
+      # Additional analysis fields (optional, populated by extractors)
+      :branches, :loops, :conditionals, :body_lines,
       keyword_init: true
     )
     
