@@ -12,9 +12,6 @@ module Rubymap
         @target = target
         @location = location
       end
-
-      # Alias for backward compatibility with tests
-      alias_method :module, :module_name
     end
   end
 end

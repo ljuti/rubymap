@@ -8,12 +8,9 @@ module Rubymap
     class ClassVariableExtractor < BaseExtractor
       def extract(node)
         name = node.name.to_s
-        
+
         # Extract the initial value if present
-        initial_value = if node.value
-          # Get the source code for the value node
-          node.value.slice
-        end
+        initial_value = node.value&.slice
 
         class_var_info = ClassVariableInfo.new(
           name: name,

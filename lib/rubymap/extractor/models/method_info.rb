@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "ostruct"
-
 module Rubymap
   class Extractor
     # Information about a Ruby method definition
@@ -29,14 +27,6 @@ module Rubymap
         "#{prefix}#{separator}#{name}"
       end
 
-      # For backward compatibility with tests expecting parameters method
-      def parameters
-        @params.map do |param|
-          OpenStruct.new(param)
-        end
-      end
-
-      # For backward compatibility with tests expecting scope
       def scope
         (receiver_type == "class") ? "class" : "instance"
       end

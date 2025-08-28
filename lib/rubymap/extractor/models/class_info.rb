@@ -18,9 +18,6 @@ module Rubymap
       def full_name
         namespace ? "#{namespace}::#{name}" : name
       end
-
-      # For backward compatibility with tests expecting documentation method
-      alias_method :documentation, :doc
     end
   end
 end

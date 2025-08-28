@@ -12,7 +12,7 @@ module Rubymap
         doc = extract_documentation(node)
 
         # Build fully qualified name if within a namespace
-        full_name = context.current_namespace && !context.current_namespace.empty? ? "#{context.current_namespace}::#{name}" : name
+        full_name = (context.current_namespace && !context.current_namespace.empty?) ? "#{context.current_namespace}::#{name}" : name
 
         class_info = ClassInfo.new(
           name: full_name,

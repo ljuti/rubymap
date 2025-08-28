@@ -91,8 +91,8 @@ RSpec.describe "Rubymap::Extractor" do
           result = extractor.extract_from_code(ruby_code)
 
           expect(result.mixins).to include(
-            have_attributes(type: "include", module: "Authenticatable"),
-            have_attributes(type: "extend", module: "ClassMethods")
+            have_attributes(type: "include", module_name: "Authenticatable"),
+            have_attributes(type: "extend", module_name: "ClassMethods")
           )
         end
       end
@@ -212,9 +212,9 @@ RSpec.describe "Rubymap::Extractor" do
           result = extractor.extract_from_code(ruby_code)
 
           get_method = result.methods.find { |m| m.name == "get" }
-          expect(get_method.parameters).to include(
-            have_attributes(name: "path", type: "required"),
-            have_attributes(name: "options", type: "optional", default: "{}")
+          expect(get_method.params).to include(
+            hash_including(name: "path", type: "required"),
+            hash_including(name: "options", type: "optional", default: "{}")
           )
         end
 
@@ -319,16 +319,16 @@ RSpec.describe "Rubymap::Extractor" do
           result = extractor.extract_from_code(ruby_code)
 
           user_class = result.classes.first
-          expect(user_class.documentation).to include("Represents a user in the system")
+          expect(user_class.doc).to include("Represents a user in the system")
         end
 
         it "extracts method documentation with parameters" do
           result = extractor.extract_from_code(ruby_code)
 
           init_method = result.methods.find { |m| m.name == "initialize" }
-          expect(init_method.parameters).to include(
-            have_attributes(name: "name", type_hint: "String"),
-            have_attributes(name: "email", type_hint: "String")
+          expect(init_method.params).to include(
+            hash_including(name: "name", type_hint: "String"),
+            hash_including(name: "email", type_hint: "String")
           )
         end
       end

@@ -21,7 +21,6 @@ module Rubymap
         !external?
       end
 
-      # Alias for backward compatibility with tests
       def name
         # For simple requires like 'require "json"', the name is the path
         path if external?

@@ -97,7 +97,7 @@ module Rubymap
 
         # Extract @param type hints from documentation
         params.each do |param|
-          if match = doc.match(/@param\s+#{Regexp.escape(param[:name])}\s+\[([^\]]+)\]/)
+          if (match = doc.match(/@param\s+#{Regexp.escape(param[:name])}\s+\[([^\]]+)\]/))
             param[:type_hint] = match[1]
           end
         end

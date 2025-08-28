@@ -39,21 +39,21 @@ module Rubymap
 
         # Find comments that appear immediately before this node
         node_line = node.location.start_line
-        
+
         # Get all comments that are before this node
         preceding_comments = context.comments.select do |comment|
           comment.location.start_line < node_line
         end
-        
+
         return nil if preceding_comments.empty?
-        
+
         # Sort by line number and find the block of comments immediately before the node
         preceding_comments = preceding_comments.sort_by { |c| c.location.start_line }
-        
+
         # Take the last consecutive block of comments
         doc_comments = []
         expected_line = node_line - 1
-        
+
         preceding_comments.reverse_each do |comment|
           comment_line = comment.location.start_line
           if comment_line == expected_line
