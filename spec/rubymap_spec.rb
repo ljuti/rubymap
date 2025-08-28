@@ -15,27 +15,45 @@ RSpec.describe Rubymap do
     describe ".map" do
       context "when given a valid path" do
         it "returns a mapping result" do
-          # This is the main public API that should accept paths and options
-          # and return a structured mapping result
-          skip "Implementation pending"
+          # Create a test file
+          test_dir = "spec/tmp/test_project"
+          FileUtils.mkdir_p(test_dir)
+          File.write("#{test_dir}/test.rb", "class TestClass; end")
+          
+          result = Rubymap.map(test_dir, format: :llm)
+          
+          expect(result).to be_a(Hash)
+          expect(result[:format]).to eq(:llm)
+        ensure
+          FileUtils.rm_rf(test_dir)
         end
       end
 
       context "when given invalid paths" do
-        it "raises Rubymap::Error for non-existent paths" do
-          skip "Implementation pending"
+        it "raises Rubymap::NotFoundError for non-existent paths" do
+          expect {
+            Rubymap.map("/non/existent/path")
+          }.to raise_error(Rubymap::NotFoundError, /Path does not exist/)
         end
       end
     end
 
     describe ".configure" do
       it "accepts a configuration block" do
-        # Configuration should be possible via a block
-        skip "Implementation pending"
+        Rubymap.configure do |config|
+          config.format = :json
+          config.verbose = true
+        end
+        
+        expect(Rubymap.configuration.format).to eq(:json)
+        expect(Rubymap.configuration.verbose).to be(true)
+      ensure
+        Rubymap.reset_configuration!
       end
 
       it "returns the configuration object" do
-        skip "Implementation pending"
+        config = Rubymap.configure
+        expect(config).to be_a(Rubymap::Configuration)
       end
     end
   end

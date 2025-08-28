@@ -24,8 +24,12 @@ module Rubymap
             next unless owner
 
             if method.scope == "class"
-              owner.class_methods << method.name if owner.respond_to?(:class_methods)
+              if owner.respond_to?(:class_methods)
+                owner.class_methods ||= []
+                owner.class_methods << method.name
+              end
             elsif owner.respond_to?(:instance_methods)
+              owner.instance_methods ||= []
               owner.instance_methods << method.name
             end
 
