@@ -24,7 +24,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "includes error details in the output" do
         result = Rubymap.map([syntax_error_code])
-        
+
         expect(result.errors).to include(
           have_attributes(
             type: "syntax_error",
@@ -37,9 +37,9 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "continues processing other files after parse errors" do
         valid_code = "class ValidClass; end"
-        
+
         result = Rubymap.map([syntax_error_code, valid_code])
-        
+
         expect(result.classes).to include(
           have_attributes(name: "ValidClass")
         )
@@ -59,7 +59,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "reports encoding errors appropriately" do
         result = Rubymap.map([invalid_encoding_content])
-        
+
         expect(result.errors).to include(
           have_attributes(type: "encoding_error")
         )
@@ -146,7 +146,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "records dependency resolution failures" do
         result = Rubymap.map([code_with_missing_require])
-        
+
         expect(result.warnings).to include(
           have_attributes(
             type: "missing_dependency",
@@ -161,21 +161,21 @@ RSpec.describe "Rubymap Error Handling" do
       let(:circular_dep_files) do
         {
           "a.rb" => "require_relative 'b'\nclass A; end",
-          "b.rb" => "require_relative 'c'\nclass B; end", 
+          "b.rb" => "require_relative 'c'\nclass B; end",
           "c.rb" => "require_relative 'a'\nclass C; end"
         }
       end
 
       it "detects circular dependency chains" do
         result = Rubymap.map(circular_dep_files)
-        
+
         expect(result.analysis.circular_dependencies).not_to be_empty
         skip "Implementation pending"
       end
 
       it "continues processing despite circular dependencies" do
         result = Rubymap.map(circular_dep_files)
-        
+
         expect(result.classes.map(&:name)).to include("A", "B", "C")
         skip "Implementation pending"
       end
@@ -273,8 +273,8 @@ RSpec.describe "Rubymap Error Handling" do
       end
 
       it "validates configuration values" do
-        invalid_config = { output: { format: "invalid_format" } }
-        
+        invalid_config = {output: {format: "invalid_format"}}
+
         expect {
           Rubymap.configure(invalid_config)
         }.to raise_error(Rubymap::ConfigurationError, /invalid format/i)
@@ -285,10 +285,10 @@ RSpec.describe "Rubymap Error Handling" do
     context "when configuration has conflicting options" do
       it "detects and reports conflicting configuration options" do
         conflicting_config = {
-          static: { paths: ["app/"] },
-          runtime: { enabled: true, paths: ["lib/"] }  # Conflicting paths
+          static: {paths: ["app/"]},
+          runtime: {enabled: true, paths: ["lib/"]}  # Conflicting paths
         }
-        
+
         expect {
           Rubymap.configure(conflicting_config)
         }.to raise_error(Rubymap::ConfigurationError, /conflicting/i)
@@ -326,7 +326,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "handles dynamically defined methods appropriately" do
         result = Rubymap.map([unusual_constructs_code])
-        
+
         # Should capture what can be statically analyzed
         expect(result.dynamic_definitions).to include(
           have_attributes(type: "eval", content: match(/dynamic_method/))
@@ -336,7 +336,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "tracks complex aliasing chains" do
         result = Rubymap.map([unusual_constructs_code])
-        
+
         expect(result.method_aliases).to include(
           have_attributes(
             chain: ["original_method", "new_method", "newer_method", "newest_method"]
@@ -347,7 +347,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "handles conditional includes/extends" do
         result = Rubymap.map([unusual_constructs_code])
-        
+
         expect(result.conditional_mixins).to include(
           have_attributes(
             module: "SomeModule",
@@ -377,7 +377,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "captures method generation patterns" do
         result = Rubymap.map([metaprogramming_code])
-        
+
         expect(result.generated_methods).to include(
           have_attributes(pattern: "define_method", count: 3)
         )
@@ -386,7 +386,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "tracks dynamic attribute definitions" do
         result = Rubymap.map([metaprogramming_code])
-        
+
         expect(result.dynamic_attributes).to include("name", "email", "status")
         skip "Implementation pending"
       end
@@ -405,9 +405,9 @@ RSpec.describe "Rubymap Error Handling" do
           "class Invalid syntax error",   # Invalid
           "module ValidModule; end"       # Valid
         ]
-        
+
         result = Rubymap.map(mixed_files)
-        
+
         expect(result.classes.map(&:name)).to include("ValidClass")
         expect(result.modules.map(&:name)).to include("ValidModule")
         expect(result.errors).not_to be_empty

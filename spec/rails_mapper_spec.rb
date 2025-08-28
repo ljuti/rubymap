@@ -40,7 +40,7 @@ RSpec.describe "Rubymap::RailsMapper" do
           # When: Analyzing the model with Rails-specific extraction
           # Then: Should capture all validation rules and their configurations
           result = rails_mapper.extract_model_information(user_model_code)
-          
+
           expect(result.validations).to include(
             have_attributes(
               attribute: "email",
@@ -48,14 +48,14 @@ RSpec.describe "Rubymap::RailsMapper" do
               options: {}
             ),
             have_attributes(
-              attribute: "email", 
+              attribute: "email",
               type: "uniqueness",
               options: {}
             ),
             have_attributes(
               attribute: "name",
               type: "length",
-              options: { minimum: 2 }
+              options: {minimum: 2}
             )
           )
           skip "Implementation pending"
@@ -63,19 +63,19 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts association definitions with options" do
           result = rails_mapper.extract_model_information(user_model_code)
-          
+
           expect(result.associations).to include(
             have_attributes(
               name: "posts",
               type: "has_many",
               class_name: "Post",
-              options: { dependent: :destroy }
+              options: {dependent: :destroy}
             ),
             have_attributes(
               name: "organization",
-              type: "belongs_to", 
+              type: "belongs_to",
               class_name: "Organization",
-              options: { optional: true }
+              options: {optional: true}
             )
           )
           skip "Implementation pending"
@@ -83,7 +83,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures named scopes" do
           result = rails_mapper.extract_model_information(user_model_code)
-          
+
           expect(result.scopes).to include(
             have_attributes(name: "active", parameters: []),
             have_attributes(name: "recent", parameters: [])
@@ -93,7 +93,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies callback methods" do
           result = rails_mapper.extract_model_information(user_model_code)
-          
+
           expect(result.callbacks).to include(
             have_attributes(type: "before_save", method: "normalize_email"),
             have_attributes(type: "after_create", method: "send_welcome_email")
@@ -121,7 +121,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "handles polymorphic associations" do
           result = rails_mapper.extract_model_information(complex_model_code)
-          
+
           polymorphic_assoc = result.associations.find { |a| a.name == "comments" }
           expect(polymorphic_assoc).to have_attributes(
             type: "has_many",
@@ -133,7 +133,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures through associations" do
           result = rails_mapper.extract_model_information(complex_model_code)
-          
+
           through_assoc = result.associations.find { |a| a.name == "tags" }
           expect(through_assoc).to have_attributes(
             type: "has_many",
@@ -144,7 +144,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies HABTM associations" do
           result = rails_mapper.extract_model_information(complex_model_code)
-          
+
           habtm_assoc = result.associations.find { |a| a.name == "categories" }
           expect(habtm_assoc.type).to eq("has_and_belongs_to_many")
           skip "Implementation pending"
@@ -152,11 +152,11 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures nested attributes configuration" do
           result = rails_mapper.extract_model_information(complex_model_code)
-          
+
           expect(result.nested_attributes).to include(
             have_attributes(
               association: "comments",
-              options: { allow_destroy: true }
+              options: {allow_destroy: true}
             )
           )
           skip "Implementation pending"
@@ -164,7 +164,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "tracks delegate methods" do
           result = rails_mapper.extract_model_information(complex_model_code)
-          
+
           expect(result.delegations).to include(
             have_attributes(
               method: "name",
@@ -197,7 +197,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies STI hierarchies" do
           result = rails_mapper.extract_model_information(sti_model_code)
-          
+
           car_model = result.models.find { |m| m.name == "Car" }
           expect(car_model.sti_base_class).to eq("Vehicle")
           expect(car_model.inheritance_type).to eq("single_table")
@@ -206,7 +206,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "tracks inherited validations and associations" do
           result = rails_mapper.extract_model_information(sti_model_code)
-          
+
           car_model = result.models.find { |m| m.name == "Car" }
           expect(car_model.inherited_validations).to include("make", "model")
           skip "Implementation pending"
@@ -287,7 +287,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts action methods" do
           result = rails_mapper.extract_controller_information(users_controller_code)
-          
+
           expect(result.actions).to include("index", "show", "create")
           expect(result.private_methods).to include("set_user", "user_params")
           skip "Implementation pending"
@@ -295,7 +295,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures before/after action filters" do
           result = rails_mapper.extract_controller_information(users_controller_code)
-          
+
           expect(result.filters).to include(
             have_attributes(
               type: "before_action",
@@ -303,9 +303,9 @@ RSpec.describe "Rubymap::RailsMapper" do
               options: {}
             ),
             have_attributes(
-              type: "before_action", 
+              type: "before_action",
               method: "set_user",
-              options: { only: [:show, :edit, :update, :destroy] }
+              options: {only: [:show, :edit, :update, :destroy]}
             )
           )
           skip "Implementation pending"
@@ -313,7 +313,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies rescue handlers" do
           result = rails_mapper.extract_controller_information(users_controller_code)
-          
+
           expect(result.rescue_handlers).to include(
             have_attributes(
               exception: "ActiveRecord::RecordNotFound",
@@ -325,7 +325,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts strong parameter definitions" do
           result = rails_mapper.extract_controller_information(users_controller_code)
-          
+
           expect(result.strong_parameters).to include(
             have_attributes(
               method: "user_params",
@@ -338,7 +338,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies respond_to format handling" do
           result = rails_mapper.extract_controller_information(users_controller_code)
-          
+
           index_action = result.actions_detail.find { |a| a.name == "index" }
           expect(index_action.supported_formats).to include("html", "json")
           skip "Implementation pending"
@@ -378,7 +378,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies API-specific patterns" do
           result = rails_mapper.extract_controller_information(api_controller_code)
-          
+
           expect(result.controller_type).to eq("api")
           expect(result.namespace).to eq("Api::V1")
           skip "Implementation pending"
@@ -386,14 +386,14 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures included modules" do
           result = rails_mapper.extract_controller_information(api_controller_code)
-          
+
           expect(result.included_modules).to include("Authenticatable", "Paginatable")
           skip "Implementation pending"
         end
 
         it "identifies service object usage" do
           result = rails_mapper.extract_controller_information(api_controller_code)
-          
+
           create_action = result.actions_detail.find { |a| a.name == "create" }
           expect(create_action.service_calls).to include("CreateUserService")
           skip "Implementation pending"
@@ -445,7 +445,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts RESTful resource routes" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           users_routes = result.resources.find { |r| r.name == "users" }
           expect(users_routes.actions).to include("index", "show", "create", "edit", "update", "destroy")
           skip "Implementation pending"
@@ -453,7 +453,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures member and collection routes" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           users_routes = result.resources.find { |r| r.name == "users" }
           expect(users_routes.member_routes).to include(
             have_attributes(method: "patch", action: "activate"),
@@ -468,7 +468,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies nested resources" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           posts_routes = result.nested_resources.find { |r| r.name == "posts" }
           expect(posts_routes.parent).to eq("users")
           expect(posts_routes.actions).to eq(["index", "show", "create"])
@@ -477,10 +477,10 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures namespaced routes" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           admin_routes = result.namespaced_routes["admin"]
           api_v1_routes = result.namespaced_routes["api/v1"]
-          
+
           expect(admin_routes).to include("users", "reports")
           expect(api_v1_routes).to include("users")
           skip "Implementation pending"
@@ -488,18 +488,18 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts custom routes" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           expect(result.custom_routes).to include(
             have_attributes(
               method: "get",
-              path: "/health", 
+              path: "/health",
               controller: "health",
               action: "check"
             ),
             have_attributes(
               method: "post",
               path: "/webhooks/stripe",
-              controller: "webhooks", 
+              controller: "webhooks",
               action: "stripe"
             )
           )
@@ -508,7 +508,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "identifies mounted engines" do
           result = rails_mapper.extract_routes_information(routes_file_content)
-          
+
           expect(result.mounted_engines).to include(
             have_attributes(
               engine: "Sidekiq::Web",
@@ -538,7 +538,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts route constraints" do
           result = rails_mapper.extract_routes_information(constrained_routes)
-          
+
           api_users = result.constrained_routes.find { |r| r.path.include?("api/users") }
           expect(api_users.constraints).to include(subdomain: "api")
           skip "Implementation pending"
@@ -553,7 +553,7 @@ RSpec.describe "Rubymap::RailsMapper" do
         end
 
         it "identifies route helpers and their generated methods" do
-          skip "Implementation pending - requires Rails environment" 
+          skip "Implementation pending - requires Rails environment"
         end
 
         it "captures route precedence and matching order" do
@@ -586,7 +586,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts job configuration" do
           result = rails_mapper.extract_job_information(job_class_code)
-          
+
           expect(result.jobs.first).to have_attributes(
             name: "EmailDeliveryJob",
             queue: "mailers",
@@ -597,12 +597,12 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "captures retry and error handling configuration" do
           result = rails_mapper.extract_job_information(job_class_code)
-          
+
           job = result.jobs.first
           expect(job.retry_config).to include(
             have_attributes(
               exception: "StandardError",
-              wait: "5.seconds", 
+              wait: "5.seconds",
               attempts: 3
             )
           )
@@ -612,7 +612,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "analyzes perform method signature" do
           result = rails_mapper.extract_job_information(job_class_code)
-          
+
           job = result.jobs.first
           expect(job.perform_parameters).to include(
             have_attributes(name: "user_id", type: "required"),
@@ -641,7 +641,7 @@ RSpec.describe "Rubymap::RailsMapper" do
 
         it "extracts Sidekiq-specific configuration" do
           result = rails_mapper.extract_job_information(sidekiq_job_code)
-          
+
           job = result.jobs.first
           expect(job.sidekiq_options).to include(
             queue: :heavy,

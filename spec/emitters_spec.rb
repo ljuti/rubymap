@@ -13,7 +13,7 @@ RSpec.describe "Rubymap::Emitters" do
       classes: [
         {
           fqname: "User",
-          type: "class", 
+          type: "class",
           superclass: "ApplicationRecord",
           file: "app/models/user.rb",
           line: 1,
@@ -38,10 +38,10 @@ RSpec.describe "Rubymap::Emitters" do
       ],
       graphs: {
         inheritance: [
-          { from: "User", to: "ApplicationRecord", type: "inherits" }
+          {from: "User", to: "ApplicationRecord", type: "inherits"}
         ],
         dependencies: [
-          { from: "Admin::UsersController", to: "User", type: "depends_on" }
+          {from: "Admin::UsersController", to: "User", type: "depends_on"}
         ]
       }
     }
@@ -57,9 +57,9 @@ RSpec.describe "Rubymap::Emitters" do
           # When: Emitting as JSON format
           # Then: Should create valid, well-structured JSON
           output = json_emitter.emit(sample_indexed_data)
-          
+
           parsed_output = JSON.parse(output)
-          
+
           expect(parsed_output).to have_key("metadata")
           expect(parsed_output).to have_key("classes")
           expect(parsed_output).to have_key("graphs")
@@ -69,7 +69,7 @@ RSpec.describe "Rubymap::Emitters" do
         it "includes project metadata in JSON output" do
           output = json_emitter.emit(sample_indexed_data)
           parsed_output = JSON.parse(output)
-          
+
           metadata = parsed_output["metadata"]
           expect(metadata["project_name"]).to eq("TestApp")
           expect(metadata["total_classes"]).to eq(25)
@@ -79,7 +79,7 @@ RSpec.describe "Rubymap::Emitters" do
         it "preserves class hierarchy information" do
           output = json_emitter.emit(sample_indexed_data)
           parsed_output = JSON.parse(output)
-          
+
           user_class = parsed_output["classes"].find { |c| c["fqname"] == "User" }
           expect(user_class["superclass"]).to eq("ApplicationRecord")
           expect(user_class["instance_methods"]).to include("save", "full_name")
@@ -89,7 +89,7 @@ RSpec.describe "Rubymap::Emitters" do
         it "includes graph relationships" do
           output = json_emitter.emit(sample_indexed_data)
           parsed_output = JSON.parse(output)
-          
+
           inheritance_graph = parsed_output["graphs"]["inheritance"]
           expect(inheritance_graph).to include(
             have_attributes("from" => "User", "to" => "ApplicationRecord")
@@ -114,7 +114,7 @@ RSpec.describe "Rubymap::Emitters" do
 
       it "creates organized directory structure" do
         json_emitter.emit_to_files(sample_indexed_data, output_directory)
-        
+
         expect(File).to exist("#{output_directory}/map.json")
         expect(File).to exist("#{output_directory}/symbols/classes.json")
         expect(File).to exist("#{output_directory}/graphs/inheritance.json")
@@ -127,14 +127,14 @@ RSpec.describe "Rubymap::Emitters" do
     end
   end
 
-  describe "YAML emitter" do 
+  describe "YAML emitter" do
     let(:yaml_emitter) { Rubymap::Emitters::YAML.new }
 
     describe "#emit" do
       context "when generating YAML output" do
         it "creates human-readable YAML with proper formatting" do
           output = yaml_emitter.emit(sample_indexed_data)
-          
+
           parsed_output = YAML.safe_load(output)
           expect(parsed_output).to have_key("metadata")
           expect(parsed_output).to have_key("classes")
@@ -144,7 +144,7 @@ RSpec.describe "Rubymap::Emitters" do
         it "maintains data integrity in YAML format" do
           output = yaml_emitter.emit(sample_indexed_data)
           parsed_output = YAML.safe_load(output)
-          
+
           user_class = parsed_output["classes"].find { |c| c["fqname"] == "User" }
           expect(user_class["metrics"]["test_coverage"]).to eq(85.0)
           skip "Implementation pending"
@@ -160,10 +160,10 @@ RSpec.describe "Rubymap::Emitters" do
       context "when generating LLM-optimized output" do
         it "creates chunked markdown documentation" do
           # Given: Codebase data
-          # When: Emitting in LLM format 
+          # When: Emitting in LLM format
           # Then: Should create markdown files optimized for AI consumption
           output = llm_emitter.emit(sample_indexed_data)
-          
+
           expect(output.files).to include(
             have_attributes(
               path: "classes/User.md",
@@ -175,7 +175,7 @@ RSpec.describe "Rubymap::Emitters" do
 
         it "includes context-rich descriptions for each class" do
           output = llm_emitter.emit(sample_indexed_data)
-          
+
           user_doc = output.files.find { |f| f.path == "classes/User.md" }
           expect(user_doc.content).to include("Represents a user in the system")
           expect(user_doc.content).to include("Inherits from: ApplicationRecord")
@@ -185,7 +185,7 @@ RSpec.describe "Rubymap::Emitters" do
 
         it "creates relationship summaries" do
           output = llm_emitter.emit(sample_indexed_data)
-          
+
           relationships_doc = output.files.find { |f| f.path == "relationships.md" }
           expect(relationships_doc.content).to include("## Inheritance Relationships")
           expect(relationships_doc.content).to include("User → ApplicationRecord")
@@ -194,7 +194,7 @@ RSpec.describe "Rubymap::Emitters" do
 
         it "generates overview documentation" do
           output = llm_emitter.emit(sample_indexed_data)
-          
+
           overview_doc = output.files.find { |f| f.path == "overview.md" }
           expect(overview_doc.content).to include("# TestApp Code Map")
           expect(overview_doc.content).to include("Total Classes: 25")
@@ -204,7 +204,7 @@ RSpec.describe "Rubymap::Emitters" do
 
         it "chunks content to stay within LLM token limits" do
           output = llm_emitter.emit(sample_indexed_data)
-          
+
           # Each chunk should be under typical LLM context limits (e.g., 8000 tokens)
           output.files.each do |file|
             expect(file.estimated_tokens).to be < 8000
@@ -217,18 +217,18 @@ RSpec.describe "Rubymap::Emitters" do
         let(:complex_hierarchy_data) do
           {
             classes: [
-              { fqname: "A", superclass: nil },
-              { fqname: "B", superclass: "A" },
-              { fqname: "C", superclass: "B" },
-              { fqname: "D", superclass: "B" },
-              { fqname: "E", superclass: "C" }
+              {fqname: "A", superclass: nil},
+              {fqname: "B", superclass: "A"},
+              {fqname: "C", superclass: "B"},
+              {fqname: "D", superclass: "B"},
+              {fqname: "E", superclass: "C"}
             ]
           }
         end
 
         it "creates visual hierarchy representations" do
           output = llm_emitter.emit(complex_hierarchy_data)
-          
+
           hierarchy_doc = output.files.find { |f| f.path.include?("hierarchy") }
           expect(hierarchy_doc.content).to include("```")  # Code blocks for ASCII trees
           expect(hierarchy_doc.content).to match(/A\s*\n.*├── B/)  # Tree structure
@@ -242,7 +242,7 @@ RSpec.describe "Rubymap::Emitters" do
 
       it "creates organized markdown file structure" do
         llm_emitter.emit_to_directory(sample_indexed_data, output_directory)
-        
+
         expect(File).to exist("#{output_directory}/overview.md")
         expect(File).to exist("#{output_directory}/classes/User.md")
         expect(File).to exist("#{output_directory}/controllers/Admin_UsersController.md")
@@ -251,7 +251,7 @@ RSpec.describe "Rubymap::Emitters" do
 
       it "creates index files for navigation" do
         llm_emitter.emit_to_directory(sample_indexed_data, output_directory)
-        
+
         index_content = File.read("#{output_directory}/index.md")
         expect(index_content).to include("- [User](classes/User.md)")
         skip "Implementation pending"
@@ -266,7 +266,7 @@ RSpec.describe "Rubymap::Emitters" do
       context "when generating dependency diagrams" do
         it "creates valid Graphviz DOT notation" do
           output = graphviz_emitter.emit(sample_indexed_data)
-          
+
           expect(output).to include("digraph")
           expect(output).to include("\"User\" -> \"ApplicationRecord\"")
           skip "Implementation pending"
@@ -274,7 +274,7 @@ RSpec.describe "Rubymap::Emitters" do
 
         it "includes visual styling for different node types" do
           output = graphviz_emitter.emit(sample_indexed_data)
-          
+
           expect(output).to match(/User.*\[.*shape=box.*\]/)  # Class styling
           expect(output).to match(/ApplicationRecord.*\[.*color=blue.*\]/)  # Superclass styling
           skip "Implementation pending"
@@ -288,7 +288,7 @@ RSpec.describe "Rubymap::Emitters" do
       context "when generating inheritance diagrams" do
         it "creates clear inheritance hierarchies" do
           output = graphviz_emitter.emit_inheritance_graph(sample_indexed_data)
-          
+
           expect(output).to include("\"User\" -> \"ApplicationRecord\" [label=\"inherits\"]")
           skip "Implementation pending"
         end
@@ -297,7 +297,7 @@ RSpec.describe "Rubymap::Emitters" do
       context "when generating dependency diagrams" do
         it "shows class-level dependencies" do
           output = graphviz_emitter.emit_dependency_graph(sample_indexed_data)
-          
+
           expect(output).to include("\"Admin::UsersController\" -> \"User\" [label=\"depends_on\"]")
           skip "Implementation pending"
         end

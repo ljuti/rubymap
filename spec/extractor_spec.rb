@@ -34,7 +34,7 @@ RSpec.describe "Rubymap::Extractor" do
           # When: Extracting symbols from the code
           # Then: Should identify the class with correct metadata
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.classes).to include(
             have_attributes(
               name: "User",
@@ -46,7 +46,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts instance methods" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.methods).to include(
             have_attributes(name: "initialize", visibility: "public"),
             have_attributes(name: "full_name", visibility: "public"),
@@ -56,7 +56,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts attribute declarations" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.attributes).to include(
             have_attributes(name: "name", type: "reader"),
             have_attributes(name: "email", type: "reader")
@@ -80,7 +80,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "captures inheritance relationships" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.classes.first).to have_attributes(
             name: "AdminUser",
             superclass: "User"
@@ -89,7 +89,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "captures mixin relationships" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.mixins).to include(
             have_attributes(type: "include", module: "Authenticatable"),
             have_attributes(type: "extend", module: "ClassMethods")
@@ -122,7 +122,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts module definition" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.modules).to include(
             have_attributes(name: "Searchable", type: "module")
           )
@@ -130,7 +130,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts nested modules" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.modules).to include(
             have_attributes(name: "Searchable::ClassMethods", type: "module")
           )
@@ -138,7 +138,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "identifies concern patterns" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.patterns).to include(
             have_attributes(type: "concern", indicators: ["ActiveSupport::Concern"])
           )
@@ -160,7 +160,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts constant definitions" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.constants).to include(
             have_attributes(name: "VERSION", value: '"1.0.0"'),
             have_attributes(name: "DEFAULT_TIMEOUT", value: "30"),
@@ -170,7 +170,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "identifies class variables" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.class_variables).to include(
             have_attributes(name: "@@instance_count", initial_value: "0")
           )
@@ -200,7 +200,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "distinguishes class methods from instance methods" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.methods).to include(
             have_attributes(name: "get", scope: "class"),
             have_attributes(name: "post", scope: "instance"),
@@ -210,7 +210,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "captures method signatures" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           get_method = result.methods.find { |m| m.name == "get" }
           expect(get_method.parameters).to include(
             have_attributes(name: "path", type: "required"),
@@ -220,7 +220,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "tracks method aliases" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.aliases).to include(
             have_attributes(new_name: "send_request", original_name: "post")
           )
@@ -268,7 +268,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "tracks external gem dependencies" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.dependencies).to include(
             have_attributes(type: "require", name: "json", external: true)
           )
@@ -276,7 +276,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "tracks relative file dependencies" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.dependencies).to include(
             have_attributes(type: "require_relative", path: "../lib/helper")
           )
@@ -284,7 +284,7 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "tracks autoload declarations" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           expect(result.dependencies).to include(
             have_attributes(type: "autoload", constant: "Parser", path: "parser/ruby")
           )
@@ -317,14 +317,14 @@ RSpec.describe "Rubymap::Extractor" do
 
         it "extracts class documentation" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           user_class = result.classes.first
           expect(user_class.documentation).to include("Represents a user in the system")
         end
 
         it "extracts method documentation with parameters" do
           result = extractor.extract_from_code(ruby_code)
-          
+
           init_method = result.methods.find { |m| m.name == "initialize" }
           expect(init_method.parameters).to include(
             have_attributes(name: "name", type_hint: "String"),
