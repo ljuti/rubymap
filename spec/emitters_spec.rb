@@ -227,7 +227,7 @@ RSpec.describe "Rubymap::Emitters" do
         end
 
         it "creates visual hierarchy representations" do
-          output = llm_emitter.emit_structured(complex_hierarchy_data)
+          llm_emitter.emit_structured(complex_hierarchy_data)
 
           skip "Hierarchy visualization not yet implemented"
           # hierarchy_doc = output[:files].find { |f| f[:path].include?("hierarchy") || f[:path].include?("overview") }

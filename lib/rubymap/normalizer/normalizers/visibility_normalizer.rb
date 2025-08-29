@@ -45,7 +45,7 @@ module Rubymap
               else
                 "invalid visibility: #{visibility}"
               end
-              
+
               error = Normalizer::NormalizedError.new(
                 type: "validation",
                 message: message,

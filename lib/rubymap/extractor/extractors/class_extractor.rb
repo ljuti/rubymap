@@ -11,8 +11,8 @@ module Rubymap
         superclass = extract_superclass(node)
         doc = extract_documentation(node)
 
-        # Build fully qualified name if within a namespace
-        full_name = (context.current_namespace && !context.current_namespace.empty?) ? "#{context.current_namespace}::#{name}" : name
+        # Build fully qualified name using namespace service
+        full_name = namespace_service.resolve_in_namespace(name, context.current_namespace)
 
         class_info = ClassInfo.new(
           name: name,  # Use simple name, namespace is separate

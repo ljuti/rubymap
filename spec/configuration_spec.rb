@@ -90,7 +90,7 @@ RSpec.describe Rubymap::Configuration do
 
         it "loads static configuration" do
           config = described_class.load_from_string(yaml_content)
-          
+
           expect(config.static["paths"]).to eq(["app/", "lib/"])
           expect(config.static["exclude"]).to eq(["tmp/"])
           expect(config.static["follow_requires"]).to be true
@@ -99,7 +99,7 @@ RSpec.describe Rubymap::Configuration do
 
         it "loads output configuration" do
           config = described_class.load_from_string(yaml_content)
-          
+
           expect(config.output["directory"]).to eq("custom_output")
           expect(config.output["format"]).to eq("json")
           expect(config.output["split_files"]).to be true
@@ -107,7 +107,7 @@ RSpec.describe Rubymap::Configuration do
 
         it "loads runtime configuration" do
           config = described_class.load_from_string(yaml_content)
-          
+
           expect(config.runtime["enabled"]).to be true
           expect(config.runtime["timeout"]).to eq(60)
           expect(config.runtime["environment"]).to eq("production")
@@ -115,7 +115,7 @@ RSpec.describe Rubymap::Configuration do
 
         it "loads filter configuration" do
           config = described_class.load_from_string(yaml_content)
-          
+
           expect(config.filter["include_private"]).to be true
           expect(config.filter["exclude_patterns"]).to eq(["**/test/**"])
         end
@@ -132,7 +132,7 @@ RSpec.describe Rubymap::Configuration do
 
     describe ".load_from_file" do
       let(:config_file) { Tempfile.new(["config", ".yml"]) }
-      
+
       after { config_file.unlink }
 
       context "when file exists" do
@@ -147,7 +147,7 @@ RSpec.describe Rubymap::Configuration do
 
         it "loads configuration from file" do
           config = described_class.load_from_file(config_file.path)
-          
+
           expect(config.output_dir).to eq("custom_dir")
           expect(config.format).to eq(:json)
           expect(config.verbose).to be true
@@ -173,7 +173,7 @@ RSpec.describe Rubymap::Configuration do
             paths: ["src/"]
           }
         })
-        
+
         expect(config.output_dir).to eq("from_hash")
         expect(config.format).to eq(:yaml)
         expect(config.verbose).to be true
@@ -193,9 +193,9 @@ RSpec.describe Rubymap::Configuration do
       ENV["RUBYMAP_OUTPUT_DIR"] = "env_output"
       ENV["RUBYMAP_FORMAT"] = "json"
       ENV["RUBYMAP_VERBOSE"] = "true"
-      
+
       config = described_class.new
-      
+
       expect(config.output_dir).to eq("env_output")
       expect(config.format).to eq(:json)
       expect(config.verbose).to be true
@@ -204,9 +204,9 @@ RSpec.describe Rubymap::Configuration do
     it "supports nested configuration via environment variables" do
       ENV["RUBYMAP_STATIC__PARSE_YARD"] = "true"
       ENV["RUBYMAP_RUNTIME__TIMEOUT"] = "120"
-      
+
       config = described_class.new
-      
+
       expect(config.static["parse_yard"]).to be true
       expect(config.runtime["timeout"]).to eq(120)
     end
@@ -256,7 +256,7 @@ RSpec.describe Rubymap::Configuration do
     describe "#apply_profile" do
       it "applies named profile" do
         config.apply_profile(:development)
-        
+
         expect(config.verbose).to be true
         expect(config.output_dir).to eq("tmp/rubymap")
       end
@@ -350,7 +350,7 @@ RSpec.describe Rubymap::Configuration do
       it "returns detailed error for invalid configuration" do
         config.format = :invalid
         result = config.validate_and_explain
-        
+
         expect(result).to include("Configuration validation failed")
         expect(result).to include("Invalid format")
       end
@@ -394,7 +394,7 @@ RSpec.describe Rubymap::Configuration do
   describe "#describe" do
     it "provides human-readable description" do
       description = config.describe
-      
+
       expect(description).to include("Rubymap Configuration")
       expect(description).to include("Static Analysis")
       expect(description).to include("Output")
@@ -416,7 +416,7 @@ RSpec.describe Rubymap::Configuration do
 
     it "merges configurations" do
       merged = config.merge(other_config)
-      
+
       expect(merged.output_dir).to eq("merged")
       expect(merged.static["paths"]).to eq(["merged/"])
       expect(merged.static["parse_yard"]).to be true
@@ -427,14 +427,14 @@ RSpec.describe Rubymap::Configuration do
     it "does not modify original configuration" do
       original_output_dir = config.output_dir
       config.merge(other_config)
-      
+
       expect(config.output_dir).to eq(original_output_dir)
     end
 
     it "merges with another Configuration instance" do
       other = described_class.new
       other.output_dir = "other"
-      
+
       merged = config.merge(other)
       expect(merged.output_dir).to eq("other")
     end
@@ -448,7 +448,7 @@ RSpec.describe Rubymap::Configuration do
           parse_yard: true
         }
       })
-      
+
       expect(config.output_dir).to eq("merged")
       expect(config.static["parse_yard"]).to be true
     end
@@ -459,9 +459,9 @@ RSpec.describe Rubymap::Configuration do
       other = described_class.new
       other.output_dir = "different"
       other.verbose = true
-      
+
       differences = config.diff(other)
-      
+
       expect(differences[:output_dir]).to eq({
         from: ".rubymap",
         to: "different"
@@ -477,10 +477,10 @@ RSpec.describe Rubymap::Configuration do
     it "serializes to YAML" do
       config.output_dir = "test_dir"
       config.format = :json
-      
+
       yaml = config.to_yaml
       parsed = YAML.safe_load(yaml)
-      
+
       expect(parsed["output"]["directory"]).to eq(".rubymap")
       expect(parsed["output"]["format"]).to eq("llm")
     end
@@ -489,7 +489,7 @@ RSpec.describe Rubymap::Configuration do
   describe "#to_h / #to_hash" do
     it "converts to hash representation" do
       hash = config.to_h
-      
+
       expect(hash).to have_key(:static)
       expect(hash).to have_key(:output)
       expect(hash).to have_key(:runtime)
@@ -499,7 +499,7 @@ RSpec.describe Rubymap::Configuration do
 
     it "includes nested configuration values" do
       hash = config.to_hash
-      
+
       expect(hash[:static]["paths"]).to eq(["."])
       expect(hash[:output]["format"]).to eq("llm")
       expect(hash[:runtime]["enabled"]).to be false
@@ -511,7 +511,7 @@ RSpec.describe Rubymap::Configuration do
       config = described_class.new
       config.verbose = "true"
       config.parallel = "false"
-      
+
       expect(config.verbose).to be true
       expect(config.parallel).to be false
     end
@@ -519,9 +519,9 @@ RSpec.describe Rubymap::Configuration do
     it "coerces integer strings to integers" do
       config = described_class.new
       config.max_depth = "5"
-      
+
       expect(config.max_depth).to eq(5)
-      
+
       # Test nested value coercion through deep_merge!
       config2 = described_class.new
       config2.deep_merge!({"runtime" => {"timeout" => "120"}})
@@ -531,7 +531,7 @@ RSpec.describe Rubymap::Configuration do
     it "converts format string to symbol" do
       config = described_class.new
       config.format = "json"
-      
+
       expect(config.format).to eq(:json)
     end
   end
@@ -545,26 +545,26 @@ RSpec.describe Rubymap::Configuration do
 
     it "expands environment variables in paths" do
       ENV["CUSTOM_DIR"] = "/custom/path"
-      
+
       config.output["directory"] = "${CUSTOM_DIR}/output"
       config.resolve_environment_variables
-      
+
       expect(config.output["directory"]).to eq("/custom/path/output")
     end
 
     it "handles missing environment variables" do
       config.output["directory"] = "${MISSING_VAR}/output"
       config.resolve_environment_variables
-      
+
       expect(config.output["directory"]).to eq("${MISSING_VAR}/output")
     end
 
     it "expands simple environment variable format" do
       ENV["HOME"] = "/home/user"
-      
+
       config.cache["directory"] = "$HOME/.cache"
       config.resolve_environment_variables
-      
+
       expect(config.cache["directory"]).to eq("/home/user/.cache")
     end
   end

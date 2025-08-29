@@ -158,7 +158,7 @@ RSpec.describe "LLM Emitter" do
       expect(index_content).to include("# Codebase Documentation Index")
       expect(index_content).to include("## Classes")
       expect(index_content).to include("Controller](chunks/")
-      expect(index_content).to include("## Modules") 
+      expect(index_content).to include("## Modules")
       expect(index_content).to include("## Relationships")
     end
 

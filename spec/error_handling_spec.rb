@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'tempfile'
-require 'tmpdir'
+require "tempfile"
+require "tmpdir"
 
 RSpec.describe "Rubymap Error Handling" do
   # Helper to create temporary Ruby files for testing
-  def with_temp_ruby_file(content, filename = 'test.rb')
+  def with_temp_ruby_file(content, filename = "test.rb")
     Dir.mktmpdir do |dir|
       file_path = File.join(dir, filename)
       File.write(file_path, content)
@@ -39,7 +39,7 @@ RSpec.describe "Rubymap Error Handling" do
       it "includes error details in the output", skip: "Error reporting not yet implemented" do
         with_temp_ruby_file(syntax_error_code) do |file_path|
           result = Rubymap.map([file_path])
-          
+
           expect(result[:errors]).to be_an(Array)
           expect(result[:errors]).not_to be_empty
         end
@@ -47,21 +47,21 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "continues processing other files after parse errors" do
         valid_code = "class ValidClass; end"
-        
+
         Dir.mktmpdir do |dir|
-          invalid_file = File.join(dir, 'invalid.rb')
-          valid_file = File.join(dir, 'valid.rb')
-          
+          invalid_file = File.join(dir, "invalid.rb")
+          valid_file = File.join(dir, "valid.rb")
+
           File.write(invalid_file, syntax_error_code)
           File.write(valid_file, valid_code)
-          
+
           result = Rubymap.map([invalid_file, valid_file])
-          
+
           # Should process both files and return output metadata
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
-          
+
           # Check that output files were created
           output_dir = result[:output_dir]
           expect(Dir.exist?(output_dir)).to be true if output_dir
@@ -72,7 +72,7 @@ RSpec.describe "Rubymap Error Handling" do
     context "when encountering encoding issues" do
       it "handles files with invalid encoding declarations gracefully" do
         invalid_encoding_code = "# encoding: invalid-encoding\nclass User; end"
-        
+
         with_temp_ruby_file(invalid_encoding_code) do |file_path|
           expect {
             result = Rubymap.map([file_path])
@@ -85,7 +85,7 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "reports encoding errors appropriately", skip: "Error reporting not yet implemented" do
         invalid_encoding_code = "\xFF\xFE# Invalid UTF-8\nclass User; end"
-        
+
         with_temp_ruby_file(invalid_encoding_code) do |file_path|
           result = Rubymap.map([file_path])
           expect(result[:errors]).to include(
@@ -98,16 +98,16 @@ RSpec.describe "Rubymap Error Handling" do
     context "when file system errors occur" do
       it "handles permission denied errors gracefully", skip: "Permission handling not implemented" do
         Dir.mktmpdir do |dir|
-          file_path = File.join(dir, 'restricted.rb')
+          file_path = File.join(dir, "restricted.rb")
           File.write(file_path, "class User; end")
-          File.chmod(0000, file_path)
-          
+          File.chmod(0o000, file_path)
+
           begin
             expect {
               Rubymap.map([file_path])
             }.not_to raise_error
           ensure
-            File.chmod(0644, file_path)
+            File.chmod(0o644, file_path)
           end
         end
       end
@@ -127,7 +127,7 @@ RSpec.describe "Rubymap Error Handling" do
           require 'non_existent_gem'
           class User; end
         RUBY
-        
+
         with_temp_ruby_file(code_with_missing_gem) do |file_path|
           expect {
             result = Rubymap.map([file_path])
@@ -141,10 +141,10 @@ RSpec.describe "Rubymap Error Handling" do
           require 'non_existent_gem'
           class User; end
         RUBY
-        
+
         with_temp_ruby_file(code_with_missing_gem) do |file_path|
           result = Rubymap.map([file_path])
-          expect(result[:unresolved_dependencies]).to include('non_existent_gem')
+          expect(result[:unresolved_dependencies]).to include("non_existent_gem")
         end
       end
     end
@@ -152,27 +152,27 @@ RSpec.describe "Rubymap Error Handling" do
     context "when circular dependencies are detected" do
       it "detects circular dependency chains", skip: "Circular dependency detection not implemented" do
         Dir.mktmpdir do |dir|
-          file_a = File.join(dir, 'a.rb')
-          file_b = File.join(dir, 'b.rb')
-          
+          file_a = File.join(dir, "a.rb")
+          file_b = File.join(dir, "b.rb")
+
           File.write(file_a, "require_relative 'b'\nclass A; end")
           File.write(file_b, "require_relative 'a'\nclass B; end")
-          
+
           result = Rubymap.map([file_a, file_b])
           expect(result[:warnings]).to include(
-            have_attributes(type: 'circular_dependency')
+            have_attributes(type: "circular_dependency")
           )
         end
       end
 
       it "continues processing despite circular dependencies" do
         Dir.mktmpdir do |dir|
-          file_a = File.join(dir, 'a.rb')
-          file_b = File.join(dir, 'b.rb')
-          
+          file_a = File.join(dir, "a.rb")
+          file_b = File.join(dir, "b.rb")
+
           File.write(file_a, "require_relative 'b'\nclass A; end")
           File.write(file_b, "require_relative 'a'\nclass B; end")
-          
+
           expect {
             result = Rubymap.map([file_a, file_b])
             expect(result).to be_a(Hash)
@@ -208,7 +208,7 @@ RSpec.describe "Rubymap Error Handling" do
             end
           end
         RUBY
-        
+
         with_temp_ruby_file(potentially_infinite_code) do |file_path|
           expect {
             result = Rubymap.map([file_path])
@@ -251,16 +251,16 @@ RSpec.describe "Rubymap Error Handling" do
     context "when output directory is not writable" do
       it "provides clear error message about permissions", skip: "Output directory handling pending" do
         Dir.mktmpdir do |dir|
-          readonly_dir = File.join(dir, 'readonly')
+          readonly_dir = File.join(dir, "readonly")
           Dir.mkdir(readonly_dir)
-          File.chmod(0555, readonly_dir)
-          
+          File.chmod(0o555, readonly_dir)
+
           begin
             expect {
               Rubymap.map([__FILE__], output_dir: readonly_dir)
             }.to raise_error(Rubymap::ConfigurationError, /not writable/)
           ensure
-            File.chmod(0755, readonly_dir)
+            File.chmod(0o755, readonly_dir)
           end
         end
       end
@@ -285,11 +285,11 @@ RSpec.describe "Rubymap Error Handling" do
     context "when configuration file is malformed" do
       it "handles YAML parsing errors in configuration" do
         malformed_yaml = "invalid: yaml: content: :"
-        
+
         Dir.mktmpdir do |dir|
-          config_file = File.join(dir, '.rubymap.yml')
+          config_file = File.join(dir, ".rubymap.yml")
           File.write(config_file, malformed_yaml)
-          
+
           Dir.chdir(dir) do
             expect {
               Rubymap.configure do |config|
@@ -332,10 +332,10 @@ RSpec.describe "Rubymap Error Handling" do
             end
           end
         RUBY
-        
+
         with_temp_ruby_file(dynamic_code) do |file_path|
           result = Rubymap.map([file_path])
-          
+
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
@@ -350,7 +350,7 @@ RSpec.describe "Rubymap Error Handling" do
             extend ModuleB if ENV['EXTEND_B']
           end
         RUBY
-        
+
         with_temp_ruby_file(conditional_code) do |file_path|
           expect {
             result = Rubymap.map([file_path])
@@ -371,10 +371,10 @@ RSpec.describe "Rubymap Error Handling" do
             end
           end
         RUBY
-        
+
         with_temp_ruby_file(singleton_code) do |file_path|
           result = Rubymap.map([file_path])
-          
+
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
@@ -393,10 +393,10 @@ RSpec.describe "Rubymap Error Handling" do
             end
           end
         RUBY
-        
+
         with_temp_ruby_file(metaprogramming_code) do |file_path|
           result = Rubymap.map([file_path])
-          
+
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
@@ -412,10 +412,10 @@ RSpec.describe "Rubymap Error Handling" do
             attr_writer :status
           end
         RUBY
-        
+
         with_temp_ruby_file(attr_code) do |file_path|
           result = Rubymap.map([file_path])
-          
+
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
@@ -428,19 +428,19 @@ RSpec.describe "Rubymap Error Handling" do
     context "when partial failures occur" do
       it "preserves successfully processed data when errors occur" do
         Dir.mktmpdir do |dir|
-          good_file = File.join(dir, 'good.rb')
-          bad_file = File.join(dir, 'bad.rb')
-          
+          good_file = File.join(dir, "good.rb")
+          bad_file = File.join(dir, "bad.rb")
+
           File.write(good_file, "class GoodClass; def good_method; end; end")
           File.write(bad_file, "class BadClass; def bad_method; # syntax error")
-          
+
           result = Rubymap.map([good_file, bad_file])
-          
+
           # Should return output metadata even when some files have errors
           expect(result).to be_a(Hash)
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
-          
+
           # The good class should be in the output files
           # (actual verification would require reading the output files)
         end
@@ -460,12 +460,12 @@ RSpec.describe "Rubymap Error Handling" do
     context "when dealing with symlinks" do
       it "handles circular symlinks gracefully", skip: "Symlink handling pending" do
         Dir.mktmpdir do |dir|
-          link_a = File.join(dir, 'link_a')
-          link_b = File.join(dir, 'link_b')
-          
+          link_a = File.join(dir, "link_a")
+          link_b = File.join(dir, "link_b")
+
           File.symlink(link_b, link_a)
           File.symlink(link_a, link_b)
-          
+
           expect {
             Rubymap.map([dir])
           }.not_to raise_error

@@ -144,8 +144,8 @@ Rubymap uses a modular pipeline approach to build a complete picture of your cod
 
 ```
 ┌──────────┐   ┌────────────┐   ┌──────────┐   ┌─────────┐   ┌──────────┐
-│ Extract  ├──▶│ Normalize  ├──▶│ Enrich   ├──▶│ Index    ├──▶│ Emit     │
-│ (Prism)  │   │ & Dedupe   │   │ Metadata │   │ Symbols  │   │ (LLM)    │
+│ Extract  ├──▶│ Normalize  ├──▶│ Enrich   ├──▶│ Index   ├──▶│ Emit     │
+│ (Prism)  │   │ & Dedupe   │   │ Metadata │   │ Symbols │   │ (LLM)    │
 └──────────┘   └────────────┘   └──────────┘   └─────────┘   └──────────┘
 ```
 

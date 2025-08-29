@@ -6,6 +6,7 @@ require "prism"
 require_relative "extractor/result"
 require_relative "extractor/extraction_context"
 require_relative "extractor/node_visitor"
+require_relative "extractor/concerns/result_mergeable"
 
 # Load all model classes
 require_relative "extractor/models/class_info"
@@ -22,6 +23,8 @@ require_relative "extractor/models/pattern_info"
 module Rubymap
   # Main extractor class that coordinates the extraction of Ruby symbols
   class Extractor
+    include Concerns::ResultMergeable
+
     def initialize
       # No instance state needed - each extraction gets its own context
     end
@@ -83,17 +86,7 @@ module Rubymap
     end
 
     def merge_results(target, source)
-      target.classes.concat(source.classes)
-      target.modules.concat(source.modules)
-      target.methods.concat(source.methods)
-      target.constants.concat(source.constants)
-      target.attributes.concat(source.attributes)
-      target.mixins.concat(source.mixins)
-      target.dependencies.concat(source.dependencies)
-      target.class_variables.concat(source.class_variables)
-      target.aliases.concat(source.aliases)
-      target.patterns.concat(source.patterns)
-      target.errors.concat(source.errors)
+      merge_results!(target, source)
     end
   end
 end

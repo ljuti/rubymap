@@ -23,7 +23,7 @@ module Rubymap
           # Support both formats: {:caller, :calls} and {:from, :to}
           from = data[:caller] || data[:from]
           to = data[:calls] || data[:to]
-          
+
           return nil unless from && to
 
           # If we already have the correct format, use it directly

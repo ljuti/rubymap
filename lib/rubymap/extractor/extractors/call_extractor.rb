@@ -77,8 +77,8 @@ module Rubymap
 
       def handle_visibility_change(node)
         # Change the current visibility in the context
-        @context.visibility_stack.pop
-        @context.visibility_stack.push(node.name)
+        context.pop_visibility
+        context.push_visibility(node.name)
       end
 
       def extract_dependency(node)

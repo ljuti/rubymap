@@ -19,7 +19,7 @@ module Rubymap
           end
 
           # Boost confidence if location information is available
-          if data[:location] && data[:location] != false && data[:location] != nil
+          if data[:location] && data[:location] != false && !data[:location].nil?
             base_confidence += 0.05
           end
 

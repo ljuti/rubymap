@@ -164,7 +164,7 @@ module Rubymap
     # Custom type casting for format (symbol) and other attributes
     on_load do
       self.format = format.to_sym if format.is_a?(String)
-      
+
       # Apply type coercion for direct assignments
       self.verbose = to_bool(verbose) if verbose.is_a?(String)
       self.parallel = to_bool(parallel) if parallel.is_a?(String)
@@ -172,28 +172,28 @@ module Rubymap
       self.follow_symlinks = to_bool(follow_symlinks) if follow_symlinks.is_a?(String)
       self.max_depth = max_depth.to_i if max_depth.is_a?(String)
     end
-    
+
     # Override setters to handle type coercion
     def verbose=(value)
       super(value.is_a?(String) ? to_bool(value) : value)
     end
-    
+
     def parallel=(value)
       super(value.is_a?(String) ? to_bool(value) : value)
     end
-    
+
     def progress=(value)
       super(value.is_a?(String) ? to_bool(value) : value)
     end
-    
+
     def follow_symlinks=(value)
       super(value.is_a?(String) ? to_bool(value) : value)
     end
-    
+
     def max_depth=(value)
       super(value.is_a?(String) ? value.to_i : value)
     end
-    
+
     def format=(value)
       super(value.is_a?(String) ? value.to_sym : value)
     end
@@ -337,17 +337,17 @@ module Rubymap
     def merge(other_config)
       # Create a new instance with current config
       result = self.class.new
-      
+
       # Copy current config
       %i[output_dir format verbose parallel progress max_depth follow_symlinks].each do |key|
         result.send("#{key}=", send(key))
       end
-      
+
       # Copy nested configs
       %w[static output runtime filter cache].each do |section|
         result.send(section).replace(send(section).dup)
       end
-      
+
       # Merge the other config
       if other_config.is_a?(Hash)
         result.deep_merge!(other_config)
@@ -356,13 +356,13 @@ module Rubymap
         %i[output_dir format verbose parallel progress max_depth follow_symlinks].each do |key|
           result.send("#{key}=", other_config.send(key))
         end
-        
+
         # Merge nested configs
         %w[static output runtime filter cache].each do |section|
           result.send(section).merge!(other_config.send(section))
         end
       end
-      
+
       result
     end
 
@@ -370,7 +370,7 @@ module Rubymap
     def deep_merge!(hash)
       hash.each do |key, value|
         key_str = key.to_s
-        
+
         # Handle top-level attributes
         if respond_to?("#{key_str}=") && !%w[static output runtime filter cache].include?(key_str)
           send("#{key_str}=", value)
@@ -380,46 +380,46 @@ module Rubymap
             current = send(key_str)
             value.each do |k, v|
               # Apply type coercion for known nested integer fields
-              if key_str == "runtime" && k.to_s == "timeout" && v.is_a?(String)
-                current[k.to_s] = v.to_i
+              current[k.to_s] = if key_str == "runtime" && k.to_s == "timeout" && v.is_a?(String)
+                v.to_i
               elsif key_str == "cache" && k.to_s == "ttl" && v.is_a?(String)
-                current[k.to_s] = v.to_i
+                v.to_i
               elsif key_str == "static" && k.to_s == "max_file_size" && v.is_a?(String)
-                current[k.to_s] = v.to_i
+                v.to_i
               # Apply type coercion for known nested boolean fields
               elsif %w[enabled safe_mode follow_requires parse_yard parse_rbs split_files include_source include_todos redact_sensitive include_private include_protected].include?(k.to_s) && v.is_a?(String)
-                current[k.to_s] = to_bool(v)
+                to_bool(v)
               else
-                current[k.to_s] = v
+                v
               end
             end
           end
         end
       end
-      
+
       # Ensure format is symbol
       self.format = format.to_sym if format.is_a?(String)
-      
+
       self
     end
 
     # Show differences between configurations
     def diff(other)
       differences = {}
-      
+
       # Compare top-level attributes
       %i[output_dir format verbose parallel progress max_depth follow_symlinks].each do |key|
         if send(key) != other.send(key)
           differences[key] = {from: send(key), to: other.send(key)}
         end
       end
-      
+
       # Compare nested configs
       %w[static output runtime filter cache].each do |section|
         section_sym = section.to_sym
         mine = send(section)
         theirs = other.send(section)
-        
+
         if mine != theirs
           differences[section_sym] = {from: mine, to: theirs}
         end
@@ -466,7 +466,7 @@ module Rubymap
 
       yaml_content = File.read(path)
       load_from_string(yaml_content, path)
-    rescue Errno::ENOENT => e
+    rescue Errno::ENOENT
       raise ConfigurationError, "Configuration file not found: #{path}"
     rescue => e
       raise ConfigurationError, "Failed to load configuration: #{e.message}"
@@ -486,10 +486,10 @@ module Rubymap
         if hash
           # Apply the hash
           config.deep_merge!(hash)
-          
+
           # Manually trigger type coercion for string values
           config.verbose = config.verbose if config.verbose.is_a?(String)
-          config.parallel = config.parallel if config.parallel.is_a?(String) 
+          config.parallel = config.parallel if config.parallel.is_a?(String)
           config.progress = config.progress if config.progress.is_a?(String)
           config.max_depth = config.max_depth if config.max_depth.is_a?(String)
           config.format = config.format if config.format.is_a?(String)
@@ -501,7 +501,7 @@ module Rubymap
 
     def to_bool(value)
       return value unless value.is_a?(String)
-      value.downcase == 'true'
+      value.downcase == "true"
     end
 
     def resolve_path(path)

@@ -29,10 +29,10 @@ RSpec.describe Rubymap::Configuration do
       it "converts any non-'true' string to false" do
         config.verbose = "yes"
         expect(config.verbose).to be false
-        
+
         config.verbose = "1"
         expect(config.verbose).to be false
-        
+
         config.verbose = "TRUE"
         expect(config.verbose).to be true  # Case-insensitive
       end
@@ -42,7 +42,7 @@ RSpec.describe Rubymap::Configuration do
       it "handles string conversion" do
         config.parallel = "true"
         expect(config.parallel).to be true
-        
+
         config.parallel = "false"
         expect(config.parallel).to be false
       end
@@ -52,7 +52,7 @@ RSpec.describe Rubymap::Configuration do
       it "handles string conversion" do
         config.progress = "true"
         expect(config.progress).to be true
-        
+
         config.progress = "false"
         expect(config.progress).to be false
       end
@@ -62,7 +62,7 @@ RSpec.describe Rubymap::Configuration do
       it "handles string conversion" do
         config.follow_symlinks = "true"
         expect(config.follow_symlinks).to be true
-        
+
         config.follow_symlinks = "false"
         expect(config.follow_symlinks).to be false
       end
@@ -122,7 +122,7 @@ RSpec.describe Rubymap::Configuration do
           "max_depth" => 15,
           "format" => :json
         })
-        
+
         expect(config.verbose).to be true
         expect(config.max_depth).to eq(15)
         expect(config.format).to eq(:json)
@@ -138,7 +138,7 @@ RSpec.describe Rubymap::Configuration do
           "max_depth" => "25",
           "format" => "yaml"
         })
-        
+
         expect(config.verbose).to be true
         expect(config.parallel).to be true
         expect(config.progress).to be true
@@ -170,7 +170,7 @@ RSpec.describe Rubymap::Configuration do
       it "coerces enabled fields" do
         config.deep_merge!({"runtime" => {"enabled" => "true"}})
         expect(config.runtime["enabled"]).to be true
-        
+
         config.deep_merge!({"cache" => {"enabled" => "false"}})
         expect(config.cache["enabled"]).to be false
       end
@@ -250,9 +250,9 @@ RSpec.describe Rubymap::Configuration do
       it "preserves current configuration" do
         config.output_dir = "custom"
         config.verbose = true
-        
+
         merged = config.merge({})
-        
+
         expect(merged.output_dir).to eq("custom")
         expect(merged.verbose).to be true
       end
@@ -264,12 +264,12 @@ RSpec.describe Rubymap::Configuration do
         other = described_class.new
         other.static["paths"] = ["new/"]
         other.static["parse_yard"] = true
-        
+
         merged = config.merge(other)
-        
+
         expect(merged.static["paths"]).to eq(["new/"])
         expect(merged.static["parse_yard"]).to be true
-        
+
         # Original should be unchanged
         expect(config.static["paths"]).to eq(["original/"])
       end
@@ -284,9 +284,9 @@ RSpec.describe Rubymap::Configuration do
         config.progress = true
         config.max_depth = 5
         config.follow_symlinks = true
-        
+
         merged = config.merge({})
-        
+
         expect(merged.output_dir).to eq("dir1")
         expect(merged.format).to eq(:json)
         expect(merged.verbose).to be true
@@ -301,7 +301,7 @@ RSpec.describe Rubymap::Configuration do
   describe "#diff" do
     it "detects differences in all top-level attributes" do
       other = described_class.new
-      
+
       config.output_dir = "changed"
       config.format = :json
       config.verbose = true
@@ -309,9 +309,9 @@ RSpec.describe Rubymap::Configuration do
       config.progress = false
       config.max_depth = 20
       config.follow_symlinks = true
-      
+
       diff = config.diff(other)
-      
+
       expect(diff[:output_dir]).to eq({from: "changed", to: ".rubymap"})
       expect(diff[:format]).to eq({from: :json, to: :llm})
       expect(diff[:verbose]).to eq({from: true, to: false})
@@ -323,28 +323,28 @@ RSpec.describe Rubymap::Configuration do
 
     it "detects differences in nested configs" do
       other = described_class.new
-      
+
       config.static["paths"] = ["changed/"]
       config.output["format"] = "changed"
-      
+
       diff = config.diff(other)
-      
+
       expect(diff[:static]).to be_a(Hash)
       expect(diff[:output]).to be_a(Hash)
     end
 
     it "returns empty hash when configs are identical" do
       other = described_class.new
-      
+
       diff = config.diff(other)
-      
+
       # Only nested configs might differ in their internal state
       diff.delete(:static) if diff[:static]
       diff.delete(:output) if diff[:output]
       diff.delete(:runtime) if diff[:runtime]
       diff.delete(:filter) if diff[:filter]
       diff.delete(:cache) if diff[:cache]
-      
+
       expect(diff).to be_empty
     end
   end
@@ -477,7 +477,7 @@ RSpec.describe Rubymap::Configuration do
         config.format = :invalid
         config.runtime["timeout"] = -1
         config.runtime["environment"] = "invalid"
-        
+
         expect {
           config.validate!
         }.to raise_error(Rubymap::ConfigurationError) do |error|
