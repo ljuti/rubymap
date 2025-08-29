@@ -10,13 +10,45 @@ module Rubymap
           when :public, "public" then "public"
           when :private, "private" then "private"
           when :protected, "protected" then "protected"
-          when nil then "public"  # Handle missing visibility
-          else
-            # Invalid visibility type
-            if errors && !visibility.is_a?(String) && !visibility.is_a?(Symbol)
+          when nil then "public"  # nil is valid, defaults to public
+          when ""
+            # Empty string is invalid
+            if errors
+              error = Normalizer::NormalizedError.new(
+                type: "validation",
+                message: "invalid visibility: ",
+                data: {visibility: visibility}
+              )
+              errors << error
+            end
+            "public"
+          when /^\s+$/
+            # Whitespace-only is invalid
+            if errors
               error = Normalizer::NormalizedError.new(
                 type: "validation",
                 message: "invalid visibility: #{visibility}",
+                data: {visibility: visibility}
+              )
+              errors << error
+            end
+            "public"
+          else
+            # Invalid visibility value - add error
+            if errors
+              # Format message based on type
+              message = case visibility
+              when Symbol
+                "invalid visibility: #{visibility}"
+              when String
+                "invalid visibility: #{visibility}"
+              else
+                "invalid visibility: #{visibility}"
+              end
+              
+              error = Normalizer::NormalizedError.new(
+                type: "validation",
+                message: message,
                 data: {visibility: visibility}
               )
               errors << error

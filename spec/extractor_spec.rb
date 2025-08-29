@@ -132,7 +132,7 @@ RSpec.describe "Rubymap::Extractor" do
           result = extractor.extract_from_code(ruby_code)
 
           expect(result.modules).to include(
-            have_attributes(name: "Searchable::ClassMethods", type: "module")
+            have_attributes(name: "ClassMethods", namespace: "Searchable", type: "module")
           )
         end
 

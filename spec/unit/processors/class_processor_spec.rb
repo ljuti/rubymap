@@ -41,7 +41,7 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
 
       before do
         allow(name_normalizer).to receive(:generate_fqname).with("User", "App").and_return("App::User")
-        allow(name_normalizer).to receive(:extract_namespace_path).with("User").and_return([])
+        allow(name_normalizer).to receive(:extract_namespace_path).with("App::User").and_return(["App"])
         allow(symbol_id_generator).to receive(:generate_class_id).with("App::User", "class").and_return("class123")
         allow(location_normalizer).to receive(:normalize).with({file: "app/models/user.rb", line: 1}).and_return(
           Rubymap::Normalizer::NormalizedLocation.new(file: "app/models/user.rb", line: 1)
@@ -96,7 +96,6 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
       end
 
       it "creates provenance with inferred source when source is missing" do
-        allow(provenance_tracker).to receive(:create_provenance).and_call_original
         allow(provenance_tracker).to receive(:create_provenance).with(
           sources: [Rubymap::Normalizer::DATA_SOURCES[:inferred]],
           confidence: 0.8
@@ -112,7 +111,6 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
 
       it "creates provenance with explicit source when provided" do
         class_data[:source] = "static"
-        allow(provenance_tracker).to receive(:create_provenance).and_call_original
         allow(provenance_tracker).to receive(:create_provenance).with(
           sources: ["static"],
           confidence: 0.8
@@ -191,7 +189,7 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
 
       before do
         allow(name_normalizer).to receive(:generate_fqname).with("Searchable", "App").and_return("App::Searchable")
-        allow(name_normalizer).to receive(:extract_namespace_path).with("Searchable").and_return([])
+        allow(name_normalizer).to receive(:extract_namespace_path).with("App::Searchable").and_return(["App"])
         allow(symbol_id_generator).to receive(:generate_module_id).with("App::Searchable").and_return("module123")
         allow(location_normalizer).to receive(:normalize).with(nil).and_return(nil)
         allow(confidence_calculator).to receive(:calculate).with(module_data).and_return(0.8)

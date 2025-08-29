@@ -54,7 +54,7 @@ module Rubymap
             kind: data[:type] || "class",
             superclass: data[:superclass],
             location: normalizers.location_normalizer.normalize(data[:location]),
-            namespace_path: normalizers.name_normalizer.extract_namespace_path(data[:name]),
+            namespace_path: normalizers.name_normalizer.extract_namespace_path(fqname),
             children: [],
             inheritance_chain: [],
             instance_methods: [],
@@ -81,7 +81,7 @@ module Rubymap
             fqname: fqname,
             kind: "module",
             location: normalizers.location_normalizer.normalize(data[:location]),
-            namespace_path: normalizers.name_normalizer.extract_namespace_path(data[:name]),
+            namespace_path: normalizers.name_normalizer.extract_namespace_path(fqname),
             children: [],
             provenance: provenance
           )

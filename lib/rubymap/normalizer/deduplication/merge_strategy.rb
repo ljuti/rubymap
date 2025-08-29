@@ -43,6 +43,8 @@ module Rubymap
             merged.provenance = merged_provenance
             # Merge superclass information (prefer explicit over inferred)
             merged.superclass = get_most_reliable_superclass(classes)
+            # Merge mixins from all classes, removing duplicates
+            merged.mixins = merge_mixins(classes)
           end
         end
 
@@ -68,6 +70,7 @@ module Rubymap
 
         def get_highest_source_precedence(provenance)
           return 0 unless provenance&.sources
+          return 0 if provenance.sources.empty?
 
           provenance.sources.map { |source| Normalizer::SOURCE_PRECEDENCE[source] || 0 }.max
         end
@@ -84,6 +87,12 @@ module Rubymap
           # Prefer superclass from highest precedence source
           classes.sort_by { |c| -get_highest_source_precedence(c.provenance) }
             .find(&:superclass)&.superclass
+        end
+
+        def merge_mixins(classes)
+          all_mixins = classes.flat_map(&:mixins).compact
+          # Remove duplicates based on type and module combination
+          all_mixins.uniq { |mixin| "#{mixin[:type]}_#{mixin[:module]}" }
         end
       end
     end

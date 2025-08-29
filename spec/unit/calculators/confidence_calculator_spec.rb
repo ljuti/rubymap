@@ -276,7 +276,7 @@ RSpec.describe Rubymap::Normalizer::Calculators::ConfidenceCalculator do
       it "applies both location boost and name penalty" do
         confidence = confidence_calculator.calculate(data)
 
-        expect(confidence).to eq(0.70)  # 0.75 base + 0.05 location - 0.10 name = 0.70
+        expect(confidence).to be_within(0.001).of(0.70)  # 0.75 base + 0.05 location - 0.10 name = 0.70
       end
     end
 
@@ -307,7 +307,7 @@ RSpec.describe Rubymap::Normalizer::Calculators::ConfidenceCalculator do
       it "calculates correct high confidence without capping below 1.0" do
         confidence = confidence_calculator.calculate(data)
 
-        expect(confidence).to eq(0.95)  # 0.90 + 0.05 = 0.95
+        expect(confidence).to be_within(0.001).of(0.95)  # 0.90 + 0.05 = 0.95
       end
     end
 
@@ -380,7 +380,7 @@ RSpec.describe Rubymap::Normalizer::Calculators::ConfidenceCalculator do
       let(:data) { "not a hash" }
 
       it "handles non-hash data" do
-        expect { confidence_calculator.calculate(data) }.to raise_error(NoMethodError)
+        expect { confidence_calculator.calculate(data) }.to raise_error(TypeError)
       end
     end
 

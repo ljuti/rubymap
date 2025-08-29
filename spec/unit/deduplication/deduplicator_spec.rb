@@ -29,6 +29,8 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
       end
 
       it "preserves methods with unique symbol IDs without merging" do
+        allow(merge_strategy).to receive(:merge_methods)
+        
         deduplicator.deduplicate_symbols(result)
 
         expect(result.methods.size).to eq(2)
@@ -114,6 +116,8 @@ RSpec.describe Rubymap::Normalizer::Deduplication::Deduplicator do
       end
 
       it "preserves classes with unique symbol IDs without merging" do
+        allow(merge_strategy).to receive(:merge_classes)
+        
         deduplicator.deduplicate_symbols(result)
 
         expect(result.classes.size).to eq(2)

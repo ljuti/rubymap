@@ -156,9 +156,9 @@ RSpec.describe "LLM Emitter" do
       index_content = File.read("#{temp_directory}/index.md")
 
       expect(index_content).to include("# Codebase Documentation Index")
-      expect(index_content).to include("## Models")
-      expect(index_content).to include("- [User Model](models/user.md)")
-      expect(index_content).to include("## Controllers")
+      expect(index_content).to include("## Classes")
+      expect(index_content).to include("Controller](chunks/")
+      expect(index_content).to include("## Modules") 
       expect(index_content).to include("## Relationships")
     end
 

@@ -20,13 +20,26 @@ module Rubymap
         private
 
         def normalize_method_call(data)
-          return nil unless data[:caller] && data[:calls]
+          # Support both formats: {:caller, :calls} and {:from, :to}
+          from = data[:caller] || data[:from]
+          to = data[:calls] || data[:to]
+          
+          return nil unless from && to
 
-          target = resolve_method_call_target(data[:calls], data[:caller])
-          call_type = determine_call_type(data[:calls], target)
+          # If we already have the correct format, use it directly
+          if data[:from] && data[:to]
+            return NormalizedMethodCall.new(
+              from: from,
+              to: to,
+              type: data[:type] || "method_call"
+            )
+          end
+
+          target = resolve_method_call_target(to, from)
+          call_type = determine_call_type(to, target)
 
           NormalizedMethodCall.new(
-            from: data[:caller],
+            from: from,
             to: target,
             type: call_type
           )

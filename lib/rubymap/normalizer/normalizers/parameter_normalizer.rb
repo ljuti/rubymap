@@ -8,6 +8,9 @@ module Rubymap
         def normalize(params)
           return [] unless params
 
+          # Handle case where params is not an array (e.g., a malformed string)
+          params = Array(params) unless params.is_a?(Array)
+
           params.map do |param|
             case param
             when String
