@@ -6,16 +6,21 @@
 
 > 🗺️ A comprehensive Ruby codebase analysis tool that maps your code's structure, relationships, and architecture
 
-Rubymap creates a searchable, LLM-friendly knowledge graph of your Ruby application. It combines fast static analysis with optional runtime introspection to capture every aspect of your code - from class hierarchies to metaprogrammed methods, from Rails models to background jobs.
+Rubymap creates a searchable, LLM-friendly knowledge graph of your Ruby application. It uses fast static analysis to capture your code's structure - from class hierarchies to method definitions, preparing for future runtime introspection capabilities.
 
 ## ✨ Key Features
 
-- **🚀 Dual-pass analysis** - Lightning-fast static parsing plus optional runtime introspection
-- **🛤️ Rails-aware** - Deep understanding of ActiveRecord, routes, jobs, and Rails conventions
+### Currently Implemented
+- **🚀 Static analysis** - Lightning-fast parsing using Prism
 - **🤖 LLM-optimized** - Generates perfectly chunked documentation for AI assistants
-- **🔮 Metaprogramming support** - Captures dynamically defined methods and runtime code
 - **⚡ Performance focused** - Sub-second analysis for thousands of files
-- **🔒 Security-first** - Sandboxed runtime analysis with configurable safety controls
+- **📊 Code structure mapping** - Classes, modules, methods, and their relationships
+- **🔧 Modular pipeline** - Extractor → Normalizer → Enricher → Indexer → Emitter
+
+### Coming Soon
+- **🛤️ Rails-aware** - Deep understanding of ActiveRecord, routes, jobs (in development)
+- **🔮 Runtime introspection** - Capture dynamically defined methods and runtime code
+- **🔒 Security controls** - Sandboxed runtime analysis with configurable safety
 - **📊 Rich metrics** - Code complexity, churn analysis, dependency graphs
 
 ## 🚀 Quick Start
@@ -27,27 +32,29 @@ gem install rubymap
 # Map your Ruby project
 rubymap
 
-# Include runtime mapping for Rails apps
-rubymap --runtime
+# Generate LLM-friendly code map (default format)
+rubymap --output docs/ai-map
 
-# Generate LLM-friendly code map
-rubymap --format llm --output docs/ai-map
+# Specify different output formats (coming soon)
+# rubymap --format json
+# rubymap --format yaml
 ```
 
 ### Quick Example
 
-Map a Rails application with full introspection:
+Map a Ruby application:
 
 ```bash
-cd my_rails_app
-rubymap --runtime
+cd my_ruby_app
+rubymap
 
 # View the generated map
 ls -la .rubymap/
-# ├── map.json          # Global metadata
-# ├── symbols/          # All classes, modules, methods
-# ├── graphs/           # Relationship graphs
-# └── rails/            # Rails-specific data
+# ├── index.md          # Navigation index
+# ├── overview.md       # Project overview
+# ├── chunks/           # LLM-optimized documentation chunks
+# ├── relationships/    # Relationship graphs
+# └── manifest.json     # Metadata and chunk index
 ```
 
 ## 📦 Installation
@@ -84,31 +91,29 @@ rubymap
 # Map specific paths
 rubymap app/models lib/services
 
-# Generate different output formats
-rubymap --format json      # Default: structured JSON
-rubymap --format llm       # LLM-optimized chunks
-rubymap --format yaml      # YAML format
-rubymap --format graphviz  # Dependency diagrams
-
-# Update existing map (incremental)
-rubymap update
-
 # Custom output directory
 rubymap --output ./documentation/map
+
+# Currently, LLM format is the default output
+# Additional formats coming soon:
+# rubymap --format json      # Structured JSON
+# rubymap --format yaml      # YAML format
+# rubymap --format graphviz  # Dependency diagrams
 ```
 
-### Rails-Specific Mapping
+### Rails-Specific Mapping (Coming Soon)
 
 ```bash
+# These features are in development:
 # Full Rails mapping (models, routes, jobs)
-rubymap --runtime
+# rubymap --runtime
 
 # Map specific Rails components with runtime
-rubymap app/models --runtime
-rubymap app/controllers app/jobs
+# rubymap app/models --runtime
+# rubymap app/controllers app/jobs
 
-# Skip certain initializers during runtime mapping
-rubymap --runtime --skip-initializer sidekiq
+# Currently, Rails apps can be mapped with static analysis:
+rubymap app/
 ```
 
 ### Configuration
@@ -117,50 +122,59 @@ Create `.rubymap.yml` in your project root:
 
 ```yaml
 # Basic configuration
-static:
-  paths: [app/, lib/]
-  exclude: [vendor/, node_modules/]
-
-runtime:
-  enabled: true
-  safe_mode: true
-  timeout: 30
+paths: [app/, lib/]
+exclude: [vendor/, node_modules/]
 
 output:
-  format: json
+  format: llm  # Currently only LLM format is supported
   directory: .rubymap
+
+# Runtime configuration (coming soon)
+# runtime:
+#   enabled: true
+#   safe_mode: true
+#   timeout: 30
 ```
 
 See [full configuration documentation](docs/rubymap.md#configuration) for all options.
 
 ## 🏗️ How It Works
 
-Rubymap uses a two-pass approach to build a complete picture of your codebase:
+Rubymap uses a modular pipeline approach to build a complete picture of your codebase:
 
 ```
-┌─────────┐   ┌────────────┐   ┌──────────┐   ┌─────────┐   ┌──────────┐
-│ Static  ├──▶│ Normalize  ├──▶│ Enrich   ├──▶│ Index    ├──▶│ Output   │
-│ Parse   │   │ Data       │   │ Metrics  │   │ Graph    │   │ Format   │
-└─────────┘   └────────────┘   └──────────┘   └─────────┘   └──────────┘
-     +
-┌─────────┐
-│Runtime  │ (Optional: ActiveRecord models, routes, dynamic methods)
-│Analysis │
-└─────────┘
+┌──────────┐   ┌────────────┐   ┌──────────┐   ┌─────────┐   ┌──────────┐
+│ Extract  ├──▶│ Normalize  ├──▶│ Enrich   ├──▶│ Index    ├──▶│ Emit     │
+│ (Prism)  │   │ & Dedupe   │   │ Metadata │   │ Symbols  │   │ (LLM)    │
+└──────────┘   └────────────┘   └──────────┘   └─────────┘   └──────────┘
 ```
 
-### Static Mapping (Always runs)
-- Parses Ruby files using Prism for speed and accuracy
+### Current Pipeline Components
+
+**Extractor** - Fast static parsing using Prism
 - Extracts classes, modules, methods, constants
 - Tracks inheritance, mixins, and dependencies
-- Reads YARD documentation and type signatures
+- Captures documentation comments
 
-### Runtime Mapping (Optional, Rails-aware)
-- Safely boots your application in a sandboxed environment
-- Discovers ActiveRecord attributes and associations
-- Maps routes to controllers and actions
-- Finds dynamically defined methods
-- Captures actual type information
+**Normalizer** - Data standardization and deduplication
+- Converts raw data to consistent format
+- Merges duplicate symbols from multiple sources
+- Resolves namespaces and relationships
+
+**Enricher** - Metadata enhancement
+- Adds code metrics and complexity scores
+- Identifies patterns and conventions
+- Prepares data for indexing
+
+**Indexer** - Symbol graph creation
+- Builds searchable index of all symbols
+- Creates relationship mappings
+- Optimizes for fast lookups
+
+**Emitter** - Output generation
+- Creates LLM-optimized documentation chunks
+- Generates navigation indexes
+- Produces manifest with metadata
 
 ## 📊 Output Examples
 
@@ -195,10 +209,14 @@ User account with authentication and profile.
 | Feature | Rubymap | YARD | Solargraph | RDoc |
 |---------|---------|------|------------|------|
 | Static mapping | ✅ | ✅ | ✅ | ✅ |
-| Runtime mapping | ✅ | ❌ | ❌ | ❌ |
-| Rails aware | ✅ | Partial | Partial | ❌ |
 | LLM optimized | ✅ | ❌ | ❌ | ❌ |
-| Metaprogramming | ✅ | Limited | Limited | ❌ |
+| Modular pipeline | ✅ | ❌ | ❌ | ❌ |
+| Deduplication | ✅ | ❌ | ❌ | ❌ |
+| Runtime mapping | 🚧 | ❌ | ❌ | ❌ |
+| Rails aware | 🚧 | Partial | Partial | ❌ |
+| Metaprogramming | 🚧 | Limited | Limited | ❌ |
+
+✅ = Implemented, 🚧 = In Development
 
 ## 📚 Documentation
 
@@ -286,7 +304,6 @@ Rubymap is built on top of these excellent tools:
 - [ ] Real-time file watching
 - [ ] GitHub integration for PR analysis
 - [ ] Support for more frameworks (Sinatra, Hanami)
-- [ ] Cloud-hosted analysis service
 
 See the [full roadmap](docs/rubymap.md#roadmap--future-features) for more planned features.
 
