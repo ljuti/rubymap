@@ -56,7 +56,7 @@ RSpec.describe "Emitter Integration", skip: "Integration tests deferred until al
 
         expect(File).to exist("#{output_dir}/map.json")
         expect(Dir.exist?("#{output_dir}/chunks")).to be true
-        expect(File).not_to exist("#{output_dir}/map.yml")
+        expect(File.exist?("#{output_dir}/map.yml")).to be false
         expect(Dir.exist?("#{output_dir}/graphs")).to be false
       end
 
@@ -172,7 +172,7 @@ RSpec.describe "Emitter Integration", skip: "Integration tests deferred until al
         result = manager.emit_all(codebase_data, output_dir, continue_on_error: true)
 
         expect(File).to exist("#{output_dir}/map.json")  # JSON still created
-        expect(File).not_to exist("#{output_dir}/map.yml")  # YAML failed
+        expect(File.exist?("#{output_dir}/map.yml")).to be false  # YAML failed
         expect(result[:errors]).to include("YAML emission failed: YAML error")
       end
 

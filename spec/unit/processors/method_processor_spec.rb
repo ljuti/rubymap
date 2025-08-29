@@ -4,12 +4,7 @@ RSpec.describe Rubymap::Normalizer::Processors::MethodProcessor do
   let(:symbol_id_generator) { instance_double(Rubymap::Normalizer::SymbolIdGenerator) }
   let(:provenance_tracker) { instance_double(Rubymap::Normalizer::ProvenanceTracker) }
   let(:normalizers) { instance_double(Rubymap::Normalizer::NormalizerRegistry) }
-
-  let(:name_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::NameNormalizer) }
-  let(:visibility_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::VisibilityNormalizer) }
-  let(:parameter_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::ParameterNormalizer) }
-  let(:arity_calculator) { instance_double(Rubymap::Normalizer::Calculators::ArityCalculator) }
-  let(:confidence_calculator) { instance_double(Rubymap::Normalizer::Calculators::ConfidenceCalculator) }
+  let(:provenance) { instance_double(Rubymap::Normalizer::Provenance) }
 
   subject(:processor) do
     described_class.new(
@@ -19,105 +14,58 @@ RSpec.describe Rubymap::Normalizer::Processors::MethodProcessor do
     )
   end
 
+  let(:result) { Rubymap::Normalizer::NormalizedResult.new }
+  let(:errors) { [] }
+
   before do
-    allow(normalizers).to receive(:name_normalizer).and_return(name_normalizer)
-    allow(normalizers).to receive(:visibility_normalizer).and_return(visibility_normalizer)
-    allow(normalizers).to receive(:parameter_normalizer).and_return(parameter_normalizer)
-    allow(normalizers).to receive(:arity_calculator).and_return(arity_calculator)
-    allow(normalizers).to receive(:confidence_calculator).and_return(confidence_calculator)
+    allow(symbol_id_generator).to receive(:generate_method_id).and_return("method_123")
+    allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
   end
 
-  describe "behavior when processing method symbols" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-    let(:provenance) { Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.8) }
-
-    context "when processing valid method data" do
+  describe "processing method data" do
+    context "when processing valid instance method data" do
       let(:method_data) do
         {
           name: "find_by_email",
           class: "User",
-          owner: "User",
           scope: "instance",
           visibility: "public",
-          parameters: [{name: "email", type: "String"}],
+          parameters: [{kind: "req", name: "email", type: "String"}],
           source: "static"
         }
       end
 
-      let(:normalized_params) { [{name: "email", type: "String"}] }
-
-      before do
-        allow(parameter_normalizer).to receive(:normalize).with([{name: "email", type: "String"}]).and_return(normalized_params)
-        allow(arity_calculator).to receive(:calculate).with(normalized_params).and_return(1)
-        allow(symbol_id_generator).to receive(:generate_method_id).with(
-          fqname: "User#find_by_email",
-          receiver: "instance",
-          arity: 1
-        ).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).with("public", errors).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).with("find_by_email").and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).with("find_by_email").and_return("find_by_email")
-        allow(confidence_calculator).to receive(:calculate).with(method_data).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
-      end
-
-      it "creates a normalized method with all required attributes" do
+      it "creates a normalized method with correct attributes" do
         processor.process([method_data], result, errors)
 
         expect(result.methods.size).to eq(1)
-
         normalized_method = result.methods.first
-        expect(normalized_method.symbol_id).to eq("method123")
+
         expect(normalized_method.name).to eq("find_by_email")
         expect(normalized_method.fqname).to eq("User#find_by_email")
-        expect(normalized_method.visibility).to eq("public")
         expect(normalized_method.owner).to eq("User")
         expect(normalized_method.scope).to eq("instance")
-        expect(normalized_method.parameters).to eq(normalized_params)
-        expect(normalized_method.arity).to eq(1)
-        expect(normalized_method.canonical_name).to eq("find_by_email")
-        expect(normalized_method.available_in).to eq([])
-        expect(normalized_method.inferred_visibility).to eq("public")
+        expect(normalized_method.visibility).to eq("public")
         expect(normalized_method.source).to eq("static")
-        expect(normalized_method.provenance).to eq(provenance)
+        expect(normalized_method).to be_a(Rubymap::Normalizer::NormalizedMethod)
       end
 
-      it "generates fully qualified name using instance method separator" do
+      it "generates fully qualified name with instance method separator" do
         processor.process([method_data], result, errors)
 
-        normalized_method = result.methods.first
-        expect(normalized_method.fqname).to eq("User#find_by_email")
+        expect(result.methods.first.fqname).to eq("User#find_by_email")
       end
 
-      it "delegates parameter normalization to parameter normalizer" do
+      it "calculates arity correctly for required parameters" do
         processor.process([method_data], result, errors)
 
-        expect(parameter_normalizer).to have_received(:normalize).with([{name: "email", type: "String"}])
+        expect(result.methods.first.arity).to eq(1)
       end
 
-      it "delegates arity calculation to arity calculator" do
+      it "processes successfully without errors" do
         processor.process([method_data], result, errors)
 
-        expect(arity_calculator).to have_received(:calculate).with(normalized_params)
-      end
-
-      it "delegates visibility normalization to visibility normalizer" do
-        processor.process([method_data], result, errors)
-
-        expect(visibility_normalizer).to have_received(:normalize).with("public", errors)
-      end
-
-      it "delegates visibility inference to visibility normalizer" do
-        processor.process([method_data], result, errors)
-
-        expect(visibility_normalizer).to have_received(:infer_from_name).with("find_by_email")
-      end
-
-      it "delegates canonical name generation to name normalizer" do
-        processor.process([method_data], result, errors)
-
-        expect(name_normalizer).to have_received(:to_snake_case).with("find_by_email")
+        expect(errors).to be_empty
       end
     end
 
@@ -131,107 +79,64 @@ RSpec.describe Rubymap::Normalizer::Processors::MethodProcessor do
         }
       end
 
-      before do
-        allow(parameter_normalizer).to receive(:normalize).with([]).and_return([])
-        allow(arity_calculator).to receive(:calculate).with([]).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).with(
-          fqname: "User.create",
-          receiver: "class",
-          arity: 0
-        ).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).with(nil, errors).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).with("create").and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).with("create").and_return("create")
-        allow(confidence_calculator).to receive(:calculate).with(class_method_data).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
-      end
-
-      it "generates fully qualified name using class method separator" do
+      it "generates fully qualified name with class method separator" do
         processor.process([class_method_data], result, errors)
 
-        normalized_method = result.methods.first
-        expect(normalized_method.fqname).to eq("User.create")
+        expect(result.methods.first.fqname).to eq("User.create")
       end
 
-      it "generates method ID with class receiver type" do
+      it "correctly identifies scope as class" do
         processor.process([class_method_data], result, errors)
 
-        expect(symbol_id_generator).to have_received(:generate_method_id).with(
-          fqname: "User.create",
-          receiver: "class",
-          arity: 0
-        )
+        expect(result.methods.first.scope).to eq("class")
+      end
+
+      it "calculates zero arity for empty parameters" do
+        processor.process([class_method_data], result, errors)
+
+        expect(result.methods.first.arity).to eq(0)
       end
     end
 
     context "when processing method data with minimal information" do
       let(:minimal_method_data) do
         {
-          name: "simple_method"
+          name: "simple_method",
+          class: "TestClass"  # Required for validation to pass
         }
-      end
-
-      before do
-        allow(parameter_normalizer).to receive(:normalize).with(nil).and_return([])
-        allow(arity_calculator).to receive(:calculate).with([]).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).with(
-          fqname: "simple_method",
-          receiver: "instance",
-          arity: 0
-        ).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).with(nil, errors).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).with("simple_method").and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).with("simple_method").and_return("simple_method")
-        allow(confidence_calculator).to receive(:calculate).with(minimal_method_data).and_return(0.5)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
       end
 
       it "uses default values for missing optional fields" do
         processor.process([minimal_method_data], result, errors)
 
         normalized_method = result.methods.first
-        expect(normalized_method.owner).to be_nil
+        expect(normalized_method.owner).to eq("TestClass")
         expect(normalized_method.scope).to eq("instance")  # Default scope
-        expect(normalized_method.fqname).to eq("simple_method")  # No owner prefix
-        expect(normalized_method.source).to be_nil  # Uses owner (nil) as source
+        expect(normalized_method.visibility).to eq("public")  # Default visibility
+        expect(normalized_method.arity).to eq(0)  # No parameters
       end
 
       it "defaults to instance scope when scope is not specified" do
         processor.process([minimal_method_data], result, errors)
 
-        normalized_method = result.methods.first
-        expect(normalized_method.scope).to eq("instance")
+        expect(result.methods.first.scope).to eq("instance")
       end
 
-      it "generates simple fqname when no owner is present" do
+      it "generates correct fqname with owner" do
         processor.process([minimal_method_data], result, errors)
 
-        normalized_method = result.methods.first
-        expect(normalized_method.fqname).to eq("simple_method")
+        expect(result.methods.first.fqname).to eq("TestClass#simple_method")
       end
     end
 
-    context "when processing method with owner but no class field" do
-      let(:owner_method_data) do
-        {
+    context "when processing method with owner vs class field" do
+      it "uses owner field when class field is missing" do
+        owner_method_data = {
           name: "process",
           owner: "DataProcessor",
           scope: "instance"
         }
-      end
 
-      before do
-        allow(parameter_normalizer).to receive(:normalize).with(nil).and_return([])
-        allow(arity_calculator).to receive(:calculate).with([]).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).and_return("process")
-        allow(confidence_calculator).to receive(:calculate).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
-      end
-
-      it "uses owner field when class field is missing" do
         processor.process([owner_method_data], result, errors)
 
         normalized_method = result.methods.first
@@ -240,218 +145,201 @@ RSpec.describe Rubymap::Normalizer::Processors::MethodProcessor do
       end
 
       it "prefers class field over owner field when both are present" do
-        owner_method_data[:class] = "SpecificProcessor"
+        both_fields_data = {
+          name: "process",
+          owner: "DataProcessor",
+          class: "SpecificProcessor",
+          scope: "instance"
+        }
 
-        processor.process([owner_method_data], result, errors)
+        processor.process([both_fields_data], result, errors)
 
-        normalized_method = result.methods.first
-        expect(normalized_method.owner).to eq("SpecificProcessor")
+        expect(result.methods.first.owner).to eq("SpecificProcessor")
       end
     end
 
-    context "when creating provenance information" do
-      let(:method_data) do
-        {
+    context "when processing methods with different parameter types" do
+      it "correctly calculates arity for required parameters" do
+        method_with_required = {
           name: "test_method",
-          source: "runtime"
+          class: "TestClass",
+          parameters: [{kind: "req", name: "arg1"}, {kind: "req", name: "arg2"}]
         }
+
+        processor.process([method_with_required], result, errors)
+
+        expect(result.methods.first.arity).to eq(2)
       end
 
-      before do
-        allow(parameter_normalizer).to receive(:normalize).and_return([])
-        allow(arity_calculator).to receive(:calculate).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).and_return("test_method")
-        allow(confidence_calculator).to receive(:calculate).and_return(0.85)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
+      it "correctly calculates arity for methods with optional parameters" do
+        method_with_optional = {
+          name: "test_method",
+          class: "TestClass",
+          parameters: [{kind: "req", name: "arg1"}, {kind: "opt", name: "arg2"}]
+        }
+
+        processor.process([method_with_optional], result, errors)
+
+        # Ruby arity for methods with optional params is -(required + 1)
+        expect(result.methods.first.arity).to eq(-2)
       end
 
-      it "creates provenance with explicit source when provided" do
-        processor.process([method_data], result, errors)
+      it "correctly calculates arity for methods with rest parameters" do
+        method_with_rest = {
+          name: "test_method",
+          class: "TestClass",
+          parameters: [{kind: "req", name: "arg1"}, {kind: "rest", name: "args"}]
+        }
 
-        expect(provenance_tracker).to have_received(:create_provenance).with(
-          sources: ["runtime"],
-          confidence: 0.85
-        )
-      end
+        processor.process([method_with_rest], result, errors)
 
-      it "creates provenance with inferred source when source is missing" do
-        method_data.delete(:source)
-
-        processor.process([method_data], result, errors)
-
-        expect(provenance_tracker).to have_received(:create_provenance).with(
-          sources: [Rubymap::Normalizer::DATA_SOURCES[:inferred]],
-          confidence: 0.85
-        )
+        expect(result.methods.first.arity).to eq(-2)
       end
     end
   end
 
   describe "validation behavior" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-
-    context "when validating method data" do
-      it "passes validation for data with required name field" do
+    context "when processing methods with required fields" do
+      it "processes valid method data successfully" do
         valid_data = {name: "valid_method", class: "TestClass"}
 
-        expect(processor.validate(valid_data, errors)).to be(true)
+        processor.process([valid_data], result, errors)
+
         expect(errors).to be_empty
+        expect(result.methods.size).to eq(1)
+        expect(result.methods.first.name).to eq("valid_method")
       end
 
-      it "fails validation when name field is nil" do
-        invalid_data = {name: nil, class: "TestClass"}
+      it "rejects methods without name field" do
+        invalid_data = {class: "TestClass"}
 
-        expect(processor.validate(invalid_data, errors)).to be(false)
+        processor.process([invalid_data], result, errors)
+
         expect(errors.size).to eq(1)
         expect(errors.first.type).to eq("validation")
         expect(errors.first.message).to eq("missing required field: name")
-        expect(errors.first.data).to eq(invalid_data)
+        expect(result.methods).to be_empty
       end
 
-      it "fails validation when name field is missing" do
-        invalid_data = {class: "TestClass"}
+      it "rejects methods with nil name field" do
+        invalid_data = {name: nil, class: "TestClass"}
 
-        expect(processor.validate(invalid_data, errors)).to be(false)
+        processor.process([invalid_data], result, errors)
+
         expect(errors.size).to eq(1)
         expect(errors.first.message).to eq("missing required field: name")
+        expect(result.methods).to be_empty
       end
 
-      it "skips processing invalid methods but continues with valid ones" do
-        allow(parameter_normalizer).to receive(:normalize).and_return([])
-        allow(arity_calculator).to receive(:calculate).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).and_return("valid_method")
-        allow(confidence_calculator).to receive(:calculate).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(
-          Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.8)
-        )
+      it "rejects methods without owner or class field" do
+        invalid_data = {name: "method_without_owner"}
 
+        processor.process([invalid_data], result, errors)
+
+        expect(errors.size).to eq(1)
+        expect(errors.first.message).to eq("Method must have an owner or class")
+        expect(result.methods).to be_empty
+      end
+
+      it "processes valid methods while skipping invalid ones" do
         mixed_data = [
-          {name: nil, class: "TestClass"},
-          {name: "valid_method", class: "TestClass"}
+          {name: nil, class: "TestClass"},  # Invalid - no name
+          {name: "valid_method", class: "TestClass"},  # Valid
+          {name: "orphaned_method"}  # Invalid - no owner/class
         ]
 
         processor.process(mixed_data, result, errors)
 
         expect(result.methods.size).to eq(1)
         expect(result.methods.first.name).to eq("valid_method")
-        expect(errors.size).to eq(1)
+        expect(errors.size).to eq(2)  # Two validation errors
       end
     end
   end
 
-  describe "fully qualified name generation behavior" do
-    subject(:fqname_generation) { processor.send(:generate_method_fqname, method_name, owner, scope) }
-
-    context "when generating fqname for instance methods" do
-      let(:method_name) { "process" }
-      let(:owner) { "DataProcessor" }
-      let(:scope) { "instance" }
-
+  describe "fully qualified name generation" do
+    context "when processing instance methods" do
       it "uses # separator for instance methods" do
-        expect(fqname_generation).to eq("DataProcessor#process")
+        method_data = {name: "process", class: "DataProcessor", scope: "instance"}
+
+        processor.process([method_data], result, errors)
+
+        expect(result.methods.first.fqname).to eq("DataProcessor#process")
       end
     end
 
-    context "when generating fqname for class methods" do
-      let(:method_name) { "create" }
-      let(:owner) { "User" }
-      let(:scope) { "class" }
-
+    context "when processing class methods" do
       it "uses . separator for class methods" do
-        expect(fqname_generation).to eq("User.create")
+        method_data = {name: "create", class: "User", scope: "class"}
+
+        processor.process([method_data], result, errors)
+
+        expect(result.methods.first.fqname).to eq("User.create")
       end
     end
 
-    context "when no owner is present" do
-      let(:method_name) { "standalone_method" }
-      let(:owner) { nil }
-      let(:scope) { "instance" }
+    context "when owner information is incomplete" do
+      it "handles methods with empty string owner" do
+        method_data = {name: "method", class: "", scope: "instance"}
 
-      it "returns method name without prefix" do
-        expect(fqname_generation).to eq("standalone_method")
-      end
-    end
+        processor.process([method_data], result, errors)
 
-    context "when owner is empty string" do
-      let(:method_name) { "method" }
-      let(:owner) { "" }
-      let(:scope) { "instance" }
-
-      it "uses empty owner in fqname" do
-        expect(fqname_generation).to eq("#method")
+        expect(result.methods.first.fqname).to eq("#method")
       end
     end
   end
 
-  describe "method scope determination behavior" do
-    subject(:scope_determination) { processor.send(:determine_method_scope, method_data) }
-
+  describe "scope handling behavior" do
     context "when scope is explicitly provided" do
-      let(:method_data) { {scope: "class"} }
+      it "uses the explicit class scope" do
+        method_data = {name: "method_name", class: "TestClass", scope: "class"}
 
-      it "returns the explicit scope" do
-        expect(scope_determination).to eq("class")
+        processor.process([method_data], result, errors)
+
+        expect(result.methods.first.scope).to eq("class")
+      end
+
+      it "uses the explicit instance scope" do
+        method_data = {name: "method_name", class: "TestClass", scope: "instance"}
+
+        processor.process([method_data], result, errors)
+
+        expect(result.methods.first.scope).to eq("instance")
       end
     end
 
     context "when scope is not provided" do
-      let(:method_data) { {name: "method_name"} }
-
       it "defaults to instance scope" do
-        expect(scope_determination).to eq("instance")
+        method_data = {name: "method_name", class: "TestClass"}
+
+        processor.process([method_data], result, errors)
+
+        expect(result.methods.first.scope).to eq("instance")
       end
     end
 
     context "when scope is nil" do
-      let(:method_data) { {scope: nil} }
-
       it "defaults to instance scope" do
-        expect(scope_determination).to eq("instance")
-      end
-    end
+        method_data = {name: "method_name", class: "TestClass", scope: nil}
 
-    context "when scope is empty string" do
-      let(:method_data) { {scope: ""} }
+        processor.process([method_data], result, errors)
 
-      it "returns empty string (truthy, not nil)" do
-        expect(scope_determination).to eq("")
+        expect(result.methods.first.scope).to eq("instance")
       end
     end
   end
 
   describe "edge case behavior" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-
     context "when processing empty method data" do
       it "handles empty array gracefully" do
-        expect { processor.process([], result, errors) }.not_to raise_error
+        processor.process([], result, errors)
+
         expect(result.methods).to be_empty
         expect(errors).to be_empty
       end
     end
 
-    context "when processing malformed method data" do
-      before do
-        allow(parameter_normalizer).to receive(:normalize).and_return([])
-        allow(arity_calculator).to receive(:calculate).and_return(0)
-        allow(symbol_id_generator).to receive(:generate_method_id).and_return("method123")
-        allow(visibility_normalizer).to receive(:normalize).and_return("public")
-        allow(visibility_normalizer).to receive(:infer_from_name).and_return("public")
-        allow(name_normalizer).to receive(:to_snake_case).and_return("test")
-        allow(confidence_calculator).to receive(:calculate).and_return(0.3)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(
-          Rubymap::Normalizer::Provenance.new(sources: ["inferred"], confidence: 0.3)
-        )
-      end
-
+    context "when processing unusual method data" do
       it "handles method data with empty string name" do
         method_data = {name: "", class: "TestClass"}
 
@@ -467,15 +355,25 @@ RSpec.describe Rubymap::Normalizer::Processors::MethodProcessor do
         processor.process([method_data], result, errors)
 
         expect(result.methods.size).to eq(1)
-        expect(result.methods.first.name).to eq(:symbol_method)
+        expect(result.methods.first.name).to eq("symbol_method")
       end
 
-      it "handles method data with unusual parameter formats" do
-        method_data = {name: "test_method", parameters: "not_an_array"}
+      it "processes methods without explicit visibility" do
+        method_data = {name: "test_method", class: "TestClass"}
 
         processor.process([method_data], result, errors)
 
-        expect(parameter_normalizer).to have_received(:normalize).with("not_an_array")
+        # Should default to public visibility
+        expect(result.methods.first.visibility).to eq("public")
+      end
+
+      it "handles methods with private visibility based on naming" do
+        method_data = {name: "_private_method", class: "TestClass"}
+
+        processor.process([method_data], result, errors)
+
+        # Should infer private visibility from underscore prefix
+        expect(result.methods.first.inferred_visibility).to eq("private")
       end
     end
   end

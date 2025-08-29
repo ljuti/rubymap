@@ -388,7 +388,7 @@ module Rubymap
         {
           path: package_path,
           size_mb: (File.size(package_path) / 1024.0 / 1024.0).round(2),
-          file_count: Dir.glob("#{output_dir}/**/*").reject { |f| File.directory?(f) }.size
+          file_count: Dir.glob("#{output_dir}/**/*").count { |f| !File.directory?(f) }
         }
       end
     end

@@ -157,7 +157,7 @@ RSpec.describe "Rubymap::Indexer" do
         )
 
         # Should still be queryable despite circular dependencies
-        expect(result.find_symbol("A")).not_to be_nil
+        expect(result.find_symbol("A")).to be_truthy
       end
 
       it "handles missing references gracefully" do
@@ -460,7 +460,7 @@ RSpec.describe "Rubymap::Indexer" do
 
         indexed_data.add_symbol(new_class)
 
-        expect(indexed_data.find_symbol("NewFeature")).not_to be_nil
+        expect(indexed_data.find_symbol("NewFeature")).to be_truthy
       end
 
       it "can update existing symbols" do
@@ -486,7 +486,7 @@ RSpec.describe "Rubymap::Indexer" do
 
         # Dependencies should be updated
         deps = indexed_data.dependencies_of("DependentClass")
-        expect(deps).not_to include("MiddleClass")
+        expect(deps.include?("MiddleClass")).to be false
       end
     end
   end

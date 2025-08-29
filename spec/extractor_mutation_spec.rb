@@ -12,7 +12,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq("/non/existent/file.rb")
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
         expect(result.errors.first[:type]).to eq("ArgumentError")
         expect(result.errors.first[:message]).to eq("File not found: /non/existent/file.rb")
       end
@@ -26,9 +26,9 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
-        expect(result.classes).not_to be_empty
+        expect(result.classes.any?).to be true
         expect(result.classes.first.name).to eq("TestClass")
-        expect(result.methods).not_to be_empty
+        expect(result.methods.any?).to be true
         expect(result.methods.first.name).to eq("test_method")
       end
 
@@ -51,7 +51,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
         expect(result.errors.first[:type]).to eq("Errno::EACCES")
         expect(result.errors.first[:message]).to eq("Permission denied - Permission denied")
       end
@@ -70,7 +70,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq(test_file)
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
       end
     end
   end
@@ -83,9 +83,9 @@ RSpec.describe Rubymap::Extractor do
         result = extractor.extract_from_code(code)
 
         expect(result).to be_a(Rubymap::Extractor::Result)
-        expect(result.classes).not_to be_empty
+        expect(result.classes.any?).to be true
         expect(result.classes.first.name).to eq("TestClass")
-        expect(result.methods).not_to be_empty
+        expect(result.methods.any?).to be true
         expect(result.methods.first.name).to eq("test_method")
       end
     end
@@ -97,7 +97,7 @@ RSpec.describe Rubymap::Extractor do
         result = extractor.extract_from_code(invalid_code)
 
         expect(result).to be_a(Rubymap::Extractor::Result)
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
         expect(result.errors.first[:context]).to eq("Parse error")
       end
 
@@ -185,7 +185,7 @@ RSpec.describe Rubymap::Extractor do
         result = extractor.extract_from_directory(test_dir, "**/test_file.rb")
 
         expect(result.classes.map(&:name)).to include("TestClass")
-        expect(result.classes.map(&:name)).not_to include("SecondClass")
+        expect(result.classes.map(&:name).include?("SecondClass")).to be false
       end
 
       it "skips non-file entries" do
@@ -212,7 +212,7 @@ RSpec.describe Rubymap::Extractor do
         result = extractor.extract_from_directory(test_dir)
 
         expect(result.classes.map(&:name)).to include("TestClass", "SecondClass")
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
       ensure
         File.delete("spec/fixtures/broken.rb") if File.exist?("spec/fixtures/broken.rb")
       end
@@ -291,7 +291,7 @@ RSpec.describe Rubymap::Extractor do
     end
 
     it "does not require any arguments" do
-      expect { described_class.new }.not_to raise_error
+      described_class.new
     end
 
     it "does not inherit from any parent class other than Object" do
@@ -307,7 +307,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to eq("/path/to/file.rb")
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
         expect(result.errors.first[:message]).to eq("Test error")
         expect(result.errors.first[:type]).to eq("StandardError")
       end
@@ -318,7 +318,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.file_path).to be_nil
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
       end
     end
 
@@ -354,7 +354,7 @@ RSpec.describe Rubymap::Extractor do
         expect(target.class_variables.map(&:name)).to include("@@source_var")
         expect(target.aliases.map(&:new_name)).to include("source_alias")
         expect(target.patterns.map(&:type)).to include("concern")
-        expect(target.errors).not_to be_empty
+        expect(target.errors.any?).to be true
       end
 
       it "appends to existing collections" do

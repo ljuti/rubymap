@@ -108,7 +108,7 @@ module Rubymap
     end
 
     def graph_to_array(graph)
-      return [] unless graph && graph.respond_to?(:edges)
+      return [] unless graph&.respond_to?(:edges)
 
       graph.edges.map do |edge|
         {
@@ -185,31 +185,27 @@ module Rubymap
 
     def merge_result!(target, result)
       # Convert Result object data to hash format expected by pipeline
-      if result.classes
-        result.classes.each do |class_info|
-          target[:classes] << {
-            name: class_info.name,
-            type: class_info.type,
-            superclass: class_info.superclass,
-            file: result.file_path,
-            line: class_info.location&.start_line,
-            namespace: class_info.namespace,
-            documentation: class_info.doc
-          }
-        end
+      result.classes&.each do |class_info|
+        target[:classes] << {
+          name: class_info.name,
+          type: class_info.type,
+          superclass: class_info.superclass,
+          file: result.file_path,
+          line: class_info.location&.start_line,
+          namespace: class_info.namespace,
+          documentation: class_info.doc
+        }
       end
 
-      if result.modules
-        result.modules.each do |mod_info|
-          target[:modules] << {
-            name: mod_info.name,
-            type: "module",
-            file: result.file_path,
-            line: mod_info.location&.start_line,
-            namespace: mod_info.namespace,
-            documentation: mod_info.doc
-          }
-        end
+      result.modules&.each do |mod_info|
+        target[:modules] << {
+          name: mod_info.name,
+          type: "module",
+          file: result.file_path,
+          line: mod_info.location&.start_line,
+          namespace: mod_info.namespace,
+          documentation: mod_info.doc
+        }
       end
 
       # Add methods

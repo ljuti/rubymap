@@ -148,13 +148,11 @@ module Rubymap
           end
 
           # Graphs as separate files
-          if indexed_data[:graphs]
-            indexed_data[:graphs].each do |graph_type, graph_data|
-              files << {
-                path: "graphs/#{graph_type}.json",
-                content: format_json(graph_data)
-              }
-            end
+          indexed_data[:graphs]&.each do |graph_type, graph_data|
+            files << {
+              path: "graphs/#{graph_type}.json",
+              content: format_json(graph_data)
+            }
           end
 
           # Index file listing all partitions

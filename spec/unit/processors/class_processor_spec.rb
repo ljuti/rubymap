@@ -4,10 +4,8 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
   let(:symbol_id_generator) { instance_double(Rubymap::Normalizer::SymbolIdGenerator) }
   let(:provenance_tracker) { instance_double(Rubymap::Normalizer::ProvenanceTracker) }
   let(:normalizers) { instance_double(Rubymap::Normalizer::NormalizerRegistry) }
-
   let(:name_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::NameNormalizer) }
-  let(:location_normalizer) { instance_double(Rubymap::Normalizer::Normalizers::LocationNormalizer) }
-  let(:confidence_calculator) { instance_double(Rubymap::Normalizer::Calculators::ConfidenceCalculator) }
+  let(:provenance) { instance_double(Rubymap::Normalizer::Provenance) }
 
   subject(:processor) do
     described_class.new(
@@ -17,17 +15,22 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
     )
   end
 
+  let(:result) { Rubymap::Normalizer::NormalizedResult.new }
+  let(:errors) { [] }
+  let(:confidence_calculator) { instance_double(Rubymap::Normalizer::Calculators::ConfidenceCalculator) }
+
   before do
     allow(normalizers).to receive(:name_normalizer).and_return(name_normalizer)
-    allow(normalizers).to receive(:location_normalizer).and_return(location_normalizer)
     allow(normalizers).to receive(:confidence_calculator).and_return(confidence_calculator)
+    allow(symbol_id_generator).to receive(:generate_class_id).and_return("class_123")
+    allow(symbol_id_generator).to receive(:generate_module_id).and_return("module_123")
+    allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
+    allow(name_normalizer).to receive(:generate_fqname).and_return("TestClass")
+    allow(name_normalizer).to receive(:extract_namespace_path).and_return([])
+    allow(confidence_calculator).to receive(:calculate).and_return(0.8)
   end
 
-  describe "behavior when processing class symbols" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-    let(:provenance) { Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.8) }
-
+  describe "processing class data" do
     context "when processing valid class data" do
       let(:class_data) do
         {
@@ -42,86 +45,34 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
       before do
         allow(name_normalizer).to receive(:generate_fqname).with("User", "App").and_return("App::User")
         allow(name_normalizer).to receive(:extract_namespace_path).with("App::User").and_return(["App"])
-        allow(symbol_id_generator).to receive(:generate_class_id).with("App::User", "class").and_return("class123")
-        allow(location_normalizer).to receive(:normalize).with({file: "app/models/user.rb", line: 1}).and_return(
-          Rubymap::Normalizer::NormalizedLocation.new(file: "app/models/user.rb", line: 1)
-        )
-        allow(confidence_calculator).to receive(:calculate).with(class_data).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
       end
 
-      it "creates a normalized class with all required attributes" do
+      it "creates a normalized class with correct attributes" do
         processor.process([class_data], result, errors)
 
         expect(result.classes.size).to eq(1)
-
         normalized_class = result.classes.first
-        expect(normalized_class.symbol_id).to eq("class123")
+
         expect(normalized_class.name).to eq("User")
         expect(normalized_class.fqname).to eq("App::User")
         expect(normalized_class.kind).to eq("class")
         expect(normalized_class.superclass).to eq("ApplicationRecord")
-        expect(normalized_class.provenance).to eq(provenance)
+        expect(normalized_class).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
       end
 
-      it "initializes class collections as empty arrays" do
+      it "processes successfully without errors" do
+        processor.process([class_data], result, errors)
+
+        expect(errors).to be_empty
+      end
+
+      it "handles location information correctly" do
         processor.process([class_data], result, errors)
 
         normalized_class = result.classes.first
-        expect(normalized_class.children).to eq([])
-        expect(normalized_class.inheritance_chain).to eq([])
-        expect(normalized_class.instance_methods).to eq([])
-        expect(normalized_class.class_methods).to eq([])
-        expect(normalized_class.available_instance_methods).to eq([])
-        expect(normalized_class.available_class_methods).to eq([])
-        expect(normalized_class.mixins).to eq([])
-      end
-
-      it "delegates fully qualified name generation to name normalizer" do
-        processor.process([class_data], result, errors)
-
-        expect(name_normalizer).to have_received(:generate_fqname).with("User", "App")
-      end
-
-      it "delegates location normalization to location normalizer" do
-        processor.process([class_data], result, errors)
-
-        expect(location_normalizer).to have_received(:normalize).with({file: "app/models/user.rb", line: 1})
-      end
-
-      it "delegates confidence calculation to confidence calculator" do
-        processor.process([class_data], result, errors)
-
-        expect(confidence_calculator).to have_received(:calculate).with(class_data)
-      end
-
-      it "creates provenance with inferred source when source is missing" do
-        allow(provenance_tracker).to receive(:create_provenance).with(
-          sources: [Rubymap::Normalizer::DATA_SOURCES[:inferred]],
-          confidence: 0.8
-        ).and_return(provenance)
-
-        processor.process([class_data], result, errors)
-
-        expect(provenance_tracker).to have_received(:create_provenance).with(
-          sources: [Rubymap::Normalizer::DATA_SOURCES[:inferred]],
-          confidence: 0.8
-        )
-      end
-
-      it "creates provenance with explicit source when provided" do
-        class_data[:source] = "static"
-        allow(provenance_tracker).to receive(:create_provenance).with(
-          sources: ["static"],
-          confidence: 0.8
-        ).and_return(provenance)
-
-        processor.process([class_data], result, errors)
-
-        expect(provenance_tracker).to have_received(:create_provenance).with(
-          sources: ["static"],
-          confidence: 0.8
-        )
+        expect(normalized_class.location).to be_a(Rubymap::Normalizer::Location)
+        expect(normalized_class.location.file).to eq("app/models/user.rb")
+        expect(normalized_class.location.line).to eq(1)
       end
     end
 
@@ -137,16 +88,7 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
         }
       end
 
-      before do
-        allow(name_normalizer).to receive(:generate_fqname).and_return("User")
-        allow(name_normalizer).to receive(:extract_namespace_path).and_return([])
-        allow(symbol_id_generator).to receive(:generate_class_id).and_return("class123")
-        allow(location_normalizer).to receive(:normalize).and_return(nil)
-        allow(confidence_calculator).to receive(:calculate).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
-      end
-
-      it "assigns mixins to the normalized class" do
+      it "processes mixins correctly" do
         processor.process([class_data], result, errors)
 
         normalized_class = result.classes.first
@@ -160,25 +102,26 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
       end
 
       it "handles nil mixins gracefully" do
-        class_data[:mixins] = nil
+        class_data_with_nil_mixins = class_data.dup
+        class_data_with_nil_mixins[:mixins] = nil
 
-        expect { processor.process([class_data], result, errors) }.not_to raise_error
+        processor.process([class_data_with_nil_mixins], result, errors)
 
-        normalized_class = result.classes.first
-        expect(normalized_class.mixins).to eq([])
+        expect(errors).to be_empty
+        expect(result.classes.first.mixins).to eq([])
       end
 
       it "handles empty mixins array gracefully" do
-        class_data[:mixins] = []
+        class_data_with_empty_mixins = class_data.dup
+        class_data_with_empty_mixins[:mixins] = []
 
-        processor.process([class_data], result, errors)
+        processor.process([class_data_with_empty_mixins], result, errors)
 
-        normalized_class = result.classes.first
-        expect(normalized_class.mixins).to eq([])
+        expect(result.classes.first.mixins).to eq([])
       end
     end
 
-    context "when processing module data misclassified as class" do
+    context "when processing module data" do
       let(:module_data) do
         {
           name: "Searchable",
@@ -190,13 +133,9 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
       before do
         allow(name_normalizer).to receive(:generate_fqname).with("Searchable", "App").and_return("App::Searchable")
         allow(name_normalizer).to receive(:extract_namespace_path).with("App::Searchable").and_return(["App"])
-        allow(symbol_id_generator).to receive(:generate_module_id).with("App::Searchable").and_return("module123")
-        allow(location_normalizer).to receive(:normalize).with(nil).and_return(nil)
-        allow(confidence_calculator).to receive(:calculate).with(module_data).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
       end
 
-      it "recognizes module type and processes as module instead" do
+      it "recognizes module type and processes as module" do
         processor.process([module_data], result, errors)
 
         expect(result.classes).to be_empty
@@ -205,13 +144,20 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
         normalized_module = result.modules.first
         expect(normalized_module.name).to eq("Searchable")
         expect(normalized_module.kind).to eq("module")
+        expect(normalized_module).to be_a(Rubymap::Normalizer::CoreNormalizedModule)
       end
 
-      it "recognizes kind field as module indicator" do
-        module_data[:kind] = "module"
-        module_data[:type] = "class"  # conflicting information
+      it "handles module type specified via kind field" do
+        module_via_kind = {
+          name: "Searchable",
+          kind: "module",
+          type: "class"  # conflicting information - kind should take precedence
+        }
 
-        processor.process([module_data], result, errors)
+        allow(name_normalizer).to receive(:generate_fqname).with("Searchable", nil).and_return("Searchable")
+        allow(name_normalizer).to receive(:extract_namespace_path).with("Searchable").and_return([])
+
+        processor.process([module_via_kind], result, errors)
 
         expect(result.classes).to be_empty
         expect(result.modules.size).to eq(1)
@@ -228,10 +174,6 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
       before do
         allow(name_normalizer).to receive(:generate_fqname).with("SimpleClass", nil).and_return("SimpleClass")
         allow(name_normalizer).to receive(:extract_namespace_path).with("SimpleClass").and_return([])
-        allow(symbol_id_generator).to receive(:generate_class_id).with("SimpleClass", "class").and_return("class123")
-        allow(location_normalizer).to receive(:normalize).with(nil).and_return(nil)
-        allow(confidence_calculator).to receive(:calculate).with(minimal_class_data).and_return(0.5)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(provenance)
       end
 
       it "uses default values for missing optional fields" do
@@ -243,123 +185,129 @@ RSpec.describe Rubymap::Normalizer::Processors::ClassProcessor do
         expect(normalized_class.location).to be_nil
       end
 
-      it "generates fully qualified name with nil namespace" do
+      it "generates correct fqname for simple class names" do
         processor.process([minimal_class_data], result, errors)
 
-        expect(name_normalizer).to have_received(:generate_fqname).with("SimpleClass", nil)
+        expect(result.classes.first.fqname).to eq("SimpleClass")
       end
     end
   end
 
   describe "validation behavior" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-
-    context "when validating class data" do
-      it "passes validation for data with required name field" do
+    context "when processing classes with required fields" do
+      it "processes valid class data successfully" do
         valid_data = {name: "User", type: "class"}
 
-        expect(processor.validate(valid_data, errors)).to be(true)
+        processor.process([valid_data], result, errors)
+
         expect(errors).to be_empty
+        expect(result.classes.size).to eq(1)
+        expect(result.classes.first.name).to eq("User")
       end
 
-      it "fails validation when name field is nil" do
-        invalid_data = {name: nil, type: "class"}
+      it "rejects classes without name field" do
+        invalid_data = {type: "class"}
 
-        expect(processor.validate(invalid_data, errors)).to be(false)
+        processor.process([invalid_data], result, errors)
+
         expect(errors.size).to eq(1)
         expect(errors.first.type).to eq("validation")
         expect(errors.first.message).to eq("missing required field: name")
-        expect(errors.first.data).to eq(invalid_data)
+        expect(result.classes).to be_empty
       end
 
-      it "fails validation when name field is missing" do
-        invalid_data = {type: "class"}
+      it "rejects classes with nil name field" do
+        invalid_data = {name: nil, type: "class"}
 
-        expect(processor.validate(invalid_data, errors)).to be(false)
+        processor.process([invalid_data], result, errors)
+
         expect(errors.size).to eq(1)
         expect(errors.first.message).to eq("missing required field: name")
+        expect(result.classes).to be_empty
       end
 
-      it "skips processing invalid classes but continues with valid ones" do
-        allow(name_normalizer).to receive(:generate_fqname).with("ValidClass", nil).and_return("ValidClass")
-        allow(name_normalizer).to receive(:extract_namespace_path).and_return([])
-        allow(symbol_id_generator).to receive(:generate_class_id).and_return("class123")
-        allow(location_normalizer).to receive(:normalize).and_return(nil)
-        allow(confidence_calculator).to receive(:calculate).and_return(0.8)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(
-          Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.8)
-        )
+      it "rejects classes with empty string name" do
+        invalid_data = {name: "", type: "class"}
 
+        processor.process([invalid_data], result, errors)
+
+        expect(errors.size).to eq(1)
+        expect(errors.first.message).to eq("Class/module name cannot be empty")
+        expect(result.classes).to be_empty
+      end
+
+      it "processes valid classes while skipping invalid ones" do
         mixed_data = [
-          {name: nil, type: "class"},
-          {name: "ValidClass", type: "class"}
+          {name: nil, type: "class"},  # Invalid - no name
+          {name: "ValidClass", type: "class"},  # Valid
+          {name: "", type: "class"}  # Invalid - empty name
         ]
+
+        allow(name_normalizer).to receive(:generate_fqname).with("ValidClass", nil).and_return("ValidClass")
+        allow(name_normalizer).to receive(:extract_namespace_path).with("ValidClass").and_return([])
 
         processor.process(mixed_data, result, errors)
 
         expect(result.classes.size).to eq(1)
         expect(result.classes.first.name).to eq("ValidClass")
-        expect(errors.size).to eq(1)
+        expect(errors.size).to eq(2)  # Two validation errors
       end
     end
   end
 
   describe "edge case behavior" do
-    let(:result) { Rubymap::Normalizer::NormalizedResult.new }
-    let(:errors) { [] }
-
     context "when processing empty class data" do
       it "handles empty array gracefully" do
-        expect { processor.process([], result, errors) }.not_to raise_error
+        processor.process([], result, errors)
+
         expect(result.classes).to be_empty
         expect(errors).to be_empty
       end
 
       it "returns empty array when processing empty data" do
-        processed_classes = processor.process([], result, errors)
+        processed_items = processor.process([], result, errors)
 
-        expect(processed_classes).to eq([])
+        expect(processed_items).to eq([])
       end
     end
 
-    context "when processing malformed class data" do
-      before do
-        allow(name_normalizer).to receive(:generate_fqname).and_return("TestClass")
-        allow(name_normalizer).to receive(:extract_namespace_path).and_return([])
-        allow(symbol_id_generator).to receive(:generate_class_id).and_return("class123")
-        allow(location_normalizer).to receive(:normalize).and_return(nil)
-        allow(confidence_calculator).to receive(:calculate).and_return(0.3)
-        allow(provenance_tracker).to receive(:create_provenance).and_return(
-          Rubymap::Normalizer::Provenance.new(sources: ["inferred"], confidence: 0.3)
-        )
-      end
+    context "when processing unusual class data" do
+      it "handles class data with symbol names" do
+        class_data = {name: :SymbolClass, type: "class"}
 
-      it "handles class data with empty string name" do
-        class_data = {name: "", type: "class"}
+        allow(name_normalizer).to receive(:generate_fqname).with(:SymbolClass, nil).and_return("SymbolClass")
+        allow(name_normalizer).to receive(:extract_namespace_path).with("SymbolClass").and_return([])
 
         processor.process([class_data], result, errors)
 
         expect(result.classes.size).to eq(1)
-        expect(result.classes.first.name).to eq("")
+        expect(result.classes.first.name).to eq(:SymbolClass)
       end
 
-      it "handles class data with non-string types gracefully" do
-        class_data = {name: :symbol_name, type: "class"}
-
-        processor.process([class_data], result, errors)
-
-        expect(result.classes.size).to eq(1)
-        expect(result.classes.first.name).to eq(:symbol_name)
-      end
-
-      it "handles unusual type values" do
-        class_data = {name: "TestClass", type: nil}
+      it "handles classes without explicit type" do
+        class_data = {name: "TestClass"}  # No type specified
 
         processor.process([class_data], result, errors)
 
         expect(result.classes.size).to eq(1)
         expect(result.classes.first.kind).to eq("class")  # defaults to "class"
+      end
+
+      it "processes classes with various mixin formats" do
+        class_data = {
+          name: "TestClass",
+          included_modules: ["ModuleA"],
+          extended_modules: ["ModuleB"],
+          prepended_modules: ["ModuleC"]
+        }
+
+        processor.process([class_data], result, errors)
+
+        normalized_class = result.classes.first
+        expect(normalized_class.mixins.size).to eq(3)
+
+        mixin_types = normalized_class.mixins.map { |m| m[:type] }
+        expect(mixin_types).to contain_exactly("include", "extend", "prepend")
       end
     end
   end

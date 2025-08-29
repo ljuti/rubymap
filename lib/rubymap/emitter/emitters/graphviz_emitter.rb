@@ -206,10 +206,8 @@ module Rubymap
           prepends_data = indexed_data.dig(:graphs, :prepends) || []
 
           # Add module nodes
-          if indexed_data[:modules]
-            indexed_data[:modules].each do |mod|
-              dot << "  \"#{escape_name(mod[:fqname])}\" [shape=ellipse, color=green, label=\"#{mod[:fqname]}\"];"
-            end
+          indexed_data[:modules]&.each do |mod|
+            dot << "  \"#{escape_name(mod[:fqname])}\" [shape=ellipse, color=green, label=\"#{mod[:fqname]}\"];"
           end
 
           dot << ""
@@ -261,13 +259,11 @@ module Rubymap
           dot << ""
 
           # Use color gradients for complexity
-          if indexed_data[:classes]
-            indexed_data[:classes].each do |klass|
-              complexity = klass.dig(:metrics, :complexity_score) || 0
-              color = complexity_to_color(complexity)
+          indexed_data[:classes]&.each do |klass|
+            complexity = klass.dig(:metrics, :complexity_score) || 0
+            color = complexity_to_color(complexity)
 
-              dot << "  \"#{escape_name(klass[:fqname])}\" [shape=#{@node_shape}, style=filled, fillcolor=\"#{color}\", label=\"#{klass[:fqname]}\\ncomplexity: #{complexity}\"];"
-            end
+            dot << "  \"#{escape_name(klass[:fqname])}\" [shape=#{@node_shape}, style=filled, fillcolor=\"#{color}\", label=\"#{klass[:fqname]}\\ncomplexity: #{complexity}\"];"
           end
 
           dot << "}"

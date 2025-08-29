@@ -24,9 +24,9 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
     it "creates new service instances for each extractor" do
       extractor1 = described_class.new(context, result)
       extractor2 = described_class.new(context, result)
-      
-      expect(extractor1.documentation_service).not_to eq(extractor2.documentation_service)
-      expect(extractor1.namespace_service).not_to eq(extractor2.namespace_service)
+
+      expect(extractor1.documentation_service == extractor2.documentation_service).to be false
+      expect(extractor1.namespace_service == extractor2.namespace_service).to be false
     end
   end
 
@@ -35,12 +35,12 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
       node = double("node")
       comments = [double("comment")]
       allow(context).to receive(:comments).and_return(comments)
-      
+
       doc_service = instance_double(Rubymap::Extractor::Services::DocumentationService)
       allow(extractor).to receive(:documentation_service).and_return(doc_service)
-      
+
       expect(doc_service).to receive(:extract_documentation).with(node, comments).and_return("documentation")
-      
+
       result = extractor.send(:extract_documentation, node)
       expect(result).to eq("documentation")
     end
@@ -51,12 +51,12 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
       node = double("node")
       comments = [double("comment")]
       allow(context).to receive(:comments).and_return(comments)
-      
+
       doc_service = instance_double(Rubymap::Extractor::Services::DocumentationService)
       allow(extractor).to receive(:documentation_service).and_return(doc_service)
-      
+
       expect(doc_service).to receive(:extract_inline_comment).with(node, comments).and_return("inline comment")
-      
+
       result = extractor.send(:extract_inline_comment, node)
       expect(result).to eq("inline comment")
     end
@@ -65,24 +65,24 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
   describe "#extract_yard_tags" do
     it "delegates to documentation service" do
       documentation = "@param name [String] the name"
-      
+
       doc_service = instance_double(Rubymap::Extractor::Services::DocumentationService)
       allow(extractor).to receive(:documentation_service).and_return(doc_service)
-      
+
       expect(doc_service).to receive(:extract_yard_tags).with(documentation).and_return({param: "name [String] the name"})
-      
+
       result = extractor.send(:extract_yard_tags, documentation)
       expect(result).to eq({param: "name [String] the name"})
     end
 
     it "returns result from documentation service unchanged" do
       documentation = "Some docs"
-      
+
       doc_service = instance_double(Rubymap::Extractor::Services::DocumentationService)
       allow(extractor).to receive(:documentation_service).and_return(doc_service)
-      
+
       expect(doc_service).to receive(:extract_yard_tags).with(documentation).and_return({})
-      
+
       result = extractor.send(:extract_yard_tags, documentation)
       expect(result).to eq({})
     end
@@ -101,7 +101,7 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
         expect(extractor.send(:extract_constant_name, node)).to eq("SomeConstant")
       end
     end
-    
+
     # Note: Testing with actual Prism nodes would require Prism to be loaded
     # and actual node instances created, which is tested in integration tests
   end

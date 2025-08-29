@@ -272,12 +272,10 @@ module Rubymap
           end
 
           # Process modules
-          if indexed_data[:modules]
-            indexed_data[:modules].each do |mod|
-              chunks.concat(create_module_chunks(mod))
-              processed += 1
-              report_progress(processed, total_items, "Processing module #{mod[:fqname]}")
-            end
+          indexed_data[:modules]&.each do |mod|
+            chunks.concat(create_module_chunks(mod))
+            processed += 1
+            report_progress(processed, total_items, "Processing module #{mod[:fqname]}")
           end
 
           # Add hierarchy chunks if we have inheritance data
@@ -423,7 +421,7 @@ module Rubymap
 
           # Helper methods chunk (second half)
           if klass[:instance_methods] && klass[:instance_methods].size > 1
-            helper_methods = klass[:instance_methods][klass[:instance_methods].size / 2..-1]
+            helper_methods = klass[:instance_methods][klass[:instance_methods].size / 2..]
             helper_content = generate_methods_chunk_content(klass, helper_methods, "Helper Methods", 3, 3)
             chunks << {
               chunk_id: "#{generate_chunk_id(klass[:fqname])}_helpers",
@@ -521,15 +519,14 @@ module Rubymap
             markdown << ""
             markdown << "This class encapsulates the behavior and data for #{klass[:fqname].split("::").last} entities in the system."
             markdown << "It is responsible for maintaining the state and providing the interface for #{klass[:fqname]} operations."
-            markdown << ""
           else
             markdown << "## Overview"
             markdown << ""
             markdown << "The #{klass[:fqname]} class provides core functionality within the application."
             last_component = klass[:fqname].to_s.split("::").last || klass[:fqname]
             markdown << "It defines the structure and behavior for #{last_component} entities."
-            markdown << ""
           end
+          markdown << ""
 
           # Metrics
           if klass[:metrics]

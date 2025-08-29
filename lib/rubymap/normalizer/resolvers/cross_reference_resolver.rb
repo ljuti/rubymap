@@ -5,8 +5,8 @@ module Rubymap
     module Resolvers
       # Resolves cross-references between methods and classes following SRP
       class CrossReferenceResolver
-        def initialize(symbol_index)
-          @symbol_index = symbol_index
+        def initialize(symbol_finder)
+          @symbol_finder = symbol_finder
         end
 
         def resolve(result)
@@ -15,7 +15,7 @@ module Rubymap
 
         private
 
-        attr_reader :symbol_index
+        attr_reader :symbol_finder
 
         def resolve_cross_references(result)
           # Associate methods with their owner classes
@@ -57,8 +57,7 @@ module Rubymap
         end
 
         def find_symbol(name, result)
-          result.classes.find { |c| c.fqname == name || c.name == name } ||
-            result.modules.find { |m| m.fqname == name || m.name == name }
+          symbol_finder.find_symbol(name, result)
         end
       end
     end

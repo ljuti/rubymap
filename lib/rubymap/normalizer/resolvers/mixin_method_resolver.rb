@@ -5,11 +5,17 @@ module Rubymap
     module Resolvers
       # Resolves methods from included/extended modules following SRP
       class MixinMethodResolver
+        def initialize(symbol_finder)
+          @symbol_finder = symbol_finder
+        end
+
         def resolve(result)
           resolve_mixin_methods(result)
         end
 
         private
+
+        attr_reader :symbol_finder
 
         def resolve_mixin_methods(result)
           # Resolve methods from included/extended modules
@@ -60,8 +66,7 @@ module Rubymap
         end
 
         def find_symbol(name, result)
-          result.classes.find { |c| c.fqname == name || c.name == name } ||
-            result.modules.find { |m| m.fqname == name || m.name == name }
+          symbol_finder.find_symbol(name, result)
         end
       end
     end

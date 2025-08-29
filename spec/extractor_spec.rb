@@ -340,15 +340,16 @@ RSpec.describe "Rubymap::Extractor" do
       let(:malformed_code) { "class User\n  def incomplete_method\n    # missing end" }
 
       it "handles syntax errors gracefully" do
-        expect {
-          extractor.extract_from_code(malformed_code)
-        }.not_to raise_error
+        # Expects successful execution:
+
+        extractor.extract_from_code(malformed_code)
+
         skip "Implementation pending"
       end
 
       it "includes error information in result" do
         result = extractor.extract_from_code(malformed_code)
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
         skip "Implementation pending"
       end
     end

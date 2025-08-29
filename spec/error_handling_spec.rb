@@ -26,13 +26,13 @@ RSpec.describe "Rubymap Error Handling" do
 
       it "captures parse errors without crashing" do
         with_temp_ruby_file(syntax_error_code) do |file_path|
-          expect {
-            result = Rubymap.map([file_path])
-            # Should handle syntax errors gracefully and return output metadata
-            expect(result).to be_a(Hash)
-            expect(result).to have_key(:format)
-            expect(result).to have_key(:output_dir)
-          }.not_to raise_error
+          # Expects successful execution:
+
+          result = Rubymap.map([file_path])
+          # Should handle syntax errors gracefully and return output metadata
+          expect(result).to be_a(Hash)
+          expect(result).to have_key(:format)
+          expect(result).to have_key(:output_dir)
         end
       end
 
@@ -41,7 +41,7 @@ RSpec.describe "Rubymap Error Handling" do
           result = Rubymap.map([file_path])
 
           expect(result[:errors]).to be_an(Array)
-          expect(result[:errors]).not_to be_empty
+          expect(result[:errors].any?).to be true
         end
       end
 
@@ -74,12 +74,12 @@ RSpec.describe "Rubymap Error Handling" do
         invalid_encoding_code = "# encoding: invalid-encoding\nclass User; end"
 
         with_temp_ruby_file(invalid_encoding_code) do |file_path|
-          expect {
-            result = Rubymap.map([file_path])
-            expect(result).to be_a(Hash)
-            expect(result).to have_key(:format)
-            expect(result).to have_key(:output_dir)
-          }.not_to raise_error
+          # Expects successful execution:
+
+          result = Rubymap.map([file_path])
+          expect(result).to be_a(Hash)
+          expect(result).to have_key(:format)
+          expect(result).to have_key(:output_dir)
         end
       end
 
@@ -103,9 +103,9 @@ RSpec.describe "Rubymap Error Handling" do
           File.chmod(0o000, file_path)
 
           begin
-            expect {
-              Rubymap.map([file_path])
-            }.not_to raise_error
+            # Expects successful execution:
+
+            Rubymap.map([file_path])
           ensure
             File.chmod(0o644, file_path)
           end
@@ -129,10 +129,9 @@ RSpec.describe "Rubymap Error Handling" do
         RUBY
 
         with_temp_ruby_file(code_with_missing_gem) do |file_path|
-          expect {
-            result = Rubymap.map([file_path])
-            expect(result).to be_a(Hash)
-          }.not_to raise_error
+          # Expects no error from:
+          result = Rubymap.map([file_path])
+          expect(result).to be_a(Hash)
         end
       end
 
@@ -173,12 +172,12 @@ RSpec.describe "Rubymap Error Handling" do
           File.write(file_a, "require_relative 'b'\nclass A; end")
           File.write(file_b, "require_relative 'a'\nclass B; end")
 
-          expect {
-            result = Rubymap.map([file_a, file_b])
-            expect(result).to be_a(Hash)
-            expect(result).to have_key(:format)
-            expect(result).to have_key(:output_dir)
-          }.not_to raise_error
+          # Expects successful execution:
+
+          result = Rubymap.map([file_a, file_b])
+          expect(result).to be_a(Hash)
+          expect(result).to have_key(:format)
+          expect(result).to have_key(:output_dir)
         end
       end
     end
@@ -210,12 +209,12 @@ RSpec.describe "Rubymap Error Handling" do
         RUBY
 
         with_temp_ruby_file(potentially_infinite_code) do |file_path|
-          expect {
-            result = Rubymap.map([file_path])
-            expect(result).to be_a(Hash)
-            expect(result).to have_key(:format)
-            expect(result).to have_key(:output_dir)
-          }.not_to raise_error
+          # Expects successful execution:
+
+          result = Rubymap.map([file_path])
+          expect(result).to be_a(Hash)
+          expect(result).to have_key(:format)
+          expect(result).to have_key(:output_dir)
         end
       end
 
@@ -291,11 +290,10 @@ RSpec.describe "Rubymap Error Handling" do
           File.write(config_file, malformed_yaml)
 
           Dir.chdir(dir) do
-            expect {
-              Rubymap.configure do |config|
-                # Should use defaults when config file is malformed
-              end
-            }.not_to raise_error
+            # Expects no error from:
+            Rubymap.configure do |config|
+              # Should use defaults when config file is malformed
+            end
           end
         end
       end
@@ -352,12 +350,12 @@ RSpec.describe "Rubymap Error Handling" do
         RUBY
 
         with_temp_ruby_file(conditional_code) do |file_path|
-          expect {
-            result = Rubymap.map([file_path])
-            expect(result).to be_a(Hash)
-            expect(result).to have_key(:format)
-            expect(result).to have_key(:output_dir)
-          }.not_to raise_error
+          # Expects successful execution:
+
+          result = Rubymap.map([file_path])
+          expect(result).to be_a(Hash)
+          expect(result).to have_key(:format)
+          expect(result).to have_key(:output_dir)
         end
       end
 
@@ -466,9 +464,9 @@ RSpec.describe "Rubymap Error Handling" do
           File.symlink(link_b, link_a)
           File.symlink(link_a, link_b)
 
-          expect {
-            Rubymap.map([dir])
-          }.not_to raise_error
+          # Expects successful execution:
+
+          Rubymap.map([dir])
         end
       end
 

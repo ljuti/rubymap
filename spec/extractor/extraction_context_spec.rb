@@ -254,9 +254,9 @@ RSpec.describe Rubymap::Extractor::ExtractionContext do
       context.push_visibility(:private)
       context.comments = [double("comment")]
       context.instance_variable_set(:@current_class, "User")
-      
+
       context.reset!
-      
+
       expect(context.current_namespace).to eq("")
       expect(context.current_visibility).to eq(:public)
       expect(context.current_class).to be_nil

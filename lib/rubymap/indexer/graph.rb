@@ -256,7 +256,7 @@ module Rubymap
           elsif rec_stack.include?(neighbor)
             # Found a cycle
             cycle_start = path.index(neighbor)
-            cycles << path[cycle_start..-1] if cycle_start
+            cycles << path[cycle_start..] if cycle_start
           end
         end
 

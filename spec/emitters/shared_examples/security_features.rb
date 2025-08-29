@@ -23,14 +23,14 @@ RSpec.shared_examples "a security-conscious emitter" do
         output = subject.emit(sensitive_data)
 
         expect(output).to include("[REDACTED]")
-        expect(output).not_to include("set_password")
-        expect(output).not_to include("api_secret")
+        expect(output.include?("set_password")).to be false
+        expect(output.include?("api_secret")).to be false
       end
 
       it "redacts sensitive patterns in documentation" do
         output = subject.emit(sensitive_data)
 
-        expect(output).not_to include("Contains user password")
+        expect(output.include?("Contains user password")).to be false
         expect(output).to include("Contains user [REDACTED]")
       end
 
@@ -49,7 +49,7 @@ RSpec.shared_examples "a security-conscious emitter" do
         output = subject.emit(sensitive_data)
 
         # Internal level might redact only critical secrets
-        expect(output).not_to include("database_password")
+        expect(output.include?("database_password")).to be false
         expect(output).to include("user_token") # Less critical, kept for internal docs
       end
 
@@ -58,9 +58,9 @@ RSpec.shared_examples "a security-conscious emitter" do
         output = subject.emit(sensitive_data)
 
         # External level redacts all potentially sensitive information
-        expect(output).not_to include("database_password")
-        expect(output).not_to include("user_token")
-        expect(output).not_to include("internal_api")
+        expect(output.include?("database_password")).to be false
+        expect(output.include?("user_token")).to be false
+        expect(output.include?("internal_api")).to be false
       end
     end
 
@@ -69,8 +69,8 @@ RSpec.shared_examples "a security-conscious emitter" do
         data_with_paths = EmitterTestData.with_absolute_paths
         output = subject.emit(data_with_paths)
 
-        expect(output).not_to include("/Users/")
-        expect(output).not_to include("/home/")
+        expect(output.include?("/Users/")).to be false
+        expect(output.include?("/home/")).to be false
         expect(output).to include("app/models/")
       end
 
@@ -78,7 +78,7 @@ RSpec.shared_examples "a security-conscious emitter" do
         output = subject.emit(sensitive_data)
 
         # Should normalize to forward slashes regardless of OS
-        expect(output).not_to match(%r{\\})
+        expect(output =~ %r{\\}).to be_nil
         expect(output).to match(%r{app/models/user\.rb})
       end
     end

@@ -160,13 +160,13 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
         result = normalizer.normalize(complex_raw_data)
 
         private_method = result.methods.find { |m| m.name == "_encrypt_password" }
-        expect(private_method).not_to be_nil
+        expect(private_method).to be_truthy
         expect(private_method.visibility).to eq("private")
         expect(private_method.inferred_visibility).to eq("private")
         expect(private_method.scope).to eq("instance")
 
         public_method = result.methods.find { |m| m.name == "full_name" }
-        expect(public_method).not_to be_nil
+        expect(public_method).to be_truthy
         expect(public_method.visibility).to eq("public")
         expect(public_method.inferred_visibility).to eq("public")
       end
@@ -175,12 +175,12 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
         result = normalizer.normalize(complex_raw_data)
 
         searchable_module = result.modules.find { |m| m.name == "Searchable" }
-        expect(searchable_module).not_to be_nil
+        expect(searchable_module).to be_truthy
         expect(searchable_module.fqname).to eq("App::Concerns::Searchable")
         expect(searchable_module.namespace_path).to eq(["App", "Concerns"])
 
         class_methods_module = result.modules.find { |m| m.name == "ClassMethods" }
-        expect(class_methods_module).not_to be_nil
+        expect(class_methods_module).to be_truthy
         expect(class_methods_module.fqname).to eq("App::Models::User::ClassMethods")
         expect(class_methods_module.namespace_path).to eq(["App", "Models", "User"])
       end
@@ -191,7 +191,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
         expect(result.method_calls.size).to eq(2)
 
         create_call = result.method_calls.find { |c| c.from.include?("create") }
-        expect(create_call).not_to be_nil
+        expect(create_call).to be_truthy
         expect(create_call.from).to eq("App::Controllers::UsersController#create")
         expect(create_call.to).to eq("App::Models::User.find_by_email")
         expect(create_call.type).to eq("method_call")
@@ -233,18 +233,18 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
 
         # All processed symbols should have required fields
         result.classes.each do |klass|
-          expect(klass.symbol_id).not_to be_nil
-          expect(klass.name).not_to be_nil
-          expect(klass.fqname).not_to be_nil
-          expect(klass.provenance).not_to be_nil
+          expect(klass.symbol_id).to be_truthy
+          expect(klass.name).to be_truthy
+          expect(klass.fqname).to be_truthy
+          expect(klass.provenance).to be_truthy
         end
 
         result.methods.each do |method|
-          expect(method.symbol_id).not_to be_nil
-          expect(method.name).not_to be_nil
-          expect(method.fqname).not_to be_nil
-          expect(method.visibility).not_to be_nil
-          expect(method.provenance).not_to be_nil
+          expect(method.symbol_id).to be_truthy
+          expect(method.name).to be_truthy
+          expect(method.fqname).to be_truthy
+          expect(method.visibility).to be_truthy
+          expect(method.provenance).to be_truthy
         end
       end
     end
@@ -264,7 +264,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
           methods: [
             {name: nil, class: "TestClass"},  # Invalid - no name
             {name: "valid_method", class: "TestClass", parameters: "malformed"},  # Edge case
-            {name: "another_method", scope: "unknown", visibility: "invalid"}  # Edge case
+            {name: "another_method", class: "TestClass", scope: "unknown", visibility: "invalid"}  # Edge case
           ]
         }
       end
@@ -272,7 +272,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
       it "handles validation errors gracefully and continues processing" do
         result = normalizer.normalize(problematic_data)
 
-        expect(result.errors).not_to be_empty
+        expect(result.errors.any?).to be true
 
         # Should have validation errors for nil names
         name_errors = result.errors.select { |e| e.message.include?("missing required field: name") }
@@ -287,7 +287,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
       it "applies default values for missing optional fields" do
         minimal_data = {
           classes: [{name: "MinimalClass"}],
-          methods: [{name: "minimal_method"}]
+          methods: [{name: "minimal_method", class: "MinimalClass"}]
         }
 
         result = normalizer.normalize(minimal_data)
@@ -331,7 +331,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
         expect(second_result.classes.first.name).to eq("SecondClass")
 
         # Results should not contaminate each other
-        expect(second_result.classes).not_to include(first_result.classes.first)
+        expect(second_result.classes.include?(first_result.classes.first)).to be false
       end
     end
 

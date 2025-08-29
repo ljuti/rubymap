@@ -88,7 +88,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
         merged_method = merge_strategy.merge_methods([static_method, runtime_method])
 
         expect(runtime_method).to eq(original_runtime_method)  # Original unchanged
-        expect(merged_method).not_to be(runtime_method)  # Different object
+        expect(merged_method.equal?(runtime_method)).to be false  # Different object
       end
     end
 
@@ -260,7 +260,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
         merged_class = merge_strategy.merge_classes([inferred_class, static_class])
 
         expect(static_class).to eq(original_static_class)
-        expect(merged_class).not_to be(static_class)
+        expect(merged_class.equal?(static_class)).to be false
       end
     end
 
@@ -398,7 +398,7 @@ RSpec.describe Rubymap::Normalizer::Deduplication::MergeStrategy do
         merged_module = merge_strategy.merge_modules([static_module, runtime_module])
 
         expect(runtime_module).to eq(original_runtime_module)
-        expect(merged_module).not_to be(runtime_module)
+        expect(merged_module.equal?(runtime_module)).to be false
       end
     end
   end

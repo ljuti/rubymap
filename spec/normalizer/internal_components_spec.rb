@@ -17,13 +17,13 @@ RSpec.describe "Normalizer Internal Components" do
       it "generates different IDs for different names" do
         id1 = generator.generate_class_id("User", "class")
         id2 = generator.generate_class_id("Post", "class")
-        expect(id1).not_to eq(id2)
+        expect(id1 == id2).to be false
       end
 
       it "generates different IDs for different kinds" do
         id1 = generator.generate_class_id("User", "class")
         id2 = generator.generate_class_id("User", "singleton")
-        expect(id1).not_to eq(id2)
+        expect(id1 == id2).to be false
       end
 
       it "returns 16 character hex string" do
@@ -42,7 +42,7 @@ RSpec.describe "Normalizer Internal Components" do
       it "differs from class ID with same name" do
         class_id = generator.generate_class_id("Helper", "class")
         module_id = generator.generate_module_id("Helper")
-        expect(class_id).not_to eq(module_id)
+        expect(class_id == module_id).to be false
       end
     end
 
@@ -50,7 +50,7 @@ RSpec.describe "Normalizer Internal Components" do
       it "considers all parameters for uniqueness" do
         id1 = generator.generate_method_id(fqname: "User#save", receiver: "User", arity: 0)
         id2 = generator.generate_method_id(fqname: "User#save", receiver: "User", arity: 1)
-        expect(id1).not_to eq(id2)
+        expect(id1 == id2).to be false
       end
 
       it "generates consistent IDs for same parameters" do
@@ -87,7 +87,7 @@ RSpec.describe "Normalizer Internal Components" do
       it "merges sources from both provenances" do
         prov1 = tracker.create_provenance(sources: ["static"], confidence: 0.7)
         prov2 = tracker.create_provenance(sources: ["runtime"], confidence: 0.8)
-        
+
         merged = tracker.merge_provenance(prov1, prov2)
         expect(merged.sources).to include("static", "runtime")
       end
@@ -95,7 +95,7 @@ RSpec.describe "Normalizer Internal Components" do
       it "takes highest confidence" do
         prov1 = tracker.create_provenance(sources: "static", confidence: 0.6)
         prov2 = tracker.create_provenance(sources: "runtime", confidence: 0.9)
-        
+
         merged = tracker.merge_provenance(prov1, prov2)
         expect(merged.confidence).to eq(0.9)
       end
@@ -103,7 +103,7 @@ RSpec.describe "Normalizer Internal Components" do
       it "removes duplicate sources" do
         prov1 = tracker.create_provenance(sources: ["static", "yard"], confidence: 0.7)
         prov2 = tracker.create_provenance(sources: ["static", "runtime"], confidence: 0.8)
-        
+
         merged = tracker.merge_provenance(prov1, prov2)
         expect(merged.sources.count("static")).to eq(1)
       end
@@ -116,7 +116,7 @@ RSpec.describe "Normalizer Internal Components" do
           timestamp: old_time.utc.strftime("%Y-%m-%dT%H:%M:%S.%LZ")
         )
         prov2 = tracker.create_provenance(sources: "runtime", confidence: 0.8)
-        
+
         merged = tracker.merge_provenance(prov1, prov2)
         merged_time = Time.parse(merged.timestamp)
         expect(merged_time).to be > old_time
@@ -141,7 +141,7 @@ RSpec.describe "Normalizer Internal Components" do
         normalizer_version: "2.0.0",
         normalized_at: "2024-01-01T00:00:00.000Z"
       )
-      
+
       expect(result.schema_version).to eq(2)
       expect(result.normalizer_version).to eq("2.0.0")
       expect(result.normalized_at).to eq("2024-01-01T00:00:00.000Z")
@@ -151,7 +151,7 @@ RSpec.describe "Normalizer Internal Components" do
       result.classes << Rubymap::Normalizer::NormalizedClass.new(name: "User")
       result.modules << Rubymap::Normalizer::NormalizedModule.new(name: "Helper")
       result.methods << Rubymap::Normalizer::NormalizedMethod.new(name: "save")
-      
+
       expect(result.classes.size).to eq(1)
       expect(result.modules.size).to eq(1)
       expect(result.methods.size).to eq(1)
@@ -174,10 +174,10 @@ RSpec.describe "Normalizer Internal Components" do
         class_methods: ["find", "all"],
         available_instance_methods: ["save", "update", "validate"],
         available_class_methods: ["find", "all", "where"],
-        mixins: [{ type: "include", module: "Trackable" }],
+        mixins: [{type: "include", module: "Trackable"}],
         provenance: Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.9, timestamp: "2024-01-01T00:00:00.000Z")
       )
-      
+
       expect(klass.symbol_id).to eq("abc123")
       expect(klass.name).to eq("User")
       expect(klass.fqname).to eq("MyApp::User")
@@ -188,7 +188,7 @@ RSpec.describe "Normalizer Internal Components" do
       klass = Rubymap::Normalizer::NormalizedClass.new(
         name: "User"
       )
-      
+
       expect(klass.name).to eq("User")
       expect(klass.symbol_id).to be_nil
       expect(klass.superclass).to be_nil
@@ -205,7 +205,7 @@ RSpec.describe "Normalizer Internal Components" do
         visibility: "public",
         owner: "User",
         scope: "instance",
-        parameters: [{ kind: "req", name: "validate" }],
+        parameters: [{kind: "req", name: "validate"}],
         arity: 1,
         canonical_name: "save",
         available_in: ["User", "AdminUser"],
@@ -213,7 +213,7 @@ RSpec.describe "Normalizer Internal Components" do
         source: "defined",
         provenance: Rubymap::Normalizer::Provenance.new(sources: ["static"], confidence: 0.8, timestamp: "2024-01-01T00:00:00.000Z")
       )
-      
+
       expect(method.name).to eq("save")
       expect(method.owner).to eq("User")
       expect(method.arity).to eq(1)
@@ -252,7 +252,7 @@ RSpec.describe "Normalizer Internal Components" do
       error = Rubymap::Normalizer::NormalizedError.new(
         type: "validation_error",
         message: "Missing required field: name",
-        data: { field: "name", value: nil }
+        data: {field: "name", value: nil}
       )
       expect(error.type).to eq("validation_error")
       expect(error.message).to include("Missing required field")

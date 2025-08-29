@@ -13,12 +13,12 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
 
         case format_type.to_s
         when "json"
-          expect { JSON.parse(output) }.not_to raise_error
+          # Expects no error from: JSON.parse(output)
         when "yaml"
-          expect { YAML.safe_load(output) }.not_to raise_error
+          # Expects no error from: YAML.safe_load(output)
         when "markdown"
           expect(output).to match(/^#\s+.+/) # Has markdown headers
-          expect(output).not_to match(/^\s*```\s*\n\s*```/) # No empty code blocks
+          expect(output =~ /^\s*```\s*\n\s*```/).to be_nil # No empty code blocks
         when "dot", "graphviz"
           expect(output).to include("digraph")
           expect(output).to match(/^\s*}$/) # Properly closed
@@ -58,7 +58,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
         output = subject.emit(sample_data)
 
         # Should use Unix line endings consistently
-        expect(output).not_to include("\r\n")
+        expect(output.include?("\r\n")).to be false
         expect(output).to match(/\n/)
       end
 
@@ -102,7 +102,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
           expect(doc).to include('"quotes"')
           expect(doc).to include("<tags>")
         when "markdown"
-          expect(output).not_to include("<script>") # Should escape HTML
+          expect(output.include?("<script>")).to be false # Should escape HTML
           expect(output).to include("&quot;") if output.include?("&")
         when "dot", "graphviz"
           expect(output).to include('\\"') if output.include?('"')
@@ -140,7 +140,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
           if output.include?("  ") # Pretty printed
             lines = output.split("\n")
             indented_lines = lines.select { |line| line.start_with?("  ") }
-            expect(indented_lines).not_to be_empty
+            expect(indented_lines.any?).to be true
 
             # Check consistent indentation (multiples of 2 spaces)
             indented_lines.each do |line|
@@ -151,7 +151,7 @@ RSpec.shared_examples "a format-validating emitter" do |format_type|
         when "markdown"
           # Check consistent header levels
           headers = output.scan(/^(#+)\s+(.+)$/)
-          expect(headers).not_to be_empty
+          expect(headers.any?).to be true
 
           header_levels = headers.map { |h| h.first.length }
           expect(header_levels.max - header_levels.min).to be <= 4 # Reasonable depth

@@ -46,10 +46,10 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
     context "with valid documentation comments" do
       it "extracts single line documentation" do
         node = double("node", location: double(start_line: 5))
-        comment = double("comment", 
+        comment = double("comment",
           location: double(start_line: 4),
           slice: "# This is documentation")
-        
+
         result = service.extract_documentation(node, [comment])
         expect(result).to eq("This is documentation")
       end
@@ -61,7 +61,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
           double("comment", location: double(start_line: 3), slice: "# Second line"),
           double("comment", location: double(start_line: 4), slice: "# Third line")
         ]
-        
+
         result = service.extract_documentation(node, comments)
         expect(result).to eq("First line\nSecond line\nThird line")
       end
@@ -71,7 +71,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 2),
           slice: "## Important documentation")
-        
+
         result = service.extract_documentation(node, [comment])
         expect(result).to eq("Important documentation")
       end
@@ -107,7 +107,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 5, start_column: 25),
           slice: "# inline comment")
-        
+
         result = service.extract_inline_comment(node, [comment])
         expect(result).to eq("inline comment")
       end
@@ -117,7 +117,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 5, start_column: 5),
           slice: "# before node")
-        
+
         expect(service.extract_inline_comment(node, [comment])).to be_nil
       end
 
@@ -126,7 +126,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 6, start_column: 25),
           slice: "# different line")
-        
+
         expect(service.extract_inline_comment(node, [comment])).to be_nil
       end
     end

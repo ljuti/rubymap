@@ -38,12 +38,10 @@ module Rubymap
             if errors
               # Format message based on type
               message = case visibility
-              when Symbol
-                "invalid visibility: #{visibility}"
-              when String
+              when Symbol, String
                 "invalid visibility: #{visibility}"
               else
-                "invalid visibility: #{visibility}"
+                "invalid visibility: #{visibility.inspect}"
               end
 
               error = Normalizer::NormalizedError.new(

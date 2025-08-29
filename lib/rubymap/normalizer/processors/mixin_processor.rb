@@ -41,6 +41,8 @@ module Rubymap
         private
 
         def find_symbol(name, result)
+          # For now, keep the existing logic since processors don't have symbol_finder injected
+          # This could be refactored later to use dependency injection
           result.classes.find { |c| c.fqname == name || c.name == name } ||
             result.modules.find { |m| m.fqname == name || m.name == name }
         end

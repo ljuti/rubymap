@@ -238,9 +238,9 @@ RSpec.describe Rubymap::Configuration do
 
     context "with unknown keys" do
       it "ignores unknown top-level keys" do
-        expect {
-          config.deep_merge!({"unknown_key" => "value"})
-        }.not_to raise_error
+        # Expects successful execution:
+
+        config.deep_merge!({"unknown_key" => "value"})
       end
     end
   end

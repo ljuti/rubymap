@@ -119,7 +119,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
       it "provides consistent styling across node types" do
         # All class nodes should have consistent style
         class_nodes = output.scan(/"[^"]+"\s*\[.*?shape=box.*?\]/)
-        expect(class_nodes).not_to be_empty
+        expect(class_nodes.any?).to be true
         expect(class_nodes.all? { |n| n.include?("shape=box") }).to be true
       end
     end
@@ -181,12 +181,12 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
       end
 
       it "excludes private classes when configured" do
-        expect(output).not_to include("PrivateHelper")
+        expect(output.include?("PrivateHelper")).to be false
       end
 
       it "filters to specific namespaces" do
         expect(output).to include("User")  # In app/models
-        expect(output).not_to include("ApplicationHelper")  # In app/helpers
+        expect(output.include?("ApplicationHelper")).to be false  # In app/helpers
       end
     end
 
@@ -292,7 +292,7 @@ RSpec.describe "GraphViz Emitter", skip: "GraphViz emitter implementation deferr
       end
 
       it "escapes special GraphViz characters" do
-        expect(output).not_to include("User<Special>")
+        expect(output.include?("User<Special>")).to be false
         expect(output).to include("User_Special_")
       end
     end

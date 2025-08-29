@@ -3,6 +3,12 @@
 require "digest"
 
 # Load all components
+require_relative "normalizer/domain_model"
+require_relative "normalizer/service_container"
+require_relative "normalizer/symbol_finder"
+require_relative "normalizer/processor_factory"
+require_relative "normalizer/resolver_factory"
+require_relative "normalizer/processing_pipeline"
 require_relative "normalizer/symbol_index"
 require_relative "normalizer/normalizer_registry"
 
@@ -53,129 +59,20 @@ module Rubymap
       DATA_SOURCES[:static] => 6
     }.freeze
 
-    def initialize
-      @symbol_id_generator = SymbolIdGenerator.new
-      @provenance_tracker = ProvenanceTracker.new
-      @normalizers = NormalizerRegistry.new
-      @symbol_index = SymbolIndex.new
-
-      # Initialize processors with dependency injection
-      @class_processor = Processors::ClassProcessor.new(
-        symbol_id_generator: @symbol_id_generator,
-        provenance_tracker: @provenance_tracker,
-        normalizers: @normalizers
-      )
-
-      @module_processor = Processors::ModuleProcessor.new(
-        symbol_id_generator: @symbol_id_generator,
-        provenance_tracker: @provenance_tracker,
-        normalizers: @normalizers
-      )
-
-      @method_processor = Processors::MethodProcessor.new(
-        symbol_id_generator: @symbol_id_generator,
-        provenance_tracker: @provenance_tracker,
-        normalizers: @normalizers
-      )
-
-      @method_call_processor = Processors::MethodCallProcessor.new(
-        symbol_id_generator: @symbol_id_generator,
-        provenance_tracker: @provenance_tracker,
-        normalizers: @normalizers
-      )
-
-      @mixin_processor = Processors::MixinProcessor.new(
-        symbol_id_generator: @symbol_id_generator,
-        provenance_tracker: @provenance_tracker,
-        normalizers: @normalizers
-      )
-
-      # Initialize resolvers
-      @namespace_resolver = Resolvers::NamespaceResolver.new
-      @inheritance_resolver = Resolvers::InheritanceResolver.new
-      @cross_reference_resolver = Resolvers::CrossReferenceResolver.new(@symbol_index)
-      @mixin_method_resolver = Resolvers::MixinMethodResolver.new
-
-      # Initialize deduplication strategy
-      merge_strategy = Deduplication::MergeStrategy.new(
-        @provenance_tracker,
-        @normalizers.visibility_normalizer
-      )
-      @deduplicator = Deduplication::Deduplicator.new(merge_strategy)
-
-      # Initialize output formatter
-      @output_formatter = Output::DeterministicFormatter.new
+    def initialize(container = nil)
+      @container = container || ServiceContainer.new
+      @processing_pipeline = ProcessingPipeline.new(@container)
     end
 
-    # Main normalization method - now serves as orchestrator following Open/Closed Principle
+    # Main normalization method - delegates to processing pipeline
     def normalize(raw_data)
-      @errors = []
-      @symbol_index.clear
-
-      result = create_result
-
-      # Process each type of symbol using dedicated processors
-      process_symbols(raw_data, result)
-
-      # Build relationships and resolve references using dedicated resolvers
-      resolve_relationships(result)
-
-      # Deduplicate symbols using dedicated strategy
-      @deduplicator.deduplicate_symbols(result)
-
-      # Ensure deterministic output ordering using dedicated formatter
-      @output_formatter.format(result)
-
-      # Add errors and return
-      result.errors = @errors
-      result
+      @container.get(:symbol_index).clear
+      @processing_pipeline.execute(raw_data)
     end
 
     private
 
-    attr_reader :class_processor, :module_processor, :method_processor,
-      :method_call_processor, :mixin_processor,
-      :namespace_resolver, :inheritance_resolver,
-      :cross_reference_resolver, :mixin_method_resolver
-
-    def create_result
-      NormalizedResult.new(
-        schema_version: SCHEMA_VERSION,
-        normalizer_version: NORMALIZER_VERSION,
-        normalized_at: Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S.%LZ")
-      )
-    end
-
-    def process_symbols(raw_data, result)
-      # Handle nil or non-hash input
-      return if raw_data.nil? || !raw_data.is_a?(Hash)
-
-      # Process in deterministic order using Strategy pattern
-      class_processor.process(raw_data[:classes] || [], result, @errors)
-      module_processor.process(raw_data[:modules] || [], result, @errors)
-      method_processor.process(raw_data[:methods] || [], result, @errors)
-      method_call_processor.process(raw_data[:method_calls] || [], result, @errors)
-
-      # Index processed symbols for fast lookups
-      index_symbols(result)
-
-      # Process mixins (raw data only since class mixins are handled directly)
-      mixin_processor.process(raw_data[:mixins] || [], result, @errors, [])
-    end
-
-    def resolve_relationships(result)
-      # Use dedicated resolvers following Single Responsibility Principle
-      namespace_resolver.resolve(result)
-      inheritance_resolver.resolve(result)
-      cross_reference_resolver.resolve(result)
-      mixin_method_resolver.resolve(result)
-    end
-
-    def index_symbols(result)
-      (result.classes + result.modules).each do |symbol|
-        @symbol_index.add(symbol)
-      end
-    end
+    attr_reader :container
 
     # Symbol ID generator using Strategy pattern (moved from original class)
     class SymbolIdGenerator

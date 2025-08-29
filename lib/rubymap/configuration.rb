@@ -276,12 +276,10 @@ module Rubymap
       end
 
       # Validate paths exist
-      if static["paths"]
-        static["paths"].each do |path|
-          resolved_path = resolve_path(path)
-          unless File.exist?(resolved_path)
-            errors << "Path does not exist: #{path}"
-          end
+      static["paths"]&.each do |path|
+        resolved_path = resolve_path(path)
+        unless File.exist?(resolved_path)
+          errors << "Path does not exist: #{path}"
         end
       end
 
@@ -488,11 +486,12 @@ module Rubymap
           config.deep_merge!(hash)
 
           # Manually trigger type coercion for string values
-          config.verbose = config.verbose if config.verbose.is_a?(String)
-          config.parallel = config.parallel if config.parallel.is_a?(String)
-          config.progress = config.progress if config.progress.is_a?(String)
-          config.max_depth = config.max_depth if config.max_depth.is_a?(String)
-          config.format = config.format if config.format.is_a?(String)
+          # The setters handle type coercion, so we re-assign from the hash
+          config.verbose = hash[:verbose] if hash[:verbose].is_a?(String)
+          config.parallel = hash[:parallel] if hash[:parallel].is_a?(String)
+          config.progress = hash[:progress] if hash[:progress].is_a?(String)
+          config.max_depth = hash[:max_depth] if hash[:max_depth].is_a?(String)
+          config.format = hash[:format] if hash[:format].is_a?(String)
         end
       end
     end

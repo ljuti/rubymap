@@ -3,94 +3,80 @@
 module Rubymap
   class Normalizer
     module Processors
-      # Processes method call symbols following SRP - handles only method call logic
+      # Processes method call symbols using the new architecture
       class MethodCallProcessor < BaseProcessor
-        def process(method_calls, result, errors)
-          method_calls.each do |call_data|
-            normalized = normalize_method_call(call_data)
-            result.method_calls << normalized if normalized
+        # Override the base validation since method calls don't have a 'name' field
+        def validate_item(data, errors)
+          # Method calls are valid as long as they have some identifying data
+          data[:method] || data[:from] || data[:caller]
+        end
+
+        def validate_specific(data, errors)
+          # Method calls are optional data, minimal validation
+          true
+        end
+
+        def normalize_item(data)
+          # Handle multiple formats:
+          # 1. { method: "save", receiver: "user" }
+          # 2. { from: "UserController#create", to: "User#save" }
+          # 3. { caller: "UserController", calls: "save" }
+
+          if data[:method]
+            # Format 1: method and receiver
+            build_from_method_receiver(data)
+          elsif data[:from] && data[:to]
+            # Format 2: from and to
+            CoreNormalizedMethodCall.new(
+              from: data[:from],
+              to: data[:to],
+              type: data[:type] || "method_call"
+            )
+          elsif data[:caller] && data[:calls]
+            # Format 3: caller and calls
+            CoreNormalizedMethodCall.new(
+              from: data[:caller],
+              to: data[:calls],
+              type: data[:type] || "method_call"
+            )
+          else
+            nil
           end
         end
 
-        def validate(data, errors)
-          # Method calls have different validation requirements
-          true
+        def add_to_result(item, result)
+          result.method_calls << item if item
         end
 
         private
 
-        def normalize_method_call(data)
-          # Support both formats: {:caller, :calls} and {:from, :to}
-          from = data[:caller] || data[:from]
-          to = data[:calls] || data[:to]
+        def build_from_method_receiver(data)
+          # Build method call from method/receiver format
+          to = data[:method]
+          from = build_caller_context(data)
 
-          return nil unless from && to
-
-          # If we already have the correct format, use it directly
-          if data[:from] && data[:to]
-            return NormalizedMethodCall.new(
-              from: from,
-              to: to,
-              type: data[:type] || "method_call"
-            )
-          end
-
-          target = resolve_method_call_target(to, from)
-          call_type = determine_call_type(to, target)
-
-          NormalizedMethodCall.new(
+          CoreNormalizedMethodCall.new(
             from: from,
-            to: target,
-            type: call_type
+            to: to,
+            type: determine_call_type(data[:receiver], to)
           )
         end
 
-        def determine_call_type(call_target, resolved_target = nil)
-          case call_target
-          when "super"
-            "super_call"
-          when /^[A-Z]/
-            "class_method_call"
-          when /^@/
-            "instance_variable_access"
-          else
-            # Check if it's calling a private method
-            if resolved_target && resolved_target =~ /#(validate_|_)/
-              "private_method_call"
-            else
-              "instance_method_call"
-            end
+        def build_caller_context(data)
+          # Try to build caller context from available data
+          if data[:caller_method] && data[:caller_class]
+            "#{data[:caller_class]}##{data[:caller_method]}"
+          elsif data[:caller_class]
+            data[:caller_class]
+          elsif data[:caller_method]
+            data[:caller_method]
           end
         end
 
-        def resolve_method_call_target(target, caller_context)
-          if target == "super"
-            # For super calls, resolve to parent method
-            if caller_context =~ /^(.+)(#|\.)(.+)$/
-              class_name = $1
-              method_name = $3
-
-              # Find parent class and construct target
-              parent = find_parent_class(class_name)
-              return "#{parent}##{method_name}" if parent
-            end
-            target
-          elsif !/#|\./.match?(target)
-            # If it's just a method name, append it to the caller's class
-            if caller_context =~ /^(.+)(#|\.)/
-              class_name = $1
-              "#{class_name}##{target}"
-            else
-              target
-            end
-          else
-            target
-          end
-        end
-
-        def find_parent_class(class_name)
-          # This would need access to symbol index - will be handled by resolver
-          nil
+        def determine_call_type(receiver, method_name)
+          return "super" if method_name == "super"
+          return "self" if receiver == "self"
+          "method_call"
         end
       end
     end

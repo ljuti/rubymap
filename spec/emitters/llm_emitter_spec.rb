@@ -224,7 +224,7 @@ RSpec.describe "LLM Emitter" do
         # TODO: Improve malformed data handling
         chunks = subject.emit(malformed_data)
 
-        expect(chunks).not_to be_empty
+        expect(chunks.any?).to be true
         expect(chunks.first.content).to include("# Code Analysis")
         expect(chunks.first.content).to include("Note: Some metadata unavailable")
       end
@@ -235,7 +235,7 @@ RSpec.describe "LLM Emitter" do
 
         chunks = subject.emit(data_without_classes)
 
-        expect(chunks).not_to be_empty
+        expect(chunks.any?).to be true
         expect(chunks.first.content).to include("No class information available")
       end
     end
@@ -249,7 +249,7 @@ RSpec.describe "LLM Emitter" do
         subject.on_progress { |update| progress_updates << update }
         subject.emit(large_dataset)
 
-        expect(progress_updates).not_to be_empty
+        expect(progress_updates.any?).to be true
         expect(progress_updates.last[:percent]).to eq(100)
       end
     end

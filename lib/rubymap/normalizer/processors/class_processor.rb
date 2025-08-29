@@ -3,99 +3,124 @@
 module Rubymap
   class Normalizer
     module Processors
-      # Processes class symbols according to SRP - only handles class-specific logic
+      # Simplified class processor using Template Method pattern
+      # Focuses on core class normalization with reduced complexity
       class ClassProcessor < BaseProcessor
-        def process(classes, result, errors)
-          processed_classes = []
-
-          classes.each do |class_data|
-            next unless validate(class_data, errors)
-
-            # Check if it's actually a module
-            if class_data[:type] == "module" || class_data[:kind] == "module"
-              normalized = normalize_as_module(class_data)
-              result.modules << normalized
-            else
-              normalized = normalize_class(class_data)
-              processed_classes << normalized
-              result.classes << normalized
-
-              # Handle mixins if present - assign directly
-              assign_mixins(class_data, normalized)
-            end
-          end
-
-          processed_classes
-        end
-
-        def validate(data, errors)
-          if data[:name].nil?
-            add_validation_error("missing required field: name", data, errors)
+        def validate_specific(data, errors)
+          # Check for empty name (nil is already handled in base class)
+          if data[:name].empty?
+            add_validation_error("Class/module name cannot be empty", data, errors)
             return false
           end
+
+          # For now, don't require location as it's optional
           true
+        end
+
+        def normalize_item(data)
+          # Determine if this is actually a module
+          if module_type?(data)
+            normalize_as_module(data)
+          else
+            normalize_as_class(data)
+          end
+        end
+
+        def add_to_result(item, result)
+          if item.kind == "module"
+            result.modules << item
+          else
+            result.classes << item
+          end
+        end
+
+        def post_process_item(item, raw_data, result)
+          # Only process mixins for classes
+          process_mixins(raw_data, item) if item.kind == "class"
         end
 
         private
 
-        def normalize_class(data)
-          fqname = normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
+        def module_type?(data)
+          data[:type] == "module" || data[:kind] == "module"
+        end
+
+        def normalize_as_class(data)
+          fqname = build_fqname(data)
           symbol_id = symbol_id_generator.generate_class_id(fqname, data[:type] || "class")
 
-          provenance = provenance_tracker.create_provenance(
-            sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
-            confidence: normalizers.confidence_calculator.calculate(data)
-          )
-
-          NormalizedClass.new(
+          # Use core domain model - cleaner and more focused
+          CoreNormalizedClass.new(
             symbol_id: symbol_id,
             name: data[:name],
             fqname: fqname,
             kind: data[:type] || "class",
             superclass: data[:superclass],
-            location: normalizers.location_normalizer.normalize(data[:location]),
-            namespace_path: normalizers.name_normalizer.extract_namespace_path(fqname),
-            children: [],
-            inheritance_chain: [],
-            instance_methods: [],
-            class_methods: [],
-            available_instance_methods: [],
-            available_class_methods: [],
-            mixins: [],
-            provenance: provenance
+            location: normalize_location(data[:location]),
+            namespace_path: extract_namespace_path(fqname),
+            provenance: create_provenance(data)
           )
         end
 
         def normalize_as_module(data)
-          fqname = normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
+          fqname = build_fqname(data)
           symbol_id = symbol_id_generator.generate_module_id(fqname)
 
-          provenance = provenance_tracker.create_provenance(
-            sources: [data[:source] || Normalizer::DATA_SOURCES[:inferred]],
-            confidence: normalizers.confidence_calculator.calculate(data)
-          )
-
-          NormalizedModule.new(
+          CoreNormalizedModule.new(
             symbol_id: symbol_id,
             name: data[:name],
             fqname: fqname,
-            kind: "module",
-            location: normalizers.location_normalizer.normalize(data[:location]),
-            namespace_path: normalizers.name_normalizer.extract_namespace_path(fqname),
-            children: [],
-            provenance: provenance
+            location: normalize_location(data[:location]),
+            namespace_path: extract_namespace_path(fqname),
+            provenance: create_provenance(data)
           )
         end
 
-        def assign_mixins(class_data, normalized_class)
-          return unless class_data[:mixins]
+        def build_fqname(data)
+          normalizers.name_normalizer.generate_fqname(data[:name], data[:namespace])
+        end
 
-          class_data[:mixins].each do |mixin|
-            normalized_class.mixins << {
+        def normalize_location(location_data)
+          return nil unless location_data
+
+          Location.new(
+            file: location_data[:file],
+            line: location_data[:line]
+          )
+        end
+
+        def extract_namespace_path(fqname)
+          normalizers.name_normalizer.extract_namespace_path(fqname)
+        end
+
+        def process_mixins(raw_data, normalized_class)
+          mixin_list = []
+
+          # Handle included modules
+          raw_data[:included_modules]&.each do |mod|
+            mixin_list << {type: "include", module: mod}
+          end
+
+          # Handle extended modules
+          raw_data[:extended_modules]&.each do |mod|
+            mixin_list << {type: "extend", module: mod}
+          end
+
+          # Handle prepended modules
+          raw_data[:prepended_modules]&.each do |mod|
+            mixin_list << {type: "prepend", module: mod}
+          end
+
+          # Also handle direct mixins format
+          raw_data[:mixins]&.each do |mixin|
+            mixin_list << {
               type: mixin[:type],
               module: mixin[:module]
             }
           end
+
+          # Update mixins if any were found
+          normalized_class.mixins = mixin_list unless mixin_list.empty?
         end
       end
     end

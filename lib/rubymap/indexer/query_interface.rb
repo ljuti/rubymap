@@ -91,14 +91,14 @@ module Rubymap
 
         # Get direct mixins
         symbol = find_symbol(class_name)
-        if symbol && symbol.mixins
+        if symbol&.mixins
           mixins.concat(symbol.mixins.map { |m| m[:module] || m["module"] })
         end
 
         # Get inherited mixins
         ancestors_of(class_name).each do |ancestor|
           ancestor_symbol = find_symbol(ancestor)
-          if ancestor_symbol && ancestor_symbol.mixins
+          if ancestor_symbol&.mixins
             mixins.concat(ancestor_symbol.mixins.map { |m| m[:module] || m["module"] })
           end
         end
