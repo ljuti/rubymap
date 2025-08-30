@@ -5,10 +5,10 @@ module Rubymap
     # Information about a Ruby method definition
     class MethodInfo
       attr_accessor :name, :visibility, :receiver_type, :params, :location,
-        :doc, :namespace, :owner
+        :doc, :namespace, :owner, :rubymap
 
       def initialize(name:, visibility: "public", receiver_type: "instance",
-        params: [], location: nil, doc: nil, namespace: nil, owner: nil)
+        params: [], location: nil, doc: nil, namespace: nil, owner: nil, rubymap: nil)
         @name = name
         @visibility = visibility
         @receiver_type = receiver_type
@@ -17,6 +17,7 @@ module Rubymap
         @doc = doc
         @namespace = namespace
         @owner = owner
+        @rubymap = rubymap
       end
 
       def full_name

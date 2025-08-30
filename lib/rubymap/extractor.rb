@@ -27,6 +27,8 @@ module Rubymap
   # representation of the code structure including classes, modules, methods, constants,
   # and their relationships. It performs purely static analysis without executing any code.
   #
+  # @rubymap Parses Ruby source files to extract classes, methods, and relationships
+  #
   # @example Extract symbols from a single file
   #   extractor = Rubymap::Extractor.new
   #   result = extractor.extract_from_file("app/models/user.rb")
@@ -56,12 +58,15 @@ module Rubymap
     #
     # The extractor is stateless - each extraction operation creates its own
     # internal context for tracking namespaces and visibility.
+    #
+    # @rubymap Initializes a new extractor instance for static code analysis
     def initialize
       # No instance state needed - each extraction gets its own context
     end
 
     # Extracts symbols from a Ruby file on disk.
     #
+    # @rubymap Extracts all symbols from a single Ruby file
     # @param file_path [String] Path to the Ruby file to analyze
     # @return [Result] Extraction result containing all discovered symbols
     # @raise [ArgumentError] if the file does not exist

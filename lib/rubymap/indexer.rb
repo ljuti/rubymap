@@ -14,6 +14,8 @@ module Rubymap
   # (inheritance, dependencies, method calls, mixins) and provides a query interface
   # for searching and navigation.
   #
+  # @rubymap Creates searchable indexes and relationship graphs from code data
+  #
   # @example Building indexes from normalized data
   #   normalizer = Rubymap::Normalizer.new
   #   normalized_data = normalizer.normalize(extraction_result)
@@ -213,7 +215,11 @@ module Rubymap
     end
 
     def build_method_call_graph(result, data)
-      method_calls = data[:method_calls] || []
+      method_calls = if !data.is_a?(Hash) && data.respond_to?(:method_calls)
+        data.method_calls || []
+      else
+        data[:method_calls] || []
+      end
 
       method_calls.each do |call|
         from = call[:from]

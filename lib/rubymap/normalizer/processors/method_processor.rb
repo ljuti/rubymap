@@ -41,6 +41,8 @@ module Rubymap
             available_in: [],
             inferred_visibility: infer_visibility(name, data[:visibility]),
             source: data[:source] || "inferred",
+            doc: data[:doc],
+            rubymap: data[:rubymap],
             provenance: provenance_tracker.create_provenance(
               sources: data[:source] || Normalizer::DATA_SOURCES[:inferred],
               confidence: 0.8

@@ -24,6 +24,8 @@ module Rubymap
   # - Factories manage component creation
   # - Detectors identify project characteristics
   #
+  # @rubymap Adds metrics, patterns, and quality insights to normalized data
+  #
   # @example Basic enrichment
   #   normalizer = Rubymap::Normalizer.new
   #   normalized = normalizer.normalize(extracted_data)

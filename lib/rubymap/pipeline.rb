@@ -10,6 +10,8 @@ module Rubymap
   # stages. It provides progress tracking, error handling, and configurable
   # processing options.
   #
+  # @rubymap Orchestrates the complete analysis pipeline from code to documentation
+  #
   # @example Basic pipeline execution
   #   config = Rubymap::Configuration.new(
   #     format: :llm,

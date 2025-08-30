@@ -22,7 +22,7 @@ module Rubymap
       :namespace_path, :children, :inheritance_chain,
       :instance_methods, :class_methods,
       :available_instance_methods, :available_class_methods,
-      :mixins, :provenance,
+      :mixins, :provenance, :doc, :rubymap,
       keyword_init: true
     ) do
       def initialize(**args)
@@ -50,7 +50,7 @@ module Rubymap
 
     CoreNormalizedModule = Struct.new(
       :symbol_id, :name, :fqname, :kind, :location,
-      :namespace_path, :children, :provenance,
+      :namespace_path, :children, :provenance, :doc,
       keyword_init: true
     ) do
       def initialize(**args)
@@ -64,7 +64,7 @@ module Rubymap
     CoreNormalizedMethod = Struct.new(
       :symbol_id, :name, :fqname, :visibility, :owner, :scope,
       :parameters, :arity, :canonical_name, :available_in,
-      :inferred_visibility, :source, :provenance,
+      :inferred_visibility, :source, :provenance, :doc, :rubymap,
       keyword_init: true
     ) do
       def initialize(**args)

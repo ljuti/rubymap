@@ -38,7 +38,10 @@ module Rubymap
 
         # Hook methods for subclasses to implement
         def validate_item(data, errors)
-          if data[:name].nil?
+          # Handle both hash and object formats
+          name = data.is_a?(Hash) ? data[:name] : data.respond_to?(:name) ? data.name : nil
+          
+          if name.nil?
             add_validation_error("missing required field: name", data, errors)
             return false
           end

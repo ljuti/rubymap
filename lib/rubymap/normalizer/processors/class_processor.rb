@@ -58,7 +58,9 @@ module Rubymap
             superclass: data[:superclass],
             location: normalize_location(data[:location]),
             namespace_path: extract_namespace_path(fqname),
-            provenance: create_provenance(data)
+            provenance: create_provenance(data),
+            doc: data[:doc],
+            rubymap: data[:rubymap]
           )
         end
 
@@ -72,7 +74,8 @@ module Rubymap
             fqname: fqname,
             location: normalize_location(data[:location]),
             namespace_path: extract_namespace_path(fqname),
-            provenance: create_provenance(data)
+            provenance: create_provenance(data),
+            doc: data[:doc]
           )
         end
 

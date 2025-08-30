@@ -5,7 +5,33 @@ require "pathname"
 require "yaml"
 
 module Rubymap
-  # Configuration for Rubymap mapping process
+  # Configuration management for the Rubymap analysis pipeline.
+  #
+  # Provides flexible configuration options for all aspects of code analysis,
+  # including file selection, output formats, metric thresholds, and processing
+  # behavior. Supports environment variables, config files, and runtime options.
+  #
+  # @rubymap Manages configuration for all pipeline components
+  #
+  # @example Basic configuration
+  #   config = Rubymap::Configuration.new(
+  #     output_dir: "docs/",
+  #     format: :markdown,
+  #     verbose: true
+  #   )
+  #
+  # @example Advanced configuration with all options
+  #   config = Rubymap::Configuration.new(
+  #     static: {
+  #       paths: ["lib/", "app/"],
+  #       exclude: ["test/", "spec/"],
+  #       parse_yard: true
+  #     },
+  #     metrics: {
+  #       complexity_threshold: 10,
+  #       enable_all: true
+  #     }
+  #   )
   class Configuration < Anyway::Config
     # Define configuration attributes with defaults
     attr_config(

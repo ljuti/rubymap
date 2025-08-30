@@ -10,6 +10,10 @@ module Rubymap
         name = extract_constant_name(node.constant_path)
         superclass = extract_superclass(node)
         doc = extract_documentation(node)
+        
+        # Extract YARD tags including @rubymap
+        tags = extract_yard_tags(doc)
+        rubymap = tags[:rubymap] if tags
 
         # Note: We don't need the full_name anymore since we're only pushing the simple name
         # namespace_service.resolve_in_namespace(name, context.current_namespace)
@@ -19,7 +23,8 @@ module Rubymap
           superclass: superclass,
           location: node.location,
           doc: doc,
-          namespace: context.current_namespace
+          namespace: context.current_namespace,
+          rubymap: rubymap
         )
 
         result.classes << class_info

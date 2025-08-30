@@ -10,7 +10,9 @@ module Rubymap
         :ruby_idioms, :rails_insights, :rails_models, :rails_controllers,
         :quality_metrics,
         :schema_version, :normalizer_version, :enricher_version,
-        :normalized_at, :enriched_at
+        :normalized_at, :enriched_at,
+        :code_smells, :missing_references, :circular_dependencies,
+        :detected_patterns, :rails_patterns
 
       def initialize
         @classes = []
@@ -32,6 +34,11 @@ module Rubymap
         @quality_metrics = QualityMetrics.new
         @enriched_at = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%S.%LZ")
         @enricher_version = "1.0.0"
+        @code_smells = []
+        @missing_references = []
+        @circular_dependencies = []
+        @detected_patterns = []
+        @rails_patterns = []
       end
 
       # Create enriched result from normalized result
@@ -72,7 +79,7 @@ module Rubymap
       :namespace_path, :children, :inheritance_chain,
       :instance_methods, :class_methods,
       :available_instance_methods, :available_class_methods,
-      :mixins, :provenance,
+      :mixins, :provenance, :doc, :rubymap,
       # Basic enriched fields
       :cyclomatic_complexity, :complexity_category, :total_complexity,
       :fan_in, :fan_out, :coupling_strength,
@@ -91,6 +98,7 @@ module Rubymap
       # Other enrichment fields
       :dependencies, :methods, :metrics, :parent_class, :ancestors, :instance_variables,
       :visibility, :file, :implements, :method_names,
+      :constants, :attributes, :class_variables, :line_count,
       keyword_init: true
     )
       def self.from_normalized(normalized_class)
@@ -110,6 +118,8 @@ module Rubymap
           available_class_methods: normalized_class.available_class_methods,
           mixins: normalized_class.mixins,
           provenance: normalized_class.provenance,
+          doc: normalized_class.respond_to?(:doc) ? normalized_class.doc : nil,
+          rubymap: normalized_class.respond_to?(:rubymap) ? normalized_class.rubymap : nil,
           # Preserve any additional analysis data
           dependencies: normalized_class.respond_to?(:dependencies) ? normalized_class.dependencies : nil,
           visibility: normalized_class.respond_to?(:visibility) ? normalized_class.visibility : nil,
@@ -129,7 +139,11 @@ module Rubymap
           filters: normalized_class.respond_to?(:filters) ? normalized_class.filters : nil,
           rescue_handlers: normalized_class.respond_to?(:rescue_handlers) ? normalized_class.rescue_handlers : nil,
           method_names: normalized_class.respond_to?(:method_names) ? normalized_class.method_names : nil,
-          methods: []
+          methods: [],
+          constants: [],
+          attributes: [],
+          class_variables: [],
+          line_count: nil
         )
       end
 
@@ -158,9 +172,10 @@ module Rubymap
     class EnrichedModule < Struct.new(
       # Original normalized fields
       :symbol_id, :name, :fqname, :kind, :location,
-      :namespace_path, :children, :provenance,
+      :namespace_path, :children, :provenance, :doc, :rubymap,
       # Enriched fields
-      :public_api_surface, :instance_methods, :visibility,
+      :public_api_surface, :instance_methods, :class_methods, :visibility,
+      :methods, :constants, :included_in, :extended_in,
       keyword_init: true
     )
       def self.from_normalized(normalized_module)
@@ -172,7 +187,15 @@ module Rubymap
           location: normalized_module.location,
           namespace_path: normalized_module.namespace_path,
           children: normalized_module.children,
-          provenance: normalized_module.provenance
+          provenance: normalized_module.provenance,
+          doc: normalized_module.respond_to?(:doc) ? normalized_module.doc : nil,
+          rubymap: normalized_module.respond_to?(:rubymap) ? normalized_module.rubymap : nil,
+          instance_methods: normalized_module.respond_to?(:instance_methods) ? normalized_module.instance_methods : [],
+          class_methods: normalized_module.respond_to?(:class_methods) ? normalized_module.class_methods : [],
+          methods: [],
+          constants: [],
+          included_in: [],
+          extended_in: []
         )
       end
 
@@ -197,7 +220,7 @@ module Rubymap
       # Original normalized fields
       :symbol_id, :name, :fqname, :visibility, :owner, :scope,
       :parameters, :arity, :canonical_name, :available_in,
-      :inferred_visibility, :source, :provenance,
+      :inferred_visibility, :source, :provenance, :doc, :rubymap,
       # Enriched fields
       :cyclomatic_complexity, :complexity_category, :complexity,
       :lines_of_code, :body_lines, :branches, :loops, :conditionals, :line_count,
@@ -223,6 +246,8 @@ module Rubymap
           inferred_visibility: normalized_method.inferred_visibility,
           source: normalized_method.source,
           provenance: normalized_method.provenance,
+          doc: normalized_method.respond_to?(:doc) ? normalized_method.doc : nil,
+          rubymap: normalized_method.respond_to?(:rubymap) ? normalized_method.rubymap : nil,
           # Copy any existing analysis data
           branches: normalized_method.respond_to?(:branches) ? normalized_method.branches : nil,
           loops: normalized_method.respond_to?(:loops) ? normalized_method.loops : nil,

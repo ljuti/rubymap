@@ -37,6 +37,8 @@ module Rubymap
   # consistent naming. It handles namespace resolution, inheritance chains,
   # method visibility inference, and generates unique symbol IDs for tracking.
   #
+  # @rubymap Standardizes extracted code into consistent normalized format
+  #
   # @example Basic normalization
   #   extractor = Rubymap::Extractor.new
   #   raw_data = extractor.extract_from_file("app/models/user.rb")
@@ -238,7 +240,7 @@ module Rubymap
     NormalizedMethod = Struct.new(
       :symbol_id, :name, :fqname, :visibility, :owner, :scope,
       :parameters, :arity, :canonical_name, :available_in,
-      :inferred_visibility, :source, :provenance,
+      :inferred_visibility, :source, :provenance, :doc, :rubymap,
       # Additional analysis fields (optional, populated by extractors)
       :branches, :loops, :conditionals, :body_lines, :test_coverage,
       keyword_init: true
