@@ -2,6 +2,7 @@
 
 require_relative "enricher/enricher_registry"
 require_relative "enricher/enrichment_result"
+require_relative "enricher/converters/converter_factory"
 
 module Rubymap
   # Enriches normalized code data with metrics, patterns, and quality insights.
@@ -170,106 +171,40 @@ module Rubymap
       end
     end
 
+    # Converts hash data to NormalizedResult using converter factory pattern.
+    #
+    # This method has been refactored to use the Strategy and Factory patterns,
+    # delegating entity-specific conversion logic to specialized converter classes.
+    # This improves maintainability, testability, and follows SOLID principles.
+    #
+    # @param hash [Hash] Hash data to convert
+    # @return [NormalizedResult] Converted normalized result
     def convert_hash_to_normalized_result(hash)
       result = Normalizer::NormalizedResult.new
 
-      # Convert hash classes to NormalizedClass structs
-      result.classes = (hash[:classes] || []).map do |klass_hash|
-        if klass_hash.is_a?(Normalizer::NormalizedClass)
-          klass_hash
-        else
-          Normalizer::NormalizedClass.new(
-            symbol_id: klass_hash[:symbol_id] || "class_#{klass_hash[:name]}",
-            name: klass_hash[:name],
-            fqname: klass_hash[:fqname] || klass_hash[:name],
-            kind: klass_hash[:kind] || "class",
-            superclass: klass_hash[:superclass],
-            location: klass_hash[:location],
-            namespace_path: klass_hash[:namespace_path] || [],
-            children: klass_hash[:children] || [],
-            inheritance_chain: klass_hash[:inheritance_chain] || [],
-            instance_methods: klass_hash[:instance_methods] || [],
-            class_methods: klass_hash[:class_methods] || [],
-            available_instance_methods: klass_hash[:available_instance_methods] || [],
-            available_class_methods: klass_hash[:available_class_methods] || [],
-            mixins: klass_hash[:mixins] || [],
-            provenance: klass_hash[:provenance] || "test",
-            # Additional test data fields
-            dependencies: klass_hash[:dependencies],
-            visibility: klass_hash[:visibility],
-            git_commits: klass_hash[:git_commits],
-            last_modified: klass_hash[:last_modified],
-            age_in_days: klass_hash[:age_in_days],
-            test_coverage: klass_hash[:test_coverage],
-            documentation_coverage: klass_hash[:documentation_coverage],
-            churn_score: klass_hash[:churn_score],
-            file: klass_hash[:file],
-            implements: klass_hash[:implements],
-            # Rails-specific fields
-            associations: klass_hash[:associations],
-            validations: klass_hash[:validations],
-            scopes: klass_hash[:scopes],
-            actions: klass_hash[:actions],
-            filters: klass_hash[:filters],
-            rescue_handlers: klass_hash[:rescue_handlers],
-            # Test data fields
-            method_names: klass_hash[:methods]
-          )
-        end
-      end
-
-      # Convert hash modules to NormalizedModule structs
-      result.modules = (hash[:modules] || []).map do |mod_hash|
-        if mod_hash.is_a?(Normalizer::NormalizedModule)
-          mod_hash
-        else
-          Normalizer::NormalizedModule.new(
-            symbol_id: mod_hash[:symbol_id] || "module_#{mod_hash[:name]}",
-            name: mod_hash[:name],
-            fqname: mod_hash[:fqname] || mod_hash[:name],
-            kind: mod_hash[:kind] || "module",
-            location: mod_hash[:location],
-            namespace_path: mod_hash[:namespace_path] || [],
-            children: mod_hash[:children] || [],
-            provenance: mod_hash[:provenance] || "test",
-            # Additional test data fields
-            instance_methods: mod_hash[:instance_methods],
-            visibility: mod_hash[:visibility]
-          )
-        end
-      end
-
-      # Convert hash methods to NormalizedMethod structs
-      result.methods = (hash[:methods] || []).map do |method_hash|
-        if method_hash.is_a?(Normalizer::NormalizedMethod)
-          method_hash
-        else
-          Normalizer::NormalizedMethod.new(
-            symbol_id: method_hash[:symbol_id] || "method_#{method_hash[:name]}",
-            name: method_hash[:name],
-            fqname: method_hash[:fqname] || method_hash[:name],
-            visibility: method_hash[:visibility] || "public",
-            owner: method_hash[:owner],
-            scope: method_hash[:scope] || "instance",
-            parameters: method_hash[:parameters] || [],
-            arity: method_hash[:arity] || -1,
-            canonical_name: method_hash[:canonical_name] || method_hash[:name],
-            available_in: method_hash[:available_in] || [],
-            inferred_visibility: method_hash[:inferred_visibility],
-            source: method_hash[:source],
-            provenance: method_hash[:provenance] || "test",
-            # Additional analysis fields
-            branches: method_hash[:branches],
-            loops: method_hash[:loops],
-            conditionals: method_hash[:conditionals],
-            body_lines: method_hash[:body_lines],
-            test_coverage: method_hash[:test_coverage]
-          )
-        end
-      end
-
+      # Convert each entity type using appropriate converter
+      result.classes = convert_entities(hash[:classes], :classes)
+      result.modules = convert_entities(hash[:modules], :modules)
+      result.methods = convert_entities(hash[:methods], :methods)
+      
+      # Method calls don't need conversion (simple array)
       result.method_calls = hash[:method_calls] || []
+      
       result
+    end
+
+    private
+
+    # Converts entities of a specific type using the appropriate converter.
+    #
+    # @param entities [Array] Array of entity hashes to convert
+    # @param type [Symbol] Entity type (:classes, :modules, :methods)
+    # @return [Array] Array of converted normalized entities
+    def convert_entities(entities, type)
+      return [] unless entities
+
+      converter = Converters::ConverterFactory.create_converter(type)
+      converter.convert(entities)
     end
 
     def apply_metrics(result)
