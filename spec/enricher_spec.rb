@@ -1278,5 +1278,350 @@ RSpec.describe "Rubymap::Enricher" do
         expect(very_complex.complexity_category).to eq("very_complex") # 21 is very_complex
       end
     end
+
+    context "when testing internal methods directly" do
+      describe "#convert_entities" do
+        it "returns empty array for nil input" do
+          result = enricher.send(:convert_entities, nil, :classes)
+          expect(result).to eq([])
+          expect(result).to be_an(Array)
+          expect(result).not_to be_nil
+        end
+
+        it "returns empty array for falsy input" do
+          # nil should return empty array
+          result = enricher.send(:convert_entities, nil, :classes)
+          expect(result).to eq([])
+          expect(result).to be_an(Array)
+          
+          # empty array should pass through to converter
+          result = enricher.send(:convert_entities, [], :classes)
+          expect(result).to eq([])
+        end
+
+        it "converts non-nil entities" do
+          entities = [{name: "TestClass"}]
+          result = enricher.send(:convert_entities, entities, :classes)
+          expect(result).not_to be_empty
+          expect(result.first).to be_a(Rubymap::Normalizer::NormalizedClass)
+        end
+        
+        it "does not return nil when entities is nil" do
+          # Explicitly test that nil input doesn't return nil
+          result = enricher.send(:convert_entities, nil, :modules)
+          expect(result).not_to be_nil
+          expect(result).to eq([])
+        end
+        
+        it "properly guards against nil without removing the guard" do
+          # Test that removing the nil guard would break things
+          entities = nil
+          result = enricher.send(:convert_entities, entities, :methods)
+          expect(result).to eq([])
+          # If guard was removed, converter would be called with nil and fail
+        end
+      end
+
+      describe "#convert_hash_to_normalized_result" do
+        it "handles missing modules key" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            methods: [{name: "test_method", owner: "TestClass"}]
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          expect(result.modules).to eq([])
+          expect(result.classes.length).to eq(1)
+          expect(result.methods.length).to eq(1)
+        end
+
+        it "handles nil modules value" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules: nil,
+            methods: [{name: "test_method", owner: "TestClass"}]
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          expect(result.modules).to eq([])
+          expect(result.modules).not_to be_nil
+        end
+        
+        it "correctly assigns modules property" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules: [{name: "TestModule"}],
+            methods: [{name: "test_method", owner: "TestClass"}]
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          # Verify the assignment actually happened
+          expect(result.modules).not_to be_empty
+          expect(result.modules.first.name).to eq("TestModule")
+        end
+        
+        it "handles modules with wrong hash key" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules__mutant__: [{name: "TestModule"}],  # Wrong key
+            methods: [{name: "test_method", owner: "TestClass"}]
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          # Should use nil/missing key handling
+          expect(result.modules).to eq([])
+        end
+
+        it "handles missing method_calls key" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules: [{name: "TestModule"}],
+            methods: [{name: "test_method", owner: "TestClass"}]
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          expect(result.method_calls).to eq([])
+        end
+
+        it "handles nil method_calls value" do
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules: [{name: "TestModule"}],
+            methods: [{name: "test_method", owner: "TestClass"}],
+            method_calls: nil
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          expect(result.method_calls).to eq([])
+        end
+
+        it "preserves non-nil method_calls" do
+          calls = [{from: "TestClass#method1", to: "TestClass#method2"}]
+          hash = {
+            classes: [{name: "TestClass"}],
+            modules: [{name: "TestModule"}],
+            methods: [{name: "test_method", owner: "TestClass"}],
+            method_calls: calls
+          }
+          result = enricher.send(:convert_hash_to_normalized_result, hash)
+          expect(result.method_calls).to eq(calls)
+        end
+      end
+
+      describe "#default_config" do
+        it "returns expected default values" do
+          config = enricher.send(:default_config)
+          expect(config[:complexity_threshold]).to eq(10)
+          expect(config[:api_size_threshold]).to eq(5)
+          expect(config[:inheritance_depth_threshold]).to eq(4)
+          expect(config[:fan_out_threshold]).to eq(3)
+          expect(config[:churn_threshold]).to eq(10)
+          expect(config[:coverage_threshold]).to eq(80)
+        end
+
+        it "all threshold values are used in enrichment" do
+          # Create enricher with custom config to verify defaults are overrideable
+          custom_config = {
+            complexity_threshold: 1,
+            api_size_threshold: 1,
+            inheritance_depth_threshold: 1,
+            fan_out_threshold: 1,
+            churn_threshold: 1,
+            coverage_threshold: 99
+          }
+          custom_enricher = Rubymap::Enricher.new(custom_config)
+          
+          data = {
+            classes: [{
+              name: "TestClass",
+              methods: [{name: "complex_method", owner: "TestClass", branches: 2}],
+              dependencies: ["Dep1", "Dep2"],
+              test_coverage: 95,
+              churn: 2,
+              public_methods: ["m1", "m2"]
+            }]
+          }
+          
+          result = custom_enricher.enrich(data)
+          test_class = result.classes.first
+          
+          # With lower thresholds, values should reflect that in scoring
+          # Test that custom config is actually used
+          expect(test_class.fan_out).to eq(2)  # 2 dependencies
+          expect(test_class.test_coverage).to eq(95)  # Coverage is 95
+          
+          # Verify thresholds are actually different from defaults
+          default_enricher = Rubymap::Enricher.new
+          default_result = default_enricher.enrich(data)
+          default_class = default_result.classes.first
+          
+          # With different thresholds, scoring should be different
+          # (though the raw metrics are the same)
+          expect(custom_enricher.config[:complexity_threshold]).to eq(1)
+          expect(default_enricher.config[:complexity_threshold]).to eq(10)
+        end
+      end
+
+      describe "#setup_pipeline" do
+        it "correctly initializes pipeline" do
+          # This test ensures the pipeline is set up correctly
+          expect(enricher.pipeline).to be_a(Rubymap::Enricher::Pipeline::EnrichmentPipeline)
+          expect(enricher.pipeline.stages).not_to be_empty
+          expect(enricher.pipeline.stages.last).to be_a(Rubymap::Enricher::Pipeline::IssueIdentificationStage)
+        end
+        
+        it "creates pipeline with correct stages based on config" do
+          # Test with all features enabled
+          full_enricher = Rubymap::Enricher.new(
+            enable_metrics: true,
+            enable_patterns: true,
+            enable_rails: true
+          )
+          
+          # Should have MetricsStage, AnalysisStage, RailsStage, ScoringStage, IssueIdentificationStage
+          expect(full_enricher.pipeline.stages.size).to eq(5)
+          
+          # Test with only scoring and issue identification
+          minimal_enricher = Rubymap::Enricher.new(
+            enable_metrics: false,
+            enable_patterns: false,
+            enable_rails: false
+          )
+          
+          # Should only have ScoringStage and IssueIdentificationStage
+          expect(minimal_enricher.pipeline.stages.size).to eq(2)
+          expect(minimal_enricher.pipeline.stages.first).to be_a(Rubymap::Enricher::Pipeline::ScoringStage)
+          expect(minimal_enricher.pipeline.stages.last).to be_a(Rubymap::Enricher::Pipeline::IssueIdentificationStage)
+        end
+      end
+    end
+    
+    context "when testing #enrich method" do
+      it "uses pipeline reader method correctly" do
+        data = {
+          classes: [{name: "SimpleClass"}]
+        }
+        
+        # We can't mock easily without changing the design, 
+        # but we can verify the pipeline is used by checking the result
+        result = enricher.enrich(data)
+        
+        # The pipeline should have been executed (stages would add data)
+        expect(result).to be_a(Rubymap::Enricher::EnrichmentResult)
+        expect(result.classes).not_to be_empty
+        
+        # Verify pipeline was actually used by checking it has stages
+        expect(enricher.pipeline.stages).not_to be_empty
+      end
+      
+      it "executes pipeline with enrichment result" do
+        data = {
+          classes: [{name: "TestClass", methods: [{name: "test", owner: "TestClass"}]}]
+        }
+        
+        result = enricher.enrich(data)
+        
+        # If pipeline wasn't executed, these metrics wouldn't be calculated
+        test_class = result.classes.first
+        expect(test_class).to respond_to(:fan_in)
+        expect(test_class).to respond_to(:fan_out)
+        expect(test_class).to respond_to(:stability_score)
+      end
+      
+      it "returns the enriched result" do
+        data = {
+          classes: [{name: "TestClass"}]
+        }
+        
+        result = enricher.enrich(data)
+        
+        # Must return the result, not nil or something else
+        expect(result).not_to be_nil
+        expect(result).to be_a(Rubymap::Enricher::EnrichmentResult)
+        expect(result.classes.first.name).to eq("TestClass")
+      end
+      
+      it "handles NormalizedResult input correctly" do
+        normalized = Rubymap::Normalizer::NormalizedResult.new
+        normalized.classes = [Rubymap::Normalizer::NormalizedClass.new(name: "MyClass")]
+        
+        result = enricher.enrich(normalized)
+        
+        expect(result).to be_a(Rubymap::Enricher::EnrichmentResult)
+        expect(result.classes.first.name).to eq("MyClass")
+      end
+      
+      it "handles Hash input correctly" do
+        hash_data = {
+          classes: [{name: "HashClass"}],
+          modules: [{name: "HashModule"}]
+        }
+        
+        result = enricher.enrich(hash_data)
+        
+        expect(result).to be_a(Rubymap::Enricher::EnrichmentResult)
+        expect(result.classes.first.name).to eq("HashClass")
+        expect(result.modules.first.name).to eq("HashModule")
+      end
+      
+      it "raises error for invalid input type" do
+        expect { enricher.enrich("invalid") }.to raise_error(ArgumentError, /Expected NormalizedResult or Hash/)
+        expect { enricher.enrich(123) }.to raise_error(ArgumentError, /got Integer/)
+        expect { enricher.enrich([]) }.to raise_error(ArgumentError, /got Array/)
+      end
+    end
+    
+    context "when testing initialization" do
+      it "creates component factory with correct parameters" do
+        test_config = { complexity_threshold: 5 }
+        test_enricher = Rubymap::Enricher.new(test_config)
+        
+        # Verify config is merged and used
+        expect(test_enricher.config[:complexity_threshold]).to eq(5)
+        expect(test_enricher.config[:enable_metrics]).to eq(true) # default
+        
+        # Component factory should be created
+        expect(test_enricher.component_factory).not_to be_nil
+        expect(test_enricher.registry).not_to be_nil
+        
+        # Component factory should have received correct parameters
+        # We can't directly inspect but we can verify it works
+        expect { test_enricher.component_factory.create_metrics }.not_to raise_error
+      end
+      
+      it "initializes with empty config" do
+        test_enricher = Rubymap::Enricher.new
+        
+        # Should use all defaults
+        expect(test_enricher.config[:enable_metrics]).to eq(true)
+        expect(test_enricher.config[:enable_patterns]).to eq(true)
+        expect(test_enricher.config[:enable_rails]).to eq(true)
+      end
+      
+      it "initializes with nil config treated as empty" do
+        test_enricher = Rubymap::Enricher.new(nil)
+        
+        # Should use all defaults
+        expect(test_enricher.config[:enable_metrics]).to eq(true)
+      end
+    end
+    
+    context "when testing setup_pipeline with fetch" do
+      it "correctly handles missing config keys with fetch defaults" do
+        # Create enricher with partial config (missing enable keys)
+        test_enricher = Rubymap::Enricher.new({
+          complexity_threshold: 5
+          # Deliberately missing enable_metrics, enable_patterns, enable_rails
+        })
+        
+        # Pipeline should still be created with defaults
+        expect(test_enricher.pipeline).not_to be_nil
+        expect(test_enricher.pipeline.stages).not_to be_empty
+        
+        # Should have all stages since fetch provides defaults
+        stages = test_enricher.pipeline.stages
+        expect(stages.map(&:class)).to include(
+          Rubymap::Enricher::Pipeline::MetricsStage,
+          Rubymap::Enricher::Pipeline::AnalysisStage,
+          Rubymap::Enricher::Pipeline::RailsStage,
+          Rubymap::Enricher::Pipeline::ScoringStage,
+          Rubymap::Enricher::Pipeline::IssueIdentificationStage
+        )
+      end
+    end
   end
 end

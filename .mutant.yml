@@ -10,4 +10,4 @@ integration:
     - spec
 matcher:
   subjects:
-    - Rubymap::Normalizer*
+    - Rubymap::Enricher*
