@@ -11,8 +11,8 @@ module Rubymap
         superclass = extract_superclass(node)
         doc = extract_documentation(node)
 
-        # Build fully qualified name using namespace service
-        full_name = namespace_service.resolve_in_namespace(name, context.current_namespace)
+        # Note: We don't need the full_name anymore since we're only pushing the simple name
+        # namespace_service.resolve_in_namespace(name, context.current_namespace)
 
         class_info = ClassInfo.new(
           name: name,  # Use simple name, namespace is separate
@@ -25,8 +25,8 @@ module Rubymap
         result.classes << class_info
 
         # Process class body with updated context
-        # Use the full_name for nested namespace
-        context.with_namespace(full_name) do
+        # Only push the simple name, not the full name to avoid duplication
+        context.with_namespace(name) do
           context.with_visibility(:public) do
             yield if block_given?
           end

@@ -10,8 +10,8 @@ module Rubymap
         name = extract_constant_name(node.constant_path)
         doc = extract_documentation(node)
 
-        # Build fully qualified name if within a namespace
-        full_name = (context.current_namespace && !context.current_namespace.empty?) ? "#{context.current_namespace}::#{name}" : name
+        # Note: We don't need the full_name anymore since we're only pushing the simple name
+        # (context.current_namespace && !context.current_namespace.empty?) ? "#{context.current_namespace}::#{name}" : name
 
         module_info = ModuleInfo.new(
           name: name,  # Use simple name, namespace is separate
@@ -24,8 +24,8 @@ module Rubymap
         result.modules << module_info
 
         # Process module body with updated context
-        # Use the full_name for nested namespace
-        context.with_namespace(full_name) do
+        # Only push the simple name, not the full name to avoid duplication
+        context.with_namespace(name) do
           context.with_visibility(:public) do
             yield if block_given?
           end

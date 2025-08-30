@@ -97,6 +97,107 @@ RSpec.describe "Rubymap::Extractor" do
         end
       end
 
+      context "when parsing deeply nested modules and classes" do
+        let(:ruby_code) do
+          <<~RUBY
+            module Rubymap
+              module Emitter
+                class BaseEmitter
+                  def emit
+                    "emitting"
+                  end
+                end
+                
+                module Emitters
+                  class LLM < BaseEmitter
+                    def emit
+                      "llm output"
+                    end
+                  end
+                end
+              end
+            end
+          RUBY
+        end
+
+        it "does not duplicate namespaces in nested structures" do
+          result = extractor.extract_from_code(ruby_code)
+
+          # Find BaseEmitter class
+          base_emitter = result.classes.find { |c| c.name == "BaseEmitter" }
+          expect(base_emitter).not_to be_nil
+          expect(base_emitter.namespace).to eq("Rubymap::Emitter")
+
+          # Find LLM class
+          llm_emitter = result.classes.find { |c| c.name == "LLM" }
+          expect(llm_emitter).not_to be_nil
+          expect(llm_emitter.namespace).to eq("Rubymap::Emitter::Emitters")
+
+          # Ensure no namespace duplication like "Rubymap::Rubymap::Emitter"
+          expect(base_emitter.namespace).not_to include("Rubymap::Rubymap")
+          expect(llm_emitter.namespace).not_to match(/Emitter::Emitter::Emitters/)
+
+          # Ensure we don't have duplicated module names in the path
+          namespace_parts = llm_emitter.namespace.split("::")
+          expect(namespace_parts).to eq(["Rubymap", "Emitter", "Emitters"])
+          expect(namespace_parts.uniq).to eq(namespace_parts) # No duplicates
+        end
+
+        it "correctly builds fully qualified names without duplication" do
+          result = extractor.extract_from_code(ruby_code)
+
+          base_emitter = result.classes.find { |c| c.name == "BaseEmitter" }
+          llm_emitter = result.classes.find { |c| c.name == "LLM" }
+
+          # Build FQNs
+          base_fqn = [base_emitter.namespace, base_emitter.name].compact.reject(&:empty?).join("::")
+          llm_fqn = [llm_emitter.namespace, llm_emitter.name].compact.reject(&:empty?).join("::")
+
+          expect(base_fqn).to eq("Rubymap::Emitter::BaseEmitter")
+          expect(llm_fqn).to eq("Rubymap::Emitter::Emitters::LLM")
+        end
+
+        it "regression test: prevents namespace duplication bug" do
+          # This test specifically guards against the bug where we were pushing
+          # the full qualified name onto the namespace stack instead of just the simple name
+          result = extractor.extract_from_code(ruby_code)
+
+          # Before the fix, BaseEmitter would have namespace "Rubymap::Rubymap::Emitter"
+          # because we were pushing "Rubymap::Emitter" when entering the Emitter module
+          # within the Rubymap module
+          emitter_module = result.modules.find { |m| m.name == "Emitter" }
+          expect(emitter_module.namespace).to eq("Rubymap")
+
+          # The Emitters module within Emitter module should have correct namespace
+          emitters_module = result.modules.find { |m| m.name == "Emitters" }
+          expect(emitters_module.namespace).to eq("Rubymap::Emitter")
+
+          # Verify no namespace contains consecutive duplicate segments
+          all_namespaces = result.classes.map(&:namespace) + result.modules.map(&:namespace)
+          all_namespaces.compact.each do |ns|
+            segments = ns.split("::")
+            segments.each_cons(2) do |a, b|
+              expect(a).not_to eq(b), "Found duplicate consecutive segments in namespace: #{ns}"
+            end
+          end
+        end
+
+        it "maintains correct namespace for methods in nested classes" do
+          result = extractor.extract_from_code(ruby_code)
+
+          # Find methods
+          base_emit = result.methods.find { |m| m.name == "emit" && m.owner == "BaseEmitter" }
+          llm_emit = result.methods.find { |m| m.name == "emit" && m.owner == "LLM" }
+
+          expect(base_emit).not_to be_nil
+          expect(llm_emit).not_to be_nil
+
+          # Verify owner namespaces are correct
+          expect(base_emit.namespace).to eq("Rubymap::Emitter::BaseEmitter")
+          expect(llm_emit.namespace).to eq("Rubymap::Emitter::Emitters::LLM")
+        end
+      end
+
       context "when parsing module definitions" do
         let(:ruby_code) do
           <<~RUBY
