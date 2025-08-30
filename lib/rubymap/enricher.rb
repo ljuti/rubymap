@@ -55,7 +55,7 @@ module Rubymap
     def initialize(config = {})
       @config = default_config.merge(config || {})
       @registry = EnricherRegistry.new
-      @component_factory = Factories::ComponentFactory.new(registry, self.config)
+      @component_factory = Factories::ComponentFactory.new(registry, @config)
       setup_pipeline
     end
 
@@ -67,13 +67,8 @@ module Rubymap
       # Convert to proper input format if needed
       input = ensure_normalized_result(normalized_data)
 
-      # Create enriched result from normalized data
-      result = EnrichmentResult.from_normalized(input)
-
       # Execute the enrichment pipeline
-      pipeline.execute(result)
-
-      result
+      pipeline.execute(EnrichmentResult.from_normalized(input))
     end
 
     private
@@ -138,7 +133,7 @@ module Rubymap
 
     # Converts entities of a specific type using the appropriate converter.
     def convert_entities(entities, type)
-      entities.nil? ? [] : Converters::ConverterFactory.create_converter(type).convert(entities)
+      Converters::ConverterFactory.create_converter(type).convert(entities)
     end
   end
 end
