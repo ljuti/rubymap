@@ -3,17 +3,73 @@
 require "fileutils"
 
 module Rubymap
-  # Orchestrates the complete mapping pipeline
+  # Orchestrates the complete code analysis pipeline from extraction to output.
+  #
+  # The Pipeline coordinates all Rubymap components in sequence, managing data
+  # flow between extraction, normalization, indexing, enrichment, and emission
+  # stages. It provides progress tracking, error handling, and configurable
+  # processing options.
+  #
+  # @example Basic pipeline execution
+  #   config = Rubymap::Configuration.new(
+  #     format: :llm,
+  #     output_dir: "docs/"
+  #   )
+  #
+  #   pipeline = Rubymap::Pipeline.new(config)
+  #   result = pipeline.run(["lib/", "app/"])
+  #
+  #   # Result contains generated documentation paths
+  #
+  # @example Pipeline with custom configuration
+  #   config = Rubymap::Configuration.new(
+  #     format: :json,
+  #     verbose: true,
+  #     exclude_patterns: ["**/test/**", "**/spec/**"]
+  #   )
+  #
+  #   pipeline = Rubymap::Pipeline.new(config)
+  #   result = pipeline.run(["."])
+  #
+  # @example Step-by-step processing
+  #   # The pipeline executes these steps:
+  #   # 1. Extract: Parse Ruby files to extract symbols
+  #   # 2. Index: Build searchable indexes and graphs
+  #   # 3. Normalize: Standardize names and resolve references
+  #   # 4. Enrich: Calculate metrics and detect patterns
+  #   # 5. Emit: Generate output in requested format
+  #
   class Pipeline
+    # @return [Configuration] Pipeline configuration settings
     attr_reader :configuration
 
+    # Creates a new Pipeline instance.
+    #
+    # @param configuration [Configuration] Configuration object with processing options
+    #
+    # @example
+    #   config = Rubymap::Configuration.default
+    #   pipeline = Rubymap::Pipeline.new(config)
     def initialize(configuration)
       @configuration = configuration
     end
 
-    # Run the complete pipeline
-    # @param paths [Array<String>] Paths to process
-    # @return [Hash] The final mapping result
+    # Executes the complete analysis pipeline.
+    #
+    # Processes the specified paths through all pipeline stages:
+    # extraction, indexing, normalization, enrichment, and emission.
+    # Provides progress logging and handles errors gracefully.
+    #
+    # @param paths [Array<String>] File or directory paths to analyze
+    # @return [Hash] Output result with format and file paths
+    #
+    # @example Process specific directories
+    #   result = pipeline.run(["app/models", "app/controllers"])
+    #   result[:path]   # => "output/map.json"
+    #   result[:format] # => :json
+    #
+    # @example Process entire project
+    #   result = pipeline.run(["."])
     def run(paths)
       log "Starting Rubymap pipeline..."
 

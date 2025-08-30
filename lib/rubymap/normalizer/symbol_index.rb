@@ -9,21 +9,22 @@ module Rubymap
       end
 
       def add(symbol)
-        @index[symbol.fqname] = symbol
-        @index[symbol.name] = symbol unless symbol.fqname == symbol.name
+        index[symbol.fqname] = symbol
+        index[symbol.name] = symbol unless symbol.fqname == symbol.name
       end
 
       def find(name)
-        @index[name]
+        index[name]
       end
 
       def clear
-        @index.clear
+        index.clear
       end
 
       def find_parent_class(class_name)
         symbol = find(class_name)
-        return nil unless symbol&.respond_to?(:superclass)
+        return nil if symbol.nil?
+        return nil unless symbol.respond_to?(:superclass)
 
         symbol.superclass
       end

@@ -7,16 +7,81 @@ require_relative "indexer/search_engine"
 require_relative "indexer/query_interface"
 
 module Rubymap
-  # Builds searchable indexes and relationship graphs from enriched Ruby codebase data
-  # Enables fast symbol lookup, dependency tracking, and code navigation
+  # Builds searchable indexes and relationship graphs from normalized codebase data.
+  #
+  # The Indexer creates efficient data structures for fast symbol lookup, dependency
+  # analysis, and relationship traversal. It builds multiple specialized graphs
+  # (inheritance, dependencies, method calls, mixins) and provides a query interface
+  # for searching and navigation.
+  #
+  # @example Building indexes from normalized data
+  #   normalizer = Rubymap::Normalizer.new
+  #   normalized_data = normalizer.normalize(extraction_result)
+  #
+  #   indexer = Rubymap::Indexer.new
+  #   indexed = indexer.build(normalized_data)
+  #
+  #   # Access various graphs and indexes
+  #   indexed.symbol_index      # Fast symbol lookup
+  #   indexed.inheritance_graph # Class hierarchy
+  #   indexed.dependency_graph  # Dependency relationships
+  #
+  # @example Querying the indexed data
+  #   indexed = indexer.build(normalized_data)
+  #
+  #   # Find symbols by name
+  #   user_class = indexed.query.find_class("User")
+  #
+  #   # Navigate relationships
+  #   indexed.inheritance_graph.ancestors_of("User")   # => ["ApplicationRecord", "ActiveRecord::Base"]
+  #   indexed.dependency_graph.dependencies_of("User") # => ["EmailService", "Validator"]
+  #
+  # @example Detecting issues
+  #   indexed = indexer.build(normalized_data)
+  #
+  #   indexed.circular_dependencies # => Detected circular dependency chains
+  #   indexed.missing_references    # => References to undefined symbols
+  #
   class Indexer
     class InvalidDataError < StandardError; end
 
+    # Creates a new Indexer instance.
+    #
+    # @param config [Hash] Configuration options
+    # @option config [Boolean] :enable_caching (true) Enable caching for repeated queries
+    # @option config [Integer] :max_search_results (100) Maximum results for searches
+    # @option config [Float] :fuzzy_threshold (0.7) Threshold for fuzzy matching
+    # @option config [Boolean] :performance_mode (false) Optimize for speed over memory
+    #
+    # @example Custom configuration
+    #   indexer = Rubymap::Indexer.new(
+    #     enable_caching: false,
+    #     fuzzy_threshold: 0.8
+    #   )
     def initialize(config = {})
       @config = default_config.merge(config)
     end
 
-    # Main entry point - builds indexes from enriched data
+    # Builds comprehensive indexes from normalized or enriched data.
+    #
+    # Creates multiple data structures:
+    # - Symbol index for O(1) lookup by name or ID
+    # - Inheritance graph tracking class hierarchies
+    # - Dependency graph for require/load relationships
+    # - Method call graph for runtime interactions
+    # - Mixin graph for module inclusions
+    #
+    # @param enriched_data [Hash, NormalizedResult, EnrichmentResult] Input data to index
+    # @return [IndexedResult] Complete indexed representation with query interface
+    # @raise [InvalidDataError] if input data format is invalid
+    #
+    # @example
+    #   data = normalizer.normalize(extracted_data)
+    #   indexed = indexer.build(data)
+    #
+    #   indexed.symbol_index.count        # => 150
+    #   indexed.inheritance_graph.nodes    # => All classes with inheritance
+    #   indexed.query.search("User")      # => Fuzzy search results
     def build(enriched_data)
       validate_input!(enriched_data)
 
@@ -42,7 +107,20 @@ module Rubymap
       result
     end
 
-    # Load a previously saved index
+    # Loads a previously saved index from disk.
+    #
+    # @param file_path [String] Path to the saved index file
+    # @return [IndexedResult] Deserialized index data
+    # @raise [StandardError] if file does not exist
+    #
+    # @example
+    #   # Save an index
+    #   indexed = indexer.build(data)
+    #   indexed.save("project.rubymap_idx")
+    #
+    #   # Load it later
+    #   loaded = Rubymap::Indexer.load("project.rubymap_idx")
+    #   loaded.query.find_class("User")  # Works as before
     def self.load(file_path)
       raise "File not found: #{file_path}" unless File.exist?(file_path)
 

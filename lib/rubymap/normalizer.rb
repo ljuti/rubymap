@@ -30,8 +30,38 @@ require_relative "normalizer/deduplication/merge_strategy"
 require_relative "normalizer/output/deterministic_formatter"
 
 module Rubymap
-  # Normalizes extracted Ruby symbols into a consistent format
-  # Refactored to follow SOLID principles with clear separation of concerns
+  # Normalizes and standardizes extracted Ruby symbols into a consistent format.
+  #
+  # The Normalizer takes raw extraction results and transforms them into a
+  # standardized representation with resolved references, deduplication, and
+  # consistent naming. It handles namespace resolution, inheritance chains,
+  # method visibility inference, and generates unique symbol IDs for tracking.
+  #
+  # @example Basic normalization
+  #   extractor = Rubymap::Extractor.new
+  #   raw_data = extractor.extract_from_file("app/models/user.rb")
+  #
+  #   normalizer = Rubymap::Normalizer.new
+  #   result = normalizer.normalize(raw_data)
+  #
+  #   result.classes  # => Normalized classes with FQNs and symbol IDs
+  #   result.methods  # => Methods with resolved owners and visibility
+  #
+  # @example Working with normalized data
+  #   result = normalizer.normalize(raw_data)
+  #
+  #   # Access normalized classes with full metadata
+  #   user_class = result.classes.find { |c| c.name == "User" }
+  #   user_class.fqname           # => "Models::User"
+  #   user_class.symbol_id        # => "a1b2c3d4e5f67890"
+  #   user_class.namespace_path   # => ["Models"]
+  #   user_class.inheritance_chain # => ["ApplicationRecord", "ActiveRecord::Base"]
+  #
+  # @example Deduplication and merging
+  #   # If the same class is defined in multiple files, Normalizer merges them
+  #   result = normalizer.normalize(combined_extraction_results)
+  #   result.classes.uniq(&:symbol_id)  # Already deduplicated
+  #
   class Normalizer
     # Schema version for normalized output
     SCHEMA_VERSION = 1
@@ -59,12 +89,43 @@ module Rubymap
       DATA_SOURCES[:static] => 6
     }.freeze
 
+    # Creates a new Normalizer instance.
+    #
+    # @param container [ServiceContainer, nil] Optional dependency injection container
+    #   for customizing normalization components
+    #
+    # @example Default configuration
+    #   normalizer = Rubymap::Normalizer.new
+    #
+    # @example Custom configuration
+    #   container = Rubymap::Normalizer::ServiceContainer.new
+    #   container.register(:symbol_id_generator, CustomIdGenerator.new)
+    #   normalizer = Rubymap::Normalizer.new(container)
     def initialize(container = nil)
       @container = container || ServiceContainer.new
       @processing_pipeline = ProcessingPipeline.new(@container)
     end
 
-    # Main normalization method - delegates to processing pipeline
+    # Normalizes raw extraction data into standardized format.
+    #
+    # Processes extracted symbols through multiple stages:
+    # 1. Validation and filtering of invalid data
+    # 2. Namespace and reference resolution
+    # 3. Deduplication of identical symbols
+    # 4. Generation of unique symbol IDs
+    # 5. Inference of missing metadata (visibility, scope, etc.)
+    #
+    # @param raw_data [Hash, Extractor::Result] Raw extraction data containing
+    #   classes, modules, methods, and other symbols
+    # @return [NormalizedResult] Standardized representation with resolved references
+    #
+    # @example
+    #   raw_data = extractor.extract_from_directory("app/")
+    #   result = normalizer.normalize(raw_data)
+    #
+    #   result.schema_version     # => 1
+    #   result.normalizer_version # => "1.0.0"
+    #   result.errors             # => Any validation errors encountered
     def normalize(raw_data)
       @container.get(:symbol_index).clear
       @processing_pipeline.execute(raw_data)

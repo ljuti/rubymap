@@ -4,16 +4,85 @@ require_relative "enricher/enricher_registry"
 require_relative "enricher/enrichment_result"
 
 module Rubymap
-  # Enriches normalized Ruby symbols with metrics, patterns, and quality insights
-  # Takes normalized data and adds calculated metrics, detected patterns, and quality analysis
+  # Enriches normalized code data with metrics, patterns, and quality insights.
+  #
+  # The Enricher analyzes normalized symbols to calculate complexity metrics,
+  # detect design patterns, identify code smells, and provide quality assessments.
+  # It adds valuable metadata for understanding code health, maintainability,
+  # and architectural patterns.
+  #
+  # @example Basic enrichment
+  #   normalizer = Rubymap::Normalizer.new
+  #   normalized = normalizer.normalize(extracted_data)
+  #
+  #   enricher = Rubymap::Enricher.new
+  #   enriched = enricher.enrich(normalized)
+  #
+  #   # Access calculated metrics
+  #   user_class = enriched.classes.find { |c| c.name == "User" }
+  #   user_class.complexity_score  # => 4.5
+  #   user_class.test_coverage     # => 85.0
+  #   user_class.api_surface       # => 12
+  #
+  # @example Pattern detection
+  #   enriched = enricher.enrich(normalized)
+  #
+  #   # Detected design patterns
+  #   enriched.detected_patterns   # => ["Singleton", "Observer", "Factory"]
+  #
+  #   # Ruby idioms
+  #   enriched.detected_idioms     # => ["duck_typing", "enumerable_usage"]
+  #
+  # @example Quality analysis
+  #   enriched = enricher.enrich(normalized)
+  #
+  #   # Code quality issues
+  #   enriched.quality_issues      # => Large classes, deep inheritance, high coupling
+  #   enriched.coupling_hotspots   # => Classes with high fan-out
+  #   enriched.complexity_hotspots # => Methods with high cyclomatic complexity
+  #
   class Enricher
+    # Creates a new Enricher instance.
+    #
+    # @param config [Hash] Configuration options
+    # @option config [Boolean] :enable_metrics (true) Calculate complexity metrics
+    # @option config [Boolean] :enable_patterns (true) Detect design patterns
+    # @option config [Boolean] :enable_rails (true) Apply Rails-specific enrichment
+    # @option config [Integer] :complexity_threshold (10) Threshold for complexity warnings
+    # @option config [Integer] :api_size_threshold (5) Threshold for public API size
+    # @option config [Integer] :inheritance_depth_threshold (4) Max inheritance depth
+    # @option config [Integer] :fan_out_threshold (3) Max dependencies before warning
+    #
+    # @example Custom thresholds
+    #   enricher = Rubymap::Enricher.new(
+    #     complexity_threshold: 15,
+    #     fan_out_threshold: 5
+    #   )
     def initialize(config = {})
       @config = default_config.merge(config)
       @registry = EnricherRegistry.new
       setup_components
     end
 
-    # Main enrichment method - transforms normalized data into enriched data
+    # Enriches normalized data with metrics and insights.
+    #
+    # Applies multiple analysis passes:
+    # 1. Calculates code metrics (complexity, coupling, cohesion)
+    # 2. Detects design patterns and idioms
+    # 3. Identifies quality issues and hotspots
+    # 4. Applies framework-specific analysis (Rails, Sinatra, etc.)
+    # 5. Calculates composite quality scores
+    #
+    # @param normalized_data [NormalizedResult, Hash] Normalized symbol data
+    # @return [EnrichmentResult] Enriched data with metrics and insights
+    #
+    # @example
+    #   enriched = enricher.enrich(normalized_data)
+    #
+    #   enriched.total_complexity      # => 245.5
+    #   enriched.average_complexity    # => 3.2
+    #   enriched.maintainability_score # => 72.5
+    #   enriched.test_coverage         # => 82.3
     def enrich(normalized_data)
       # Convert to proper input format if needed
       input = ensure_normalized_result(normalized_data)

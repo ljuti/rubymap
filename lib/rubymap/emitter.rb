@@ -11,8 +11,52 @@ require_relative "emitter/processors/redactor"
 require_relative "emitter/processors/cross_linker"
 
 module Rubymap
+  # Generates various output formats from indexed codebase data.
+  #
+  # The Emitter module provides a unified interface for generating documentation,
+  # visualizations, and machine-readable formats from analyzed code. It supports
+  # multiple output formats optimized for different use cases.
+  #
+  # @example Generate JSON output
+  #   indexed_data = indexer.build(enriched_data)
+  #
+  #   # Generate JSON string
+  #   json = Rubymap::Emitter.emit(indexed_data, format: :json)
+  #
+  #   # Write to directory
+  #   Rubymap::Emitter.emit(indexed_data, format: :json, output_dir: "docs/")
+  #
+  # @example Generate multiple formats
+  #   Rubymap::Emitter.emit_all(indexed_data, "output/",
+  #     formats: [:json, :yaml, :llm, :graphviz]
+  #   )
+  #
+  # @example Custom configuration
+  #   Rubymap::Emitter.emit(indexed_data,
+  #     format: :llm,
+  #     output_dir: "docs/",
+  #     chunk_size: 2000,
+  #     include_source: false,
+  #     redact: true
+  #   )
+  #
   module Emitter
     class << self
+      # Emits indexed data in the specified format.
+      #
+      # @param indexed_data [IndexedResult, Hash] Indexed codebase data
+      # @param format [Symbol] Output format (:json, :yaml, :llm, :graphviz)
+      # @param output_dir [String, nil] Directory to write files, or nil for string output
+      # @param options [Hash] Format-specific options
+      #
+      # @return [String, Hash] Generated output (string if no output_dir, file paths if output_dir)
+      # @raise [ArgumentError] if format is unknown
+      #
+      # @example JSON output
+      #   json_string = Emitter.emit(data, format: :json)
+      #
+      # @example LLM-optimized markdown
+      #   Emitter.emit(data, format: :llm, output_dir: "docs/", chunk_size: 3000)
       def emit(indexed_data, format: :json, output_dir: nil, **options)
         emitter = create_emitter(format, **options)
 
@@ -23,6 +67,25 @@ module Rubymap
         end
       end
 
+      # Emits indexed data in multiple formats simultaneously.
+      #
+      # Generates all requested formats in a single operation, ensuring
+      # consistency across outputs and creating a unified manifest.
+      #
+      # @param indexed_data [IndexedResult, Hash] Indexed codebase data
+      # @param output_dir [String] Directory for all output files
+      # @param formats [Array<Symbol>] List of formats to generate
+      # @param options [Hash] Options applied to all formats
+      #
+      # @return [Hash] Paths to generated files by format
+      #
+      # @example
+      #   results = Emitter.emit_all(data, "docs/",
+      #     formats: [:json, :llm],
+      #     redact: true
+      #   )
+      #   results[:json]  # => ["docs/rubymap.json"]
+      #   results[:llm]   # => ["docs/chunks/overview.md", ...]
       def emit_all(indexed_data, output_dir, formats: [:json, :yaml, :llm, :graphviz], **options)
         manager = EmitterManager.new(**options)
         manager.emit_all(indexed_data, output_dir, formats: formats)
