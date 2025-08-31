@@ -194,4 +194,303 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
       end
     end
   end
+
+  # Additional comprehensive tests to kill alive mutations
+  describe "mutation killing tests" do
+    describe "#clean_comment_text edge cases" do
+      it "handles comment with single # and no space" do
+        expect(service.send(:clean_comment_text, "#text")).to eq("text")
+      end
+
+      it "handles comment with single # and space" do
+        expect(service.send(:clean_comment_text, "# text")).to eq("text")
+      end
+
+      it "handles comment with ## and no space" do
+        expect(service.send(:clean_comment_text, "##text")).to eq("text")
+      end
+
+      it "handles comment with ## and space" do
+        expect(service.send(:clean_comment_text, "## text")).to eq("text")
+      end
+
+      it "handles comment with ### (more than ##)" do
+        expect(service.send(:clean_comment_text, "### text")).to eq("# text")
+      end
+
+      it "handles empty comment" do
+        expect(service.send(:clean_comment_text, "#")).to eq("")
+      end
+
+      it "handles comment with only space after #" do
+        expect(service.send(:clean_comment_text, "# ")).to eq("")
+      end
+
+      it "handles comment without # prefix" do
+        expect(service.send(:clean_comment_text, "text")).to eq("text")
+      end
+
+      it "preserves internal # characters" do
+        expect(service.send(:clean_comment_text, "# text # with # hashes")).to eq("text # with # hashes")
+      end
+    end
+
+    describe "#find_documentation_comments edge cases" do
+      it "stops collecting when there is a gap larger than 1 line" do
+        comments = [
+          double("comment", location: double(start_line: 5), slice: "# distant"),
+          double("comment", location: double(start_line: 7), slice: "# gap"),
+          double("comment", location: double(start_line: 9), slice: "# immediate")
+        ]
+        result = service.send(:find_documentation_comments, comments, 10)
+        # Should only collect the comment on line 9, breaking at the gap
+        expect(result.length).to eq(1)
+        expect(result[0].slice).to eq("# immediate")
+      end
+
+      it "handles comments with exact gap of 1 line before node" do
+        comments = [
+          double("comment", location: double(start_line: 8), slice: "# comment"),
+          double("comment", location: double(start_line: 9), slice: "# immediate")
+        ]
+        result = service.send(:find_documentation_comments, comments, 10)
+        # Both consecutive comments should be selected
+        expect(result.length).to eq(2)
+        expect(result[0].slice).to eq("# comment")
+        expect(result[1].slice).to eq("# immediate")
+      end
+
+      it "handles comments with gap exactly 2 lines before node" do
+        comments = [
+          double("comment", location: double(start_line: 7), slice: "# distant"),
+          double("comment", location: double(start_line: 9), slice: "# immediate")
+        ]
+        result = service.send(:find_documentation_comments, comments, 10)
+        # Should only collect the comment on line 9
+        expect(result.length).to eq(1)
+        expect(result[0].slice).to eq("# immediate")
+      end
+
+      it "handles multiple consecutive comment blocks" do
+        comments = [
+          double("comment", location: double(start_line: 10), slice: "# block1"),
+          double("comment", location: double(start_line: 11), slice: "# block1"),
+          # gap
+          double("comment", location: double(start_line: 13), slice: "# block2"),
+          double("comment", location: double(start_line: 14), slice: "# block2")
+        ]
+        result = service.send(:find_documentation_comments, comments, 15)
+        # Should select the last consecutive block (lines 13-14)
+        expect(result.length).to eq(2)
+        expect(result[0].slice).to eq("# block2")
+        expect(result[1].slice).to eq("# block2")
+      end
+
+      it "handles comments on same line as each other but different from node" do
+        comments = [
+          double("comment", location: double(start_line: 4), slice: "# comment1"),
+          double("comment", location: double(start_line: 4), slice: "# comment2")
+        ]
+        result = service.send(:find_documentation_comments, comments, 5)
+        # Only one comment from the same line will be selected
+        expect(result.length).to eq(1)
+      end
+
+      it "preserves exact order of consecutive comments" do
+        comments = [
+          double("comment", location: double(start_line: 3), slice: "# first"),
+          double("comment", location: double(start_line: 4), slice: "# second"),
+          double("comment", location: double(start_line: 5), slice: "# third")
+        ]
+        result = service.send(:find_documentation_comments, comments, 6)
+        expect(result.length).to eq(3)
+        expect(result[0].slice).to eq("# first")
+        expect(result[1].slice).to eq("# second")
+        expect(result[2].slice).to eq("# third")
+      end
+    end
+
+    describe "#extract_inline_comment exact position testing" do
+      it "returns nil when comment start_column equals node end_column" do
+        node = double("node", location: double(start_line: 5, end_column: 20))
+        comment = double("comment",
+          location: double(start_line: 5, start_column: 20),
+          slice: "# at boundary")
+        
+        expect(service.extract_inline_comment(node, [comment])).to be_nil
+      end
+
+      it "extracts comment when start_column is exactly end_column + 1" do
+        node = double("node", location: double(start_line: 5, end_column: 20))
+        comment = double("comment",
+          location: double(start_line: 5, start_column: 21),
+          slice: "# just after")
+        
+        result = service.extract_inline_comment(node, [comment])
+        expect(result).to eq("just after")
+      end
+
+      it "handles multiple comments on same line, returns first matching" do
+        node = double("node", location: double(start_line: 5, end_column: 20))
+        comments = [
+          double("comment", location: double(start_line: 5, start_column: 15), slice: "# before"),
+          double("comment", location: double(start_line: 5, start_column: 25), slice: "# after1"),
+          double("comment", location: double(start_line: 5, start_column: 30), slice: "# after2")
+        ]
+        
+        result = service.extract_inline_comment(node, comments)
+        expect(result).to eq("after1")
+      end
+    end
+
+    describe "#documentation_comment? exact matching" do
+      it "returns false for single # at start" do
+        comment = double("comment", slice: "# regular")
+        expect(service.documentation_comment?(comment)).to be false
+      end
+
+      it "returns true for exactly ##" do
+        comment = double("comment", slice: "##")
+        expect(service.documentation_comment?(comment)).to be true
+      end
+
+      it "returns true for ## with trailing content" do
+        comment = double("comment", slice: "##content")
+        expect(service.documentation_comment?(comment)).to be true
+      end
+
+      it "returns false when ## is not at the start" do
+        comment = double("comment", slice: "text ## comment")
+        expect(service.documentation_comment?(comment)).to be false
+      end
+
+      it "returns false for empty string" do
+        comment = double("comment", slice: "")
+        expect(service.documentation_comment?(comment)).to be false
+      end
+    end
+
+    describe "#extract_yard_tags regex and parsing edge cases" do
+      it "extracts tag with only tag name and space" do
+        doc = "@param "
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("")
+      end
+
+      it "handles tag name with numbers and underscores" do
+        doc = "@param_1 value"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param_1]).to eq("value")
+      end
+
+      it "strips trailing whitespace in tag values" do
+        doc = "@param   value with spaces  "
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("value with spaces")
+      end
+
+      it "handles multiple spaces between tag and value" do
+        doc = "@param      value"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("value")
+      end
+
+      it "handles tag at start of line with no leading whitespace" do
+        doc = "@param value"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("value")
+      end
+
+      it "handles tag with tab character" do
+        doc = "@param\tvalue"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("value")
+      end
+
+      it "ignores malformed tags without space" do
+        doc = "@paramvalue"
+        result = service.extract_yard_tags(doc)
+        expect(result).to eq({})
+      end
+
+      it "handles mixed valid and invalid tags" do
+        doc = "@param valid\n@invalidtag notag\n@return [String]"
+        result = service.extract_yard_tags(doc)
+        expect(result.keys).to contain_exactly(:param, :invalidtag, :return)
+        expect(result[:param]).to eq("valid")
+        expect(result[:invalidtag]).to eq("notag")
+        expect(result[:return]).to eq("[String]")
+      end
+
+      it "converts first occurrence to string, subsequent to array" do
+        doc = "@param first\n@param second"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq(["first", "second"])
+      end
+
+      it "handles three or more tags of same type" do
+        doc = "@param first\n@param second\n@param third"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq(["first", "second", "third"])
+      end
+
+      it "handles @ symbol in tag value" do
+        doc = "@param user@example.com"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("user@example.com")
+      end
+    end
+
+    describe "#extract_documentation with exact return values" do
+      it "returns exact string for single comment" do
+        node = double("node", location: double(start_line: 2))
+        comment = double("comment", location: double(start_line: 1), slice: "# exact text")
+        result = service.extract_documentation(node, [comment])
+        expect(result).to eq("exact text")
+      end
+
+      it "returns exactly nil when no preceding comments" do
+        node = double("node", location: double(start_line: 1))
+        comments = [double("comment", location: double(start_line: 2), slice: "# after")]
+        result = service.extract_documentation(node, comments)
+        expect(result).to be_nil
+      end
+
+      it "joins multiple comments with exact newline character" do
+        node = double("node", location: double(start_line: 4))
+        comments = [
+          double("comment", location: double(start_line: 2), slice: "# first"),
+          double("comment", location: double(start_line: 3), slice: "# second")
+        ]
+        result = service.extract_documentation(node, comments)
+        expect(result).to eq("first\nsecond")
+      end
+
+      it "handles empty comment content" do
+        node = double("node", location: double(start_line: 2))
+        comment = double("comment", location: double(start_line: 1), slice: "#")
+        result = service.extract_documentation(node, [comment])
+        expect(result).to eq("")
+      end
+    end
+
+    describe "boundary conditions and comparisons" do
+      it "handles node at line 1 with no possible preceding comments" do
+        node = double("node", location: double(start_line: 1))
+        comments = [
+          double("comment", location: double(start_line: 1), slice: "# same line"),
+          double("comment", location: double(start_line: 2), slice: "# after")
+        ]
+        result = service.extract_documentation(node, comments)
+        expect(result).to be_nil
+      end
+
+      it "handles very large line numbers" do
+        node = double("node", location: double(start_line: 999999))
+        comment = double("comment", location: double(start_line: 999998), slice: "# large line")
+        result = service.extract_documentation(node, [comment])
+        expect(result).to eq("large line")
+      end
+    end
+  end
 end

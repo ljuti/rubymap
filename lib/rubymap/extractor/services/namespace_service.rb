@@ -15,9 +15,9 @@ module Rubymap
           return [] unless fqname
 
           parts = fqname.to_s.split("::")
-          return [] if parts.size <= 1
-
-          parts[0...-1]
+          # Take all parts except the last one (which is the simple name)
+          # If there's only one part or less, there's no namespace
+          parts.size > 1 ? parts[0...-1] : []
         end
 
         # Get the simple name from a fully qualified name
@@ -46,7 +46,9 @@ module Rubymap
         def normalize_name(name)
           return nil unless name
 
-          name.to_s.gsub(/^::/, "")
+          # Use \A to match only at the beginning of the string (not line)
+          # Use sub since we're only replacing one occurrence
+          name.to_s.sub(/\A::/, "")
         end
 
         # Resolve a name within a given namespace context
@@ -73,17 +75,14 @@ module Rubymap
 
         # Find the common namespace between two fully qualified names
         def common_namespace(fqname1, fqname2)
-          return nil if fqname1.nil? || fqname2.nil?
+          return nil unless fqname1 && fqname2
 
           parts1 = fqname1.to_s.split("::")
           parts2 = fqname2.to_s.split("::")
 
-          common_parts = []
-          parts1.zip(parts2).each do |p1, p2|
-            break unless p1 == p2
-            common_parts << p1
-          end
-
+          # Use take_while for cleaner logic
+          common_parts = parts1.zip(parts2).take_while { |p1, p2| p1 == p2 }.map(&:first)
+          
           common_parts.empty? ? nil : common_parts.join("::")
         end
       end

@@ -39,15 +39,15 @@ module Rubymap
         return "unknown" unless value
 
         case value
-        when /^\d+$/ then "integer"
-        when /^\d+\.\d+$/ then "float"
-        when /^["']/ then "string"
-        when /^:/ then "symbol"
-        when /^\[/ then "array"
-        when /^\{/ then "hash"
-        when /^true|false$/ then "boolean"
-        when /^nil$/ then "nil"
-        when /^[A-Z]/ then "constant_ref"
+        when /\A\d+\z/ then "integer"
+        when /\A\d+\.\d+\z/ then "float"
+        when /\A["']/ then "string"
+        when /\A:/ then "symbol"
+        when /\A\[/ then "array"
+        when /\A\{/ then "hash"
+        when /\A(?:true|false)\z/ then "boolean"
+        when /\Anil\z/ then "nil"
+        when /\A[A-Z]/ then "constant_ref"
         else "expression"
         end
       end

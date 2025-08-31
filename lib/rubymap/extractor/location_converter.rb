@@ -10,22 +10,26 @@ module Rubymap
       # @return [Hash, nil] Hash representation of location or nil
       def self.to_h(location)
         return nil unless location
-
-        # Handle Prism::Location objects and similar
-        if location.respond_to?(:start_line)
-          {
-            line: location.start_line,
-            column: location.respond_to?(:start_column) ? location.start_column : nil,
-            end_line: location.respond_to?(:end_line) ? location.end_line : nil,
-            end_column: location.respond_to?(:end_column) ? location.end_column : nil
-          }.compact
-        elsif location.is_a?(Hash)
+        
+        case location
+        when Hash
           # Already a hash, return as-is
           location
+        when ->(loc) { loc.respond_to?(:start_line) }
+          # Handle Prism::Location objects and similar
+          build_location_hash(location)
         else
-          # Unknown format, return nil
           nil
         end
+      end
+      
+      private_class_method def self.build_location_hash(location)
+        {
+          line: location.start_line,
+          column: location.respond_to?(:start_column) ? location.start_column : nil,
+          end_line: location.respond_to?(:end_line) ? location.end_line : nil,
+          end_column: location.respond_to?(:end_column) ? location.end_column : nil
+        }.compact
       end
     end
   end

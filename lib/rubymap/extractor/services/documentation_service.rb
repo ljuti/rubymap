@@ -65,31 +65,28 @@ module Rubymap
 
         def find_documentation_comments(comments, node_line)
           # Find comments that appear immediately before this node
-          preceding_comments = comments.select do |comment|
+          preceding_comments = comments.select { |comment|
             comment.location.start_line < node_line
-          end
+          }
 
           return [] if preceding_comments.empty?
 
-          # Sort by line number and find the block of comments immediately before the node
-          preceding_comments = preceding_comments.sort_by { |c| c.location.start_line }
-
-          # Take the last consecutive block of comments
+          # Sort by line number (descending) to process from closest to node
+          sorted_comments = preceding_comments.sort_by { |c| -c.location.start_line }
+          
+          # Collect consecutive comments immediately before the node
           doc_comments = []
           expected_line = node_line - 1
-
-          preceding_comments.reverse_each do |comment|
+          
+          sorted_comments.each do |comment|
             comment_line = comment.location.start_line
-            if comment_line == expected_line
-              doc_comments.unshift(comment)
-              expected_line = comment_line - 1
-            elsif comment_line < expected_line - 1
-              # Gap in comments, stop collecting
-              break
-            end
+            break if comment_line != expected_line # Stop on first gap
+            
+            doc_comments << comment
+            expected_line = comment_line - 1
           end
-
-          doc_comments
+          
+          doc_comments.reverse # Return in original order
         end
 
         def format_documentation(doc_comments)

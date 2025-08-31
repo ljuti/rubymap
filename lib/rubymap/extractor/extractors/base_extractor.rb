@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require_relative "../services/documentation_service"
 require_relative "../services/namespace_service"
 
@@ -7,6 +8,8 @@ module Rubymap
   class Extractor
     # Base class for all specific extractors
     class BaseExtractor
+      extend Forwardable
+      
       attr_reader :context, :result, :documentation_service, :namespace_service
 
       def initialize(context, result)
@@ -38,6 +41,8 @@ module Rubymap
         end
       end
 
+      # Delegation methods for documentation extraction
+      # These pass through to the documentation service with proper context
       def extract_documentation(node)
         documentation_service.extract_documentation(node, context.comments)
       end
