@@ -53,10 +53,10 @@ module Rubymap
           end
 
           # Check naming patterns
-          evidence << "factory_name" if /Factory$/.match?(symbol.name)
-          evidence << "singleton_name" if /Singleton$/.match?(symbol.name)
-          evidence << "observer_name" if /Observer$/.match?(symbol.name)
-          evidence << "strategy_name" if /Strategy$/.match?(symbol.name)
+          evidence << "factory_name" if /Factory\z/.match?(symbol.name)
+          evidence << "singleton_name" if /Singleton\z/.match?(symbol.name)
+          evidence << "observer_name" if /Observer\z/.match?(symbol.name)
+          evidence << "strategy_name" if /Strategy\z/.match?(symbol.name)
 
           evidence
         end

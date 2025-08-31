@@ -55,3 +55,5 @@ class User < ApplicationRecord
     end
   end
 end
+
+# Modified for test
