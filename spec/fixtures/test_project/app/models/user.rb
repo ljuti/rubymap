@@ -55,11 +55,3 @@ class User < ApplicationRecord
     end
   end
 end
-# Modified
-# Modified
-# Modified
-# Modified
-# Modified
-
-# Modified
-# Modified
