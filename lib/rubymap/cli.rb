@@ -13,7 +13,7 @@ module Rubymap
       true
     end
 
-    desc "map PATH", "Map a Ruby codebase at the specified path"
+    desc "map [PATH]", "Map a Ruby codebase at the specified path"
     option :format, type: :string, enum: %w[json yaml llm dot graphviz], default: "llm",
       desc: "Output format (json, yaml, llm, dot, graphviz)"
     option :output, type: :string, aliases: "-o", default: "rubymap_output",
@@ -24,6 +24,12 @@ module Rubymap
       desc: "Enable verbose output"
     option :no_progress, type: :boolean, default: false,
       desc: "Disable progress indicators"
+    option :config, type: :string, aliases: "-c",
+      desc: "Path to configuration file"
+    option :runtime, type: :boolean, default: false,
+      desc: "Enable runtime introspection (loads the application)"
+    option :skip_initializer, type: :array,
+      desc: "Skip specified initializers during runtime mapping"
     def map(path = ".")
       pastel = Pastel.new
 
@@ -74,6 +80,67 @@ module Rubymap
 
       puts renderer.render
       puts
+    end
+
+    desc "update [PATH]", "Update existing map with changes"
+    option :since, type: :string, desc: "Update files changed since timestamp"
+    option :format, type: :string, enum: %w[json yaml llm dot graphviz], default: "llm"
+    option :output, type: :string, aliases: "-o", default: "rubymap_output"
+    option :verbose, type: :boolean, aliases: "-v", default: false
+    def update(path = ".")
+      pastel = Pastel.new
+
+      # Check if output directory exists
+      output_dir = options[:output]
+      unless Dir.exist?(output_dir)
+        puts pastel.yellow("No existing map found. Performing full mapping...")
+        map(path)
+        return
+      end
+
+      puts pastel.cyan.bold("\n🔄 Updating Rubymap\n")
+      puts pastel.dim("Path: #{File.expand_path(path)}")
+
+      # For now, just do a full map (incremental updates not implemented)
+      map(path)
+    end
+
+    desc "view SYMBOL", "Display information about a class or module"
+    option :format, type: :string, default: "text", enum: %w[text json yaml]
+    def view(symbol_name)
+      pastel = Pastel.new
+
+      # Look for existing map data
+      output_dir = "rubymap_output"
+      unless Dir.exist?(output_dir)
+        puts pastel.red("No map found. Run 'rubymap map' first.")
+        exit(1)
+      end
+
+      puts pastel.cyan.bold("\n🔍 Symbol: #{symbol_name}\n")
+
+      # For now, just show a placeholder
+      puts pastel.yellow("Symbol viewing not yet fully implemented")
+      puts pastel.dim("Would show information about: #{symbol_name}")
+    end
+
+    desc "clean", "Remove cache and output files"
+    option :all, type: :boolean, desc: "Remove all generated files"
+    def clean
+      pastel = Pastel.new
+
+      puts pastel.cyan.bold("\n🧹 Cleaning Rubymap Files\n")
+
+      dirs_to_clean = ["rubymap_output", ".rubymap", ".rubymap_cache"]
+
+      dirs_to_clean.each do |dir|
+        if Dir.exist?(dir)
+          FileUtils.rm_rf(dir)
+          puts pastel.green("✓ Removed #{dir}")
+        end
+      end
+
+      puts pastel.dim("\nCleanup complete.")
     end
 
     desc "init", "Initialize a .rubymap configuration file"
@@ -127,11 +194,36 @@ module Rubymap
       puts pastel.dim("\nYou can now run 'rubymap map' to use these defaults")
     end
 
+    desc "status", "Show current mapping status"
+    def status
+      pastel = Pastel.new
+
+      puts pastel.cyan.bold("\n📊 Rubymap Status\n")
+
+      if Dir.exist?("rubymap_output")
+        files = Dir.glob("rubymap_output/**/*").select { |f| File.file?(f) }
+        puts pastel.green("✓ Map exists")
+        puts pastel.dim("  Files: #{files.size}")
+        puts pastel.dim("  Location: rubymap_output/")
+
+        if files.any?
+          latest = files.max_by { |f| File.mtime(f) }
+          puts pastel.dim("  Last updated: #{File.mtime(latest)}")
+        end
+      else
+        puts pastel.yellow("No map found. Run 'rubymap map' to create one.")
+      end
+
+      if File.exist?(".rubymap.yml")
+        puts pastel.green("✓ Configuration file exists")
+      end
+    end
+
     private
 
     def configure_rubymap(cli_options)
       # Load config from file if it exists
-      config_file = find_config_file
+      config_file = cli_options["config"] || find_config_file
       file_config = load_config_file(config_file) if config_file
 
       # Merge CLI options with file config (CLI takes precedence)
@@ -149,6 +241,14 @@ module Rubymap
 
         # Always exclude the output directory to prevent recursion
         config.filter["exclude_patterns"] << "#{config.output_dir}/**"
+
+        # Handle runtime options
+        if merged_config["runtime"]
+          config.runtime["enabled"] = true
+          if merged_config["skip_initializer"]
+            config.runtime["skip_initializers"] = merged_config["skip_initializer"]
+          end
+        end
       end
     end
 

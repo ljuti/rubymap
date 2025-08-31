@@ -1,0 +1,18 @@
+# Rubymap configuration file
+format: json
+output_dir: .rubymap
+verbose: false
+exclude_patterns:
+  - "**/spec/**"
+  - "**/test/**"
+  - "**/vendor/**"
+  - "**/node_modules/**"
+  - "**/.git/**"
+static:
+  paths:
+    - app
+    - lib
+  parse_yard: true
+filter:
+  include_private: false
+  include_protected: true

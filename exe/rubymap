@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Add the lib directory to the load path if running directly
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
 require "bundler/setup"
 require "rubymap"
 require "rubymap/cli"
