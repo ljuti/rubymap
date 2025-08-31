@@ -6,18 +6,24 @@ Rubymap is a comprehensive Ruby codebase mapping tool that extracts, indexes, an
 
 ### Current Features
 
-- **Static Analysis**: Fast parsing using Prism for comprehensive code extraction
-- **LLM-Optimized Output**: Generates perfectly chunked documentation for AI assistants
+- **Static Analysis**: Fast parsing using Prism with parallel processing for comprehensive code extraction
+- **LLM-Optimized Output**: Generates perfectly chunked documentation with customizable ERB templates
+- **Multiple Output Formats**: JSON, YAML, LLM markdown, and GraphViz DOT formats
 - **Modular Pipeline**: Extractor → Normalizer → Enricher → Indexer → Emitter
-- **Smart Deduplication**: Merges duplicate symbols from multiple sources
+- **Smart Deduplication**: Priority-based merging of duplicate symbols with confidence scoring
+- **Pattern Detection**: Identifies design patterns, Rails conventions, and Ruby idioms
+- **Code Metrics**: Cyclomatic complexity, ABC metrics, cohesion, coupling, and hotspot analysis
+- **Template System**: User-overridable ERB templates with format-specific options
+- **Advanced Indexing**: Multiple graph types with O(1) lookup and circular dependency detection
 - **Deterministic Output**: Stable IDs and ordering for clean diffs
 
 ### Coming Soon
 
-- **Runtime Introspection**: Capture dynamically defined methods and runtime code
-- **Rails Deep Integration**: ActiveRecord models, routes, jobs mapping
-- **Multiple Output Formats**: JSON, YAML, GraphViz support
+- **Runtime Introspection**: Capture dynamically defined methods and runtime code (configuration exists)
+- **Rails Deep Integration**: Enhanced ActiveRecord models, routes, jobs mapping (partial support)
 - **Web UI**: Interactive code exploration interface
+- **File Watching**: Real-time updates as code changes
+- **GitHub Integration**: PR analysis and code review support
 
 ## Installation & Usage
 
@@ -49,11 +55,18 @@ rubymap app/models lib/
 ### Current CLI Commands
 
 ```
-rubymap [OPTIONS] [PATHS...]        # Create code map
+rubymap map [OPTIONS] [PATHS...]    # Create code map
 
 Options:
+  --format FORMAT    Output format: json, yaml, llm, graphviz (default: llm)
   --output PATH      Output directory (default: .rubymap)
+  --exclude PATTERNS Patterns to exclude from mapping
   --verbose          Enable verbose logging
+  --no-progress      Disable progress indicators
+
+rubymap init                        # Initialize .rubymap.yml configuration
+rubymap version                     # Show version information
+rubymap formats                     # List available output formats
 ```
 
 ## Configuration
@@ -73,8 +86,24 @@ exclude:
 
 # Output settings
 output:
-  format: llm  # Currently only LLM format is supported
+  format: llm  # Options: llm, json, yaml, graphviz
   directory: .rubymap
+  include_source: false
+  redact_sensitive: true
+
+# Template settings
+templates:
+  directory: ./my_templates  # Custom template directory
+  format_options:
+    llm:
+      chunk_size: 2000
+      include_metrics: true
+
+# Runtime settings (experimental)
+runtime:
+  enabled: false
+  safe_mode: true
+  timeout: 30
 ```
 
 ## Architecture
@@ -90,29 +119,43 @@ output:
 
 #### Extractor
 - Uses Prism parser for fast, accurate Ruby parsing
-- Extracts classes, modules, methods, constants
-- Captures inheritance, mixins, documentation
+- Extracts classes, modules, methods, constants, attributes, class variables
+- Captures inheritance, mixins, documentation, YARD tags, @rubymap annotations
+- Detects metaprogramming patterns (define_method, attr_accessor, delegate)
+- Parallel file processing with configurable thread pools
 
 #### Normalizer
-- Standardizes data format across sources
-- Deduplicates symbols with smart merging
-- Resolves namespaces and relationships
+- Configurable processing pipeline with pluggable steps
+- Priority-based deduplication with confidence scoring
+- Full namespace resolution and cross-reference validation
+- Mixin method resolution with inheritance chain building
 - Generates deterministic symbol IDs
+- 100% mutation test coverage
 
 #### Enricher
-- Adds metadata and metrics
-- Calculates complexity scores
-- Identifies patterns and conventions
+- Comprehensive metadata enhancement with configurable pipeline
+- Calculates complexity scores (cyclomatic, ABC metrics)
+- Identifies design patterns (singleton, factory, observer, strategy)
+- Rails pattern detection (models, controllers, concerns, jobs, mailers)
+- Ruby idiom detection (memoization, delegation, DSLs)
+- Type inference and coercion support
+- Hotspot analysis for frequently modified code
 
 #### Indexer
-- Builds searchable symbol index
-- Creates relationship graphs
-- Optimizes for fast lookups
+- Builds multiple specialized graphs (inheritance, dependencies, mixins, constants)
+- O(1) symbol lookup with multi-level caching
+- Circular dependency detection with cycle reporting
+- Missing reference identification and validation
+- Query interface with fuzzy search and filtering
+- Bidirectional relationship tracking
 
 #### Emitter
-- Generates LLM-optimized chunks
-- Creates navigation indexes
-- Produces manifest with metadata
+- Multiple format support: JSON, YAML, LLM markdown, GraphViz DOT
+- ERB-based template system with user overrides
+- Context-aware chunking for LLM optimization
+- Progress reporting with TTY components
+- Security redaction for sensitive data
+- Deterministic output for version control
 
 ## Output Format
 

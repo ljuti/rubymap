@@ -11,17 +11,26 @@ Rubymap creates a searchable, LLM-friendly knowledge graph of your Ruby applicat
 ## ✨ Key Features
 
 ### Currently Implemented
-- **🚀 Static analysis** - Lightning-fast parsing using Prism
-- **🤖 LLM-optimized** - Generates perfectly chunked documentation for AI assistants
-- **⚡ Performance focused** - Sub-second analysis for thousands of files
-- **📊 Code structure mapping** - Classes, modules, methods, and their relationships
+- **🚀 Static analysis** - Lightning-fast parsing using Prism with comprehensive symbol extraction
+- **🤖 LLM-optimized** - Generates perfectly chunked documentation for AI assistants with template system
+- **📝 Template system** - Customizable ERB templates with user overrides and format-specific options
+- **⚡ Performance focused** - Sub-second analysis for thousands of files with parallel processing
+- **📊 Code structure mapping** - Classes, modules, methods, constants, attributes, and their relationships
 - **🔧 Modular pipeline** - Extractor → Normalizer → Enricher → Indexer → Emitter
+- **🎯 Smart deduplication** - Intelligent merging of duplicate symbols with priority-based resolution
+- **🔍 Pattern detection** - Identifies design patterns, Rails conventions, Ruby idioms, and metaprogramming
+- **📈 Code metrics** - Complexity, cohesion, coupling, hotspot analysis, and quality metrics
+- **🏗️ Clean architecture** - SOLID principles with dependency injection, strategy patterns, and 100% mutation test coverage
+- **📁 Multiple output formats** - JSON, YAML, LLM-optimized markdown, and GraphViz DOT formats
+- **🔄 Enrichment pipeline** - Configurable processors, analyzers, and converters for metadata enhancement
+- **📍 Advanced indexing** - Multiple graph types with O(1) lookup and circular dependency detection
 
 ### Coming Soon
-- **🛤️ Rails-aware** - Deep understanding of ActiveRecord, routes, jobs (in development)
-- **🔮 Runtime introspection** - Capture dynamically defined methods and runtime code
+- **🛤️ Rails-aware** - Deep understanding of ActiveRecord associations, routes, and jobs (partial support)
+- **🔮 Runtime introspection** - Capture dynamically defined methods and runtime code (configuration exists)
 - **🔒 Security controls** - Sandboxed runtime analysis with configurable safety
-- **📊 Rich metrics** - Code complexity, churn analysis, dependency graphs
+- **🌐 Web UI** - Interactive exploration of code maps
+- **👀 File watching** - Real-time updates as code changes
 
 ## 🚀 Quick Start
 
@@ -35,9 +44,10 @@ rubymap
 # Generate LLM-friendly code map (default format)
 rubymap --output docs/ai-map
 
-# Specify different output formats (coming soon)
-# rubymap --format json
-# rubymap --format yaml
+# Specify different output formats
+rubymap --format json
+rubymap --format yaml
+rubymap --format graphviz
 ```
 
 ### Quick Example
@@ -94,11 +104,11 @@ rubymap app/models lib/services
 # Custom output directory
 rubymap --output ./documentation/map
 
-# Currently, LLM format is the default output
-# Additional formats coming soon:
-# rubymap --format json      # Structured JSON
-# rubymap --format yaml      # YAML format
-# rubymap --format graphviz  # Dependency diagrams
+# Specify output format (default: llm)
+rubymap --format json      # Structured JSON
+rubymap --format yaml      # YAML format
+rubymap --format graphviz  # Dependency diagrams
+rubymap --format llm       # LLM-optimized markdown
 ```
 
 ### Rails-Specific Mapping (Coming Soon)
@@ -123,17 +133,28 @@ Create `.rubymap.yml` in your project root:
 ```yaml
 # Basic configuration
 paths: [app/, lib/]
-exclude: [vendor/, node_modules/]
+exclude: [vendor/, node_modules/, spec/, test/]
 
 output:
-  format: llm  # Currently only LLM format is supported
+  format: llm  # Options: llm, json, yaml, graphviz
   directory: .rubymap
+  include_source: false
+  redact_sensitive: true
 
-# Runtime configuration (coming soon)
-# runtime:
-#   enabled: true
-#   safe_mode: true
-#   timeout: 30
+# Template customization (new!)
+templates:
+  directory: ./my_templates  # Custom template directory
+  format_options:
+    llm:
+      chunk_size: 2000
+      include_metrics: true
+
+# Runtime configuration (experimental)
+runtime:
+  enabled: false  # Not yet fully implemented
+  safe_mode: true
+  timeout: 30
+  environment: development
 ```
 
 See [full configuration documentation](docs/rubymap.md#configuration) for all options.
@@ -152,29 +173,47 @@ Rubymap uses a modular pipeline approach to build a complete picture of your cod
 ### Current Pipeline Components
 
 **Extractor** - Fast static parsing using Prism
-- Extracts classes, modules, methods, constants
-- Tracks inheritance, mixins, and dependencies
-- Captures documentation comments
+- Extracts classes, modules, methods, constants, attributes, mixins, and class variables
+- Tracks inheritance chains, dependencies, method calls, and require statements
+- Captures documentation comments, YARD tags, and @rubymap annotations
+- Detects metaprogramming patterns (define_method, attr_accessor, delegate, etc.)
+- Parallel file processing with configurable thread pools
 
-**Normalizer** - Data standardization and deduplication
-- Converts raw data to consistent format
-- Merges duplicate symbols from multiple sources
-- Resolves namespaces and relationships
+**Normalizer** - Data standardization with advanced processing
+- Configurable processing pipeline with pluggable steps
+- Smart deduplication using priority-based symbol merging
+- Full namespace resolution and cross-reference validation
+- Mixin method resolution with proper inheritance chain building
+- Confidence scoring for symbol reliability
+- 100% mutation test coverage ensuring reliability
 
-**Enricher** - Metadata enhancement
-- Adds code metrics and complexity scores
-- Identifies patterns and conventions
-- Prepares data for indexing
+**Enricher** - Comprehensive metadata enhancement  
+- Rails pattern detection (models, controllers, concerns, jobs, mailers)
+- Design pattern identification (singleton, factory, observer, strategy, decorator)
+- Code metrics calculation (cyclomatic complexity, ABC metrics, cohesion, coupling)
+- Ruby idiom detection (memoization, delegation, DSLs, metaprogramming)
+- Hotspot analysis for frequently modified code
+- Configurable analyzer and converter pipeline
+- Type inference and coercion support
 
-**Indexer** - Symbol graph creation
-- Builds searchable index of all symbols
-- Creates relationship mappings
-- Optimizes for fast lookups
+**Indexer** - Advanced symbol graph creation
+- Multiple specialized graphs (inheritance, dependencies, method calls, mixins, constants)
+- O(1) symbol lookup with multi-level caching
+- Circular dependency detection with cycle reporting
+- Missing reference identification and validation
+- Query interface with fuzzy search and filtering
+- Relationship tracking with bidirectional references
+- Graph traversal utilities for analysis
 
-**Emitter** - Output generation
-- Creates LLM-optimized documentation chunks
-- Generates navigation indexes
-- Produces manifest with metadata
+**Emitter** - Flexible output generation with templates
+- ERB-based template system with format-specific templates
+- User template overrides via configuration or custom directories
+- LLM-optimized chunking with context-aware content splitting
+- Multiple output formats: JSON, YAML, LLM markdown, GraphViz DOT
+- Progress reporting with TTY components
+- Security redaction for sensitive data
+- Deterministic output for clean version control diffs
+- Template presenters for clean separation of concerns
 
 ## 📊 Output Examples
 
