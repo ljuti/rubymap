@@ -46,16 +46,16 @@ module Rubymap
 
           tags = {}
           documentation.lines.each do |line|
-            if (match = line.match(/@(\w+)\s+(.*)/))
-              tag_name = match[1].to_sym
-              tag_value = match[2].strip
+            next unless (match = line.match(/@(\w+)\s+(.*)/))
+            
+            tag_name = match[1].to_sym
+            tag_value = match[2].strip
 
-              tags[tag_name] = if tags[tag_name]
-                # Handle multiple tags of the same type
-                Array(tags[tag_name]) << tag_value
-              else
-                tag_value
-              end
+            if tags[tag_name]
+              # Handle multiple tags of the same type
+              tags[tag_name] = Array(tags[tag_name]) << tag_value
+            else
+              tags[tag_name] = tag_value
             end
           end
           tags

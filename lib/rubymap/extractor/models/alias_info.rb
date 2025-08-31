@@ -15,10 +15,10 @@ module Rubymap
 
       def to_h
         {
-          new_name: @new_name,
-          original_name: @original_name,
-          location: @location,
-          namespace: @namespace
+          new_name: new_name,
+          original_name: original_name,
+          location: location,
+          namespace: namespace
         }.compact
       end
     end

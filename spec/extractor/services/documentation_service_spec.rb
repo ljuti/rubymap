@@ -192,6 +192,30 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         result = service.extract_yard_tags(doc)
         expect(result).to eq({})  # Tag with no content is not extracted
       end
+      
+      it "handles tags with trailing whitespace" do
+        doc = "@param name [String] the name   "
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("name [String] the name")
+      end
+      
+      it "handles tags without space separator" do
+        doc = "@paramname [String] the name"
+        result = service.extract_yard_tags(doc)
+        expect(result[:paramname]).to eq("[String] the name")
+      end
+      
+      it "handles tags with multiple spaces" do
+        doc = "@param    name [String] the name"
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("name [String] the name")
+      end
+      
+      it "handles empty tag value after spaces" do
+        doc = "@param    "
+        result = service.extract_yard_tags(doc)
+        expect(result[:param]).to eq("")
+      end
     end
   end
 

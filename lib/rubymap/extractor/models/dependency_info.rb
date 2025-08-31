@@ -32,10 +32,10 @@ module Rubymap
 
       def to_h
         {
-          type: @type,
-          path: @path,
-          location: @location,
-          constant: @constant,
+          type: type,
+          path: path,
+          location: location,
+          constant: constant,
           external: external?
         }.compact
       end

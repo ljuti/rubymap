@@ -15,10 +15,10 @@ module Rubymap
 
       def to_h
         {
-          type: @type,
-          target: @target,
-          location: @location,
-          indicators: @indicators
+          type: type,
+          target: target,
+          location: location,
+          indicators: indicators
         }.compact
       end
     end
