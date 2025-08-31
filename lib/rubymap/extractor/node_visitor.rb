@@ -40,13 +40,15 @@ module Rubymap
       private
 
       def initialize_extractors
-        @class_extractor = ClassExtractor.new(context, result)
-        @module_extractor = ModuleExtractor.new(context, result)
-        @method_extractor = MethodExtractor.new(context, result)
-        @call_extractor = CallExtractor.new(context, result)
-        @constant_extractor = ConstantExtractor.new(context, result)
-        @class_variable_extractor = ClassVariableExtractor.new(context, result)
-        @alias_extractor = AliasExtractor.new(context, result)
+        @extractors = {
+          class: ClassExtractor.new(context, result),
+          module: ModuleExtractor.new(context, result),
+          method: MethodExtractor.new(context, result),
+          call: CallExtractor.new(context, result),
+          constant: ConstantExtractor.new(context, result),
+          class_variable: ClassVariableExtractor.new(context, result),
+          alias: AliasExtractor.new(context, result)
+        }
       end
 
       # Handler methods for each node type
@@ -59,35 +61,35 @@ module Rubymap
       end
 
       def handle_class(node)
-        @class_extractor.extract(node) { visit_children(node) }
+        @extractors[:class].extract(node) { visit_children(node) }
       end
 
       def handle_module(node)
-        @module_extractor.extract(node) { visit_children(node) }
+        @extractors[:module].extract(node) { visit_children(node) }
       end
 
       def handle_method(node)
-        @method_extractor.extract(node)
+        @extractors[:method].extract(node)
         visit_children(node)
       end
 
       def handle_call(node)
-        @call_extractor.extract(node)
+        @extractors[:call].extract(node)
         visit_children(node)
       end
 
       def handle_constant(node)
-        @constant_extractor.extract(node)
+        @extractors[:constant].extract(node)
         visit_children(node)
       end
 
       def handle_class_variable(node)
-        @class_variable_extractor.extract(node)
+        @extractors[:class_variable].extract(node)
         visit_children(node)
       end
 
       def handle_alias(node)
-        @alias_extractor.extract(node)
+        @extractors[:alias].extract(node)
         visit_children(node)
       end
 
