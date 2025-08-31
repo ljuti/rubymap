@@ -247,7 +247,7 @@ RSpec.describe Rubymap::Enricher::QualityRulesEngine do
       it "factors in stability score" do
         issues = [{type: "issue", severity: "medium"}]
         score_with_stability = engine.calculate_class_score(stable_class, issues)
-        
+
         # With stability weight of 0.3:
         # Base score after penalty: 0.9 (1.0 - 0.1)
         # With stability: (0.9 * 0.7) + (0.9 * 0.3) = 0.63 + 0.27 = 0.9
@@ -297,7 +297,7 @@ RSpec.describe Rubymap::Enricher::QualityRulesEngine do
     it "calculates severity based on ranges" do
       issues = engine.apply_method_rules(method_with_ranges)
       long_method_issue = issues.find { |i| i[:type] == "long_method" }
-      
+
       expect(long_method_issue).not_to be_nil
       expect(long_method_issue[:severity]).to eq("medium") # 45 lines falls in medium range
     end
@@ -314,11 +314,11 @@ RSpec.describe Rubymap::Enricher::QualityRulesEngine do
 
     it "interpolates values into message templates" do
       issues = engine.apply_method_rules(method)
-      
+
       long_method_issue = issues.find { |i| i[:type] == "long_method" }
       expect(long_method_issue[:message]).to include("25")
       expect(long_method_issue[:message]).to include("20")
-      
+
       params_issue = issues.find { |i| i[:type] == "too_many_parameters" }
       expect(params_issue[:message]).to include("6")
       expect(params_issue[:message]).to include("4")

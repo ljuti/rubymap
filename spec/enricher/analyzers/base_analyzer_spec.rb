@@ -2,6 +2,30 @@
 
 require "spec_helper"
 
+# Create a test subclass to test protected methods
+class TestAnalyzer < Rubymap::Enricher::Analyzers::BaseAnalyzer
+  def analyze(result, config)
+    # Implementation for testing
+  end
+
+  # Expose protected methods for testing
+  def test_pattern_matches?(evidence, required_evidence, confidence_threshold = 0.7)
+    pattern_matches?(evidence, required_evidence, confidence_threshold)
+  end
+
+  def test_calculate_confidence(evidence, required_evidence, optional_evidence = [])
+    calculate_confidence(evidence, required_evidence, optional_evidence)
+  end
+
+  def test_matches_naming_pattern?(name, pattern)
+    matches_naming_pattern?(name, pattern)
+  end
+
+  def test_extract_evidence(symbol)
+    extract_evidence(symbol)
+  end
+end
+
 RSpec.describe Rubymap::Enricher::Analyzers::BaseAnalyzer do
   let(:analyzer) { described_class.new }
 
@@ -12,30 +36,6 @@ RSpec.describe Rubymap::Enricher::Analyzers::BaseAnalyzer do
 
     it "raises with the correct message" do
       expect { analyzer.analyze(nil, nil) }.to raise_error(NotImplementedError, /Subclasses must implement/)
-    end
-  end
-
-  # Create a test subclass to test protected methods
-  class TestAnalyzer < Rubymap::Enricher::Analyzers::BaseAnalyzer
-    def analyze(result, config)
-      # Implementation for testing
-    end
-
-    # Expose protected methods for testing
-    def test_pattern_matches?(evidence, required_evidence, confidence_threshold = 0.7)
-      pattern_matches?(evidence, required_evidence, confidence_threshold)
-    end
-
-    def test_calculate_confidence(evidence, required_evidence, optional_evidence = [])
-      calculate_confidence(evidence, required_evidence, optional_evidence)
-    end
-
-    def test_matches_naming_pattern?(name, pattern)
-      matches_naming_pattern?(name, pattern)
-    end
-
-    def test_extract_evidence(symbol)
-      extract_evidence(symbol)
     end
   end
 
@@ -139,7 +139,7 @@ RSpec.describe Rubymap::Enricher::Analyzers::BaseAnalyzer do
         evidence = [:method1]
         required = [:method1, :method2]
         # NaN threshold always returns false in comparison
-        expect(test_analyzer.test_pattern_matches?(evidence, required, 0.0/0.0)).to be false
+        expect(test_analyzer.test_pattern_matches?(evidence, required, 0.0 / 0.0)).to be false
       end
 
       it "rejects negative infinity threshold" do

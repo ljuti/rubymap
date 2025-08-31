@@ -33,7 +33,7 @@ module Rubymap
         def analyze_methods_quality(methods, result)
           methods.each do |method|
             issues = rules_engine.apply_method_rules(method)
-            
+
             if issues.any?
               result.quality_issues << QualityIssue.new(
                 type: "method",
@@ -52,7 +52,7 @@ module Rubymap
         def analyze_classes_quality(classes, result)
           classes.each do |klass|
             issues = rules_engine.apply_class_rules(klass)
-            
+
             if issues.any?
               result.quality_issues << QualityIssue.new(
                 type: "class",
@@ -69,7 +69,7 @@ module Rubymap
 
         def calculate_overall_quality(result)
           scores = collect_quality_scores(result)
-          
+
           if scores.any?
             overall_score = (scores.sum / scores.size).round(2)
             result.quality_metrics.overall_score = overall_score
@@ -90,15 +90,15 @@ module Rubymap
 
         def collect_quality_scores(result)
           scores = []
-          
+
           result.methods&.each do |method|
             scores << method.quality_score if method.quality_score
           end
-          
+
           result.classes&.each do |klass|
             scores << klass.quality_score if klass.quality_score
           end
-          
+
           scores
         end
 
@@ -109,7 +109,7 @@ module Rubymap
             medium: 0,
             low: 0
           }
-          
+
           result.quality_issues.each do |quality_issue|
             quality_issue.issues.each do |issue|
               severity = issue[:severity]
@@ -118,7 +118,7 @@ module Rubymap
               severities[severity] = (severities[severity] || 0) + 1
             end
           end
-          
+
           severities
         end
       end
