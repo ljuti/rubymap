@@ -34,6 +34,7 @@ module Rubymap
         @factories[:provenance_tracker] = -> { ProvenanceTracker.new }
         @factories[:symbol_index] = -> { SymbolIndex.new }
         @factories[:normalizer_registry] = -> { NormalizerRegistry.new }
+        @factories[:input_adapter] = -> { InputAdapter.new }
 
         # Symbol finder service
         @factories[:symbol_finder] = -> { SymbolFinder.new(get(:symbol_index)) }

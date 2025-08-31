@@ -4,6 +4,7 @@ require "digest"
 
 # Load all components
 require_relative "normalizer/domain_model"
+require_relative "normalizer/input_adapter"
 require_relative "normalizer/service_container"
 require_relative "normalizer/symbol_finder"
 require_relative "normalizer/processor_factory"

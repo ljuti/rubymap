@@ -127,7 +127,8 @@ RSpec.describe Rubymap::Normalizer::ProcessingPipeline do
       # Child exists but inheritance chain won't be resolved
       # because resolve happened before symbols were indexed
       child = result.classes.find { |c| c.name == "Child" }
-      expect(child).not_to be_nil
+      expect(child).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
+      expect(child.name).to eq("Child")
       expect(child.inheritance_chain).to eq([]) # No inheritance resolved
     end
 
@@ -146,8 +147,8 @@ RSpec.describe Rubymap::Normalizer::ProcessingPipeline do
       child = result.classes.find { |c| c.name == "Child" }
       parent = result.classes.find { |c| c.name == "Parent" }
       
-      expect(child).not_to be_nil
-      expect(parent).not_to be_nil
+      expect(child).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
+      expect(parent).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
       expect(child.superclass).to eq("Parent")
     end
   end
@@ -282,6 +283,91 @@ RSpec.describe Rubymap::Normalizer::ProcessingPipeline do
         
         symbol_index = container.get(:symbol_index)
         expect(symbol_index.find("Test")).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
+      end
+
+      it "processes all processor types in order" do
+        processor_factory = container.get(:processor_factory)
+        
+        # Create spies for each processor
+        processors = {}
+        described_class::PROCESSORS.each do |proc_type, _|
+          processors[proc_type] = spy("#{proc_type}")
+          allow(processor_factory).to receive("create_#{proc_type}").and_return(processors[proc_type])
+        end
+        
+        mixin_processor = spy("mixin_processor")
+        allow(processor_factory).to receive(:create_mixin_processor).and_return(mixin_processor)
+        
+        context.extracted_data = {
+          classes: [{name: "A"}],
+          modules: [{name: "B"}],
+          methods: [{name: "c"}],
+          method_calls: [{from: "a", to: "b"}],
+          mixins: [{type: "include"}]
+        }
+        
+        step.call(context)
+        
+        # Verify all processors were called in order
+        described_class::PROCESSORS.each_with_index do |(proc_type, data_key), index|
+          expect(processors[proc_type]).to have_received(:process).with(
+            context.extracted_data[data_key],
+            context.result,
+            context.errors
+          ).ordered
+        end
+        
+        # Verify mixin processor was called last
+        expect(mixin_processor).to have_received(:process).with(
+          context.extracted_data[:mixins],
+          context.result,
+          context.errors
+        ).ordered
+      end
+
+      it "handles missing data keys with empty arrays" do
+        context.extracted_data = {classes: [{name: "Test"}]}  # Missing other keys
+        
+        # Should process successfully
+        step.call(context)
+        
+        expect(context.result.classes.size).to eq(1)
+        expect(context.result.classes.first.name).to eq("Test")
+      end
+
+      it "processes mixins after indexing symbols" do
+        # Setup: Create symbols that will be indexed
+        context.extracted_data = {
+          classes: [{name: "Target", location: {file: "target.rb", line: 1}}],
+          modules: [{name: "Mixin", location: {file: "mixin.rb", line: 1}}],
+          methods: [],
+          method_calls: [],
+          mixins: [{module: "Mixin", target: "Target", type: "include"}]
+        }
+        
+        # Spy on mixin processor to verify it's called
+        processor_factory = container.get(:processor_factory)
+        mixin_processor = spy("mixin_processor")
+        allow(processor_factory).to receive(:create_mixin_processor).and_return(mixin_processor)
+        
+        step.call(context)
+        
+        # Verify mixin processor was called with the mixin data
+        expect(mixin_processor).to have_received(:process).with(
+          [{module: "Mixin", target: "Target", type: "include"}],
+          context.result,
+          context.errors
+        )
+        
+        # Verify symbols were indexed before mixin processing
+        symbol_index = container.get(:symbol_index)
+        target = symbol_index.find("Target")
+        mixin = symbol_index.find("Mixin")
+        
+        expect(target).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
+        expect(target.name).to eq("Target")
+        expect(mixin).to be_a(Rubymap::Normalizer::NormalizedModule)
+        expect(mixin.name).to eq("Mixin")
       end
     end
 

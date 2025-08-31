@@ -15,142 +15,35 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Mutation Tests" do
       container: container
     )}
 
-    describe "#extract_symbol_data" do
-      it "returns empty data for falsy values" do
-        [nil, false].each do |falsy_value|
-          extracted = step.send(:extract_symbol_data, falsy_value)
-          expect(extracted).to eq({
-            classes: [], modules: [], methods: [], method_calls: [], mixins: []
-          })
-        end
-      end
-
-      it "returns hash data when input is Hash" do
-        data = {classes: [{name: "Test"}]}
-        result = step.send(:extract_symbol_data, data)
-        expect(result[:classes]).to eq([{name: "Test"}])
-      end
-
-      it "returns converted data when input is Extractor::Result" do
-        extractor_result = Rubymap::Extractor::Result.new
-        extractor_result.classes << Rubymap::Extractor::ClassInfo.new(name: "Test", namespace: [])
-        
-        result = step.send(:extract_symbol_data, extractor_result)
-        expect(result[:classes].first[:name]).to eq("Test")
-      end
-
-      it "returns empty data for unexpected input types" do
-        ["string", 123, []].each do |invalid_input|
-          result = step.send(:extract_symbol_data, invalid_input)
-          expect(result[:classes]).to eq([])
-        end
-      end
+    it "delegates to InputAdapter from container" do
+      input_adapter = spy("adapter", adapt: {classes: [], modules: [], methods: [], method_calls: [], mixins: []})
+      allow(container).to receive(:get).with(:input_adapter).and_return(input_adapter)
+      
+      test_input = {classes: [{name: "Test"}]}
+      context.input = test_input
+      
+      step.call(context)
+      
+      expect(input_adapter).to have_received(:adapt).with(test_input)
     end
-
-    describe "#extractor_result?" do
-      it "returns true only when both classes AND modules methods exist" do
-        obj = double("complete", classes: [], modules: [])
-        expect(step.send(:extractor_result?, obj)).to be true
-      end
-
-      it "returns false when object only has classes method" do
-        obj = double("partial", classes: [])
-        expect(step.send(:extractor_result?, obj)).to be false
-      end
-
-      it "returns false when object only has modules method" do
-        obj = double("partial", modules: [])
-        expect(step.send(:extractor_result?, obj)).to be false
-      end
-
-      it "returns false for nil" do
-        expect(step.send(:extractor_result?, nil)).to be false
-      end
-
-      it "returns false for Hash even if it has keys :classes and :modules" do
-        hash = {classes: [], modules: []}
-        expect(step.send(:extractor_result?, hash)).to be false
-      end
-    end
-
-    describe "#convert_to_hashes" do
-      it "returns items unchanged when empty" do
-        items = []
-        result = step.send(:convert_to_hashes, items)
-        expect(result).to be(items) # Must be same object
-      end
-
-      it "returns items unchanged when first is Hash" do
-        items = [{name: "Test"}]
-        result = step.send(:convert_to_hashes, items)
-        expect(result).to be(items) # Must be same object
-      end
-
-      it "converts when first is not Hash" do
-        obj = double("obj", to_h: {name: "Test"})
-        items = [obj]
-        result = step.send(:convert_to_hashes, items)
-        # Verify it's a different object
-        expect(result.object_id == items.object_id).to be false
-        expect(result).to eq([{name: "Test"}])
-      end
-
-      it "checks first element using is_a?(Hash) not instance_of?" do
-        # Subclass of Hash should still return items unchanged
-        class TestHash < Hash; end
-        test_hash = TestHash.new
-        test_hash[:name] = "Test"
-        
-        items = [test_hash]
-        result = step.send(:convert_to_hashes, items)
-        expect(result).to be(items) # Should recognize TestHash as Hash
-      end
-    end
-
-    describe "#extract_from_hash" do
-      it "returns empty arrays for nil values" do
-        data = {classes: nil, modules: nil, methods: nil, method_calls: nil, mixins: nil}
-        result = step.send(:extract_from_hash, data)
-        
-        expect(result[:classes]).to eq([])
-        expect(result[:modules]).to eq([])
-        expect(result[:methods]).to eq([])
-        expect(result[:method_calls]).to eq([])
-        expect(result[:mixins]).to eq([])
-      end
-
-      it "uses || operator to provide defaults" do
-        # Empty hash should get all defaults
-        result = step.send(:extract_from_hash, {})
-        
-        expect(result[:classes]).to eq([])
-        expect(result[:modules]).to eq([])
-        expect(result[:methods]).to eq([])
-        expect(result[:method_calls]).to eq([])
-        expect(result[:mixins]).to eq([])
-      end
-    end
-
-    describe "#extract_from_result" do
-      it "handles nil collections with || operator" do
-        result_obj = double("result", classes: nil, modules: nil, methods: nil, mixins: nil)
-        
-        data = step.send(:extract_from_result, result_obj)
-        
-        expect(data[:classes]).to eq([])
-        expect(data[:modules]).to eq([])
-        expect(data[:methods]).to eq([])
-        expect(data[:method_calls]).to eq([])
-        expect(data[:mixins]).to eq([])
-      end
-
-      it "always returns empty array for method_calls" do
-        result_obj = double("result", classes: [], modules: [], methods: [], mixins: [])
-        
-        data = step.send(:extract_from_result, result_obj)
-        
-        expect(data[:method_calls]).to eq([])
-      end
+    
+    it "stores adapted data in context.extracted_data" do
+      adapted_data = {
+        classes: [{name: "Test"}],
+        modules: [],
+        methods: [],
+        method_calls: [],
+        mixins: []
+      }
+      
+      input_adapter = double("adapter", adapt: adapted_data)
+      allow(container).to receive(:get).with(:input_adapter).and_return(input_adapter)
+      
+      context.input = {classes: [{name: "Test"}]}
+      
+      step.call(context)
+      
+      expect(context.extracted_data).to eq(adapted_data)
     end
   end
 
@@ -202,8 +95,11 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Mutation Tests" do
     end
 
     it "calls all four resolvers in sequence" do
-      # Just verify it executes without error
-      expect { step.call(context) }.not_to raise_error
+      # Execute and verify it completes successfully
+      step.call(context)
+      
+      # Result should be unchanged but processed
+      expect(context.result).to be_a(Rubymap::Normalizer::NormalizedResult)
     end
   end
 

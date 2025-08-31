@@ -79,88 +79,46 @@ module Rubymap
     end
 
     # Step 1: Extract symbols from input
+    # Single Responsibility: Adapt input to symbol data format
     class ExtractSymbolsStep < PipelineStep
       def call(context)
-        context.extracted_data = extract_symbol_data(context.input)
-      end
-
-      private
-
-      def extract_symbol_data(raw_data)
-        return empty_symbol_data unless raw_data
-        return extract_from_hash(raw_data) if raw_data.is_a?(Hash)
-        return extract_from_result(raw_data) if extractor_result?(raw_data)
-        empty_symbol_data
-      end
-
-      def extract_from_hash(raw_data)
-        {
-          classes: raw_data[:classes] || [],
-          modules: raw_data[:modules] || [],
-          methods: raw_data[:methods] || [],
-          method_calls: raw_data[:method_calls] || [],
-          mixins: raw_data[:mixins] || []
-        }
-      end
-
-      def extract_from_result(raw_data)
-        {
-          classes: convert_to_hashes(raw_data.classes || []),
-          modules: convert_to_hashes(raw_data.modules || []),
-          methods: convert_to_hashes(raw_data.methods || []),
-          method_calls: [],
-          mixins: convert_to_hashes(raw_data.mixins || [])
-        }
-      end
-
-      def empty_symbol_data
-        {
-          classes: [],
-          modules: [],
-          methods: [],
-          method_calls: [],
-          mixins: []
-        }
-      end
-
-      def extractor_result?(raw_data)
-        raw_data.respond_to?(:classes) && raw_data.respond_to?(:modules)
-      end
-
-      def convert_to_hashes(items)
-        return items if items.empty?
-        return items if items.first.is_a?(Hash)
-        items.map(&:to_h)
+        adapter = context.container.get(:input_adapter)
+        context.extracted_data = adapter.adapt(context.input)
       end
     end
 
     # Step 2: Process symbols through processors
     class ProcessSymbolsStep < PipelineStep
+      # Define processors in order with their data keys
+      PROCESSORS = [
+        [:class_processor, :classes],
+        [:module_processor, :modules],
+        [:method_processor, :methods],
+        [:method_call_processor, :method_calls]
+      ].freeze
+
       def call(context)
         return unless context.extracted_data
         
         processor_factory = context.container.get(:processor_factory)
         
-        # Process main symbols
-        process_main_symbols(processor_factory, context)
+        # Process all symbol types
+        PROCESSORS.each do |processor_type, data_key|
+          processor = processor_factory.send("create_#{processor_type}")
+          data = context.extracted_data[data_key] || []
+          processor.process(data, context.result, context.errors)
+        end
         
         # Index symbols
         index_symbols(context)
         
-        # Process mixins (after indexing)
-        process_mixins(processor_factory, context)
+        # Process mixins after indexing
+        processor = processor_factory.create_mixin_processor
+        mixins = context.extracted_data[:mixins] || []
+        processor.process(mixins, context.result, context.errors)
       end
 
       private
-
-      def process_main_symbols(factory, context)
-        data = context.extracted_data
-        
-        factory.create_class_processor.process(data[:classes], context.result, context.errors)
-        factory.create_module_processor.process(data[:modules], context.result, context.errors)
-        factory.create_method_processor.process(data[:methods], context.result, context.errors)
-        factory.create_method_call_processor.process(data[:method_calls], context.result, context.errors)
-      end
 
       def index_symbols(context)
         symbol_index = context.container.get(:symbol_index)
@@ -168,11 +126,6 @@ module Rubymap
         (context.result.classes + context.result.modules).each do |symbol|
           symbol_index.add(symbol)
         end
-      end
-
-      def process_mixins(factory, context)
-        mixins = context.extracted_data[:mixins] || []
-        factory.create_mixin_processor.process(mixins, context.result, context.errors, [])
       end
     end
 

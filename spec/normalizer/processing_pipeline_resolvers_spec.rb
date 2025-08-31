@@ -214,40 +214,26 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
     end
   end
 
-  describe "ProcessSymbolsStep - main symbols processing" do
-    let(:step) { Rubymap::Normalizer::ProcessSymbolsStep.new }
-    let(:context) { Rubymap::Normalizer::PipelineContext.new(
-      input: nil,
-      result: Rubymap::Normalizer::NormalizedResult.new,
-      container: container
-    )}
-    let(:processor_factory) { container.get(:processor_factory) }
-    
-    it "processes each symbol type with its processor" do
-      context.extracted_data = {
-        classes: [{name: "A"}],
-        modules: [{name: "B"}],
-        methods: [{name: "c", owner: "A"}],
-        method_calls: [{from: "A#c", to: "B#d"}]
-      }
-      context.errors = []
+  describe "ProcessSymbolsStep - processor configuration" do
+    it "defines processors in correct order" do
+      expected_processors = [
+        [:class_processor, :classes],
+        [:module_processor, :modules],
+        [:method_processor, :methods],
+        [:method_call_processor, :method_calls]
+      ]
       
-      step.send(:process_main_symbols, processor_factory, context)
-      
-      expect(context.result.classes.size).to eq(1)
-      expect(context.result.modules.size).to eq(1)
-      expect(context.result.methods.size).to eq(1)
+      expect(Rubymap::Normalizer::ProcessSymbolsStep::PROCESSORS).to eq(expected_processors)
     end
   end
 
-  describe "ProcessSymbolsStep - mixin processing" do
+  describe "ProcessSymbolsStep - comprehensive processing" do
     let(:step) { Rubymap::Normalizer::ProcessSymbolsStep.new }
     let(:context) { Rubymap::Normalizer::PipelineContext.new(
       input: nil,
       result: Rubymap::Normalizer::NormalizedResult.new,
       container: container
     )}
-    let(:processor_factory) { container.get(:processor_factory) }
     
     before do
       # Add target class and module for mixin
@@ -269,16 +255,22 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
       symbol_index.add(context.result.modules.first)
     end
     
-    it "processes mixins correctly" do
+    it "processes all symbol types including mixins" do
       context.extracted_data = {
+        classes: [{name: "A"}],
+        modules: [{name: "B"}],
+        methods: [{name: "c", owner: "A"}],
+        method_calls: [{from: "A#c", to: "B#d"}],
         mixins: [{module: "Mixin", target: "Target", type: "include"}]
       }
       context.errors = []
       
-      step.send(:process_mixins, processor_factory, context)
+      step.call(context)
       
-      # Just verify it doesn't raise an error
-      expect(context.errors).to eq([])
+      # Verify all were processed
+      expect(context.result.classes.size).to be >= 1
+      expect(context.result.modules.size).to be >= 1
+      expect(context.result.methods.size).to eq(1)
     end
   end
 
@@ -301,23 +293,4 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
     end
   end
 
-  describe "ExtractSymbolsStep edge cases" do
-    let(:step) { Rubymap::Normalizer::ExtractSymbolsStep.new }
-    
-    it "handles arrays with nil first element" do
-      items = [nil, {name: "Test"}]
-      result = step.send(:convert_to_hashes, items)
-      # nil gets converted to {} by to_h
-      expect(result).to eq([{}, {name: "Test"}])
-    end
-    
-    it "properly checks if first element is Hash" do
-      # Not a hash but responds to is_a?
-      fake_hash = double("fake", is_a?: false, to_h: {name: "Fake"})
-      items = [fake_hash]
-      
-      result = step.send(:convert_to_hashes, items)
-      expect(result).to eq([{name: "Fake"}])
-    end
-  end
 end
