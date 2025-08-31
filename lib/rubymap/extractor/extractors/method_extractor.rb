@@ -11,7 +11,7 @@ module Rubymap
         receiver_type = determine_receiver_type(node)
         params = extract_parameters(node.parameters)
         doc = extract_method_documentation(node, params)
-        
+
         # Extract YARD tags including @rubymap
         tags = extract_yard_tags(doc)
         rubymap = tags[:rubymap] if tags

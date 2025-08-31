@@ -98,7 +98,7 @@ module Rubymap
       # Build pipeline with configured stages
       # Skip default pipeline since we're building a custom one
       @pipeline = Pipeline::EnrichmentPipeline.new(config.merge(skip_default_pipeline: true))
-      
+
       # Add stages with their components
       pipeline.add_stage(Pipeline::MetricsStage, metrics: metrics) if config.fetch(:enable_metrics)
       pipeline.add_stage(Pipeline::AnalysisStage, analyzers: analyzers) if config.fetch(:enable_patterns)
@@ -126,10 +126,10 @@ module Rubymap
       result.classes = convert_entities(hash[:classes], :classes)
       result.modules = convert_entities(hash[:modules], :modules)
       result.methods = convert_entities(hash[:methods], :methods)
-      
+
       # Method calls don't need conversion (simple array)
       result.method_calls = hash[:method_calls] || []
-      
+
       result
     end
 

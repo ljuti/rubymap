@@ -10,7 +10,7 @@ module Rubymap
         name = extract_constant_name(node.constant_path)
         superclass = extract_superclass(node)
         doc = extract_documentation(node)
-        
+
         # Extract YARD tags including @rubymap
         tags = extract_yard_tags(doc)
         rubymap = tags[:rubymap] if tags

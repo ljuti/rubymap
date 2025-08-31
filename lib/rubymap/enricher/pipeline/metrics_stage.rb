@@ -10,7 +10,7 @@ module Rubymap
         attr_reader :metrics
 
         def initialize(config = {}, next_stage = nil)
-          super(config, next_stage)
+          super
           @metrics = config[:metrics] || []
         end
 

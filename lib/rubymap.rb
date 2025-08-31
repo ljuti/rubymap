@@ -25,7 +25,7 @@ require_relative "rubymap/pipeline"
 #   puts result.methods.count
 #
 # @example Analyze specific path with options
-#   result = Rubymap.map("lib/", 
+#   result = Rubymap.map("lib/",
 #     enable_metrics: true,
 #     include_private: false
 #   )

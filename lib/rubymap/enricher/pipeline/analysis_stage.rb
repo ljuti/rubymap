@@ -10,7 +10,7 @@ module Rubymap
         attr_reader :analyzers
 
         def initialize(config = {}, next_stage = nil)
-          super(config, next_stage)
+          super
           @analyzers = config[:analyzers] || []
         end
 

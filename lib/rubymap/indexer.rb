@@ -5,6 +5,7 @@ require_relative "indexer/graph"
 require_relative "indexer/symbol_index"
 require_relative "indexer/search_engine"
 require_relative "indexer/query_interface"
+require_relative "indexer/symbol_converter"
 
 module Rubymap
   # Builds searchable indexes and relationship graphs from normalized codebase data.
@@ -62,6 +63,7 @@ module Rubymap
     #   )
     def initialize(config = {})
       @config = default_config.merge(config)
+      @symbol_converter = SymbolConverter.new
     end
 
     # Builds comprehensive indexes from normalized or enriched data.
@@ -288,71 +290,42 @@ module Rubymap
     end
 
     def extract_classes(data)
-      # Check if it's an enriched result object (not a hash)
-      if !data.is_a?(Hash) && data.respond_to?(:classes)
-        # Convert enriched objects to hashes if needed
-        Array(data.classes).map { |c| normalize_symbol(c) }
+      # If it's an object with a to_h method, convert it first
+      if !data.is_a?(Hash) && data.respond_to?(:to_h)
+        hash_data = data.to_h
+        @symbol_converter.normalize_symbol_array(hash_data[:classes])
+      # If it's an object with classes method, use that
+      elsif !data.is_a?(Hash) && data.respond_to?(:classes)
+        @symbol_converter.normalize_symbol_array(data.classes)
       else
-        Array(data[:classes]).map { |c| normalize_symbol(c) }
+        @symbol_converter.normalize_symbol_array(data[:classes])
       end
     end
 
     def extract_methods(data)
-      # Check if it's an enriched result object (not a hash)
-      if !data.is_a?(Hash) && data.respond_to?(:methods)
-        Array(data.methods).map { |m| normalize_symbol(m) }
+      # If it's an object with a to_h method, convert it first
+      if !data.is_a?(Hash) && data.respond_to?(:to_h)
+        hash_data = data.to_h
+        @symbol_converter.normalize_symbol_array(hash_data[:methods])
+      # If it's an object with methods method, use that
+      elsif !data.is_a?(Hash) && data.respond_to?(:methods)
+        @symbol_converter.normalize_symbol_array(data.methods)
       else
-        Array(data[:methods]).map { |m| normalize_symbol(m) }
+        @symbol_converter.normalize_symbol_array(data[:methods])
       end
     end
 
     def extract_modules(data)
-      # Check if it's an enriched result object (not a hash)
-      if !data.is_a?(Hash) && data.respond_to?(:modules)
-        Array(data.modules).map { |m| normalize_symbol(m) }
+      # If it's an object with a to_h method, convert it first
+      if !data.is_a?(Hash) && data.respond_to?(:to_h)
+        hash_data = data.to_h
+        @symbol_converter.normalize_symbol_array(hash_data[:modules])
+      # If it's an object with modules method, use that
+      elsif !data.is_a?(Hash) && data.respond_to?(:modules)
+        @symbol_converter.normalize_symbol_array(data.modules)
       else
-        Array(data[:modules]).map { |m| normalize_symbol(m) }
+        @symbol_converter.normalize_symbol_array(data[:modules])
       end
-    end
-
-    def normalize_symbol(symbol)
-      # Handle nil input
-      return {} if symbol.nil?
-
-      # If it's already a hash with the expected structure, return it
-      if symbol.is_a?(Hash)
-        # Only return if it has expected symbol keys
-        if symbol[:name] || symbol[:fqname]
-          return symbol
-        else
-          # This is not a symbol hash, return empty
-          return {}
-        end
-      end
-
-      # Convert struct to hash if possible
-      if symbol.respond_to?(:to_h)
-        begin
-          hash = symbol.to_h
-          # Only use to_h result if it has expected symbol keys
-          if hash.is_a?(Hash) && (hash[:name] || hash[:fqname])
-            return hash
-          end
-        rescue
-          # Fall through if to_h fails
-        end
-      end
-
-      # Extract fields manually from objects
-      result = {}
-      [:name, :fqname, :type, :superclass, :dependencies, :mixins, :file, :line, :owner].each do |field|
-        if symbol.respond_to?(field)
-          result[field] = symbol.send(field)
-        end
-      end
-
-      # Only return if we actually got a name
-      (result[:name] || result[:fqname]) ? result : {}
     end
   end
 end

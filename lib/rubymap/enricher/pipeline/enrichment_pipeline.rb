@@ -35,11 +35,11 @@ module Rubymap
         # @return [self] Returns self for chaining
         def add_stage(stage_class, stage_config = {})
           stage = stage_class.new(stage_config.merge(config))
-          
+
           if stages.any?
             stages.last.chain(stage)
           end
-          
+
           stages << stage
           self
         end

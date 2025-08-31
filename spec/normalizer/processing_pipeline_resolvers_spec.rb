@@ -8,12 +8,14 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
 
   describe "ResolveRelationshipsStep" do
     let(:step) { Rubymap::Normalizer::ResolveRelationshipsStep.new }
-    let(:context) { Rubymap::Normalizer::PipelineContext.new(
-      input: nil,
-      result: Rubymap::Normalizer::NormalizedResult.new,
-      container: container
-    )}
-    
+    let(:context) {
+      Rubymap::Normalizer::PipelineContext.new(
+        input: nil,
+        result: Rubymap::Normalizer::NormalizedResult.new,
+        container: container
+      )
+    }
+
     before do
       # Set up test data with relationships
       parent_class = Rubymap::Normalizer::CoreNormalizedClass.new(
@@ -22,35 +24,35 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         symbol_id: "parent_id",
         namespace_path: []
       )
-      
+
       child_class = Rubymap::Normalizer::CoreNormalizedClass.new(
-        name: "Child", 
+        name: "Child",
         fqname: "Child",
         symbol_id: "child_id",
         superclass: "Parent",
         namespace_path: []
       )
-      
+
       context.result.classes << parent_class
       context.result.classes << child_class
     end
 
     it "executes all resolvers in correct order" do
       resolver_factory = container.get(:resolver_factory)
-      
+
       # Create spies for each resolver
       namespace_resolver = spy("namespace_resolver")
       inheritance_resolver = spy("inheritance_resolver")
       cross_ref_resolver = spy("cross_ref_resolver")
       mixin_resolver = spy("mixin_resolver")
-      
+
       allow(resolver_factory).to receive(:create_namespace_resolver).and_return(namespace_resolver)
       allow(resolver_factory).to receive(:create_inheritance_resolver).and_return(inheritance_resolver)
       allow(resolver_factory).to receive(:create_cross_reference_resolver).and_return(cross_ref_resolver)
       allow(resolver_factory).to receive(:create_mixin_method_resolver).and_return(mixin_resolver)
-      
+
       step.call(context)
-      
+
       # Verify all resolvers were called in order
       expect(namespace_resolver).to have_received(:resolve).with(context.result).ordered
       expect(inheritance_resolver).to have_received(:resolve).with(context.result).ordered
@@ -60,32 +62,32 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
 
     it "passes the same result object to all resolvers" do
       original_result_id = context.result.object_id
-      
+
       resolver_factory = container.get(:resolver_factory)
-      
+
       # Verify each resolver receives the same result object
       allow(resolver_factory.create_namespace_resolver).to receive(:resolve) do |passed_result|
         expect(passed_result.object_id).to eq(original_result_id)
       end
-      
+
       allow(resolver_factory.create_inheritance_resolver).to receive(:resolve) do |passed_result|
         expect(passed_result.object_id).to eq(original_result_id)
       end
-      
+
       allow(resolver_factory.create_cross_reference_resolver).to receive(:resolve) do |passed_result|
         expect(passed_result.object_id).to eq(original_result_id)
       end
-      
+
       allow(resolver_factory.create_mixin_method_resolver).to receive(:resolve) do |passed_result|
         expect(passed_result.object_id).to eq(original_result_id)
       end
-      
+
       step.call(context)
     end
 
     it "modifies the result with inheritance chains" do
       step.call(context)
-      
+
       child = context.result.classes.find { |c| c.name == "Child" }
       expect(child.inheritance_chain).to include("Parent")
     end
@@ -96,9 +98,9 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         result: Rubymap::Normalizer::NormalizedResult.new,
         container: container
       )
-      
+
       step.call(empty_context)
-      
+
       # Verify result remains empty after resolution
       expect(empty_context.result.classes).to eq([])
       expect(empty_context.result.modules).to eq([])
@@ -112,19 +114,19 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         symbol_id: "myapp_id",
         namespace_path: []
       )
-      
+
       nested_class = Rubymap::Normalizer::CoreNormalizedClass.new(
         name: "User",
         fqname: "MyApp::User",
         symbol_id: "user_id",
         namespace_path: ["MyApp"]
       )
-      
+
       context.result.modules << namespace_module
       context.result.classes << nested_class
-      
+
       step.call(context)
-      
+
       # Verify namespace relationships are resolved
       expect(nested_class.namespace_path).to eq(["MyApp"])
     end
@@ -132,27 +134,29 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
 
   describe "ProcessSymbolsStep - processor execution" do
     let(:step) { Rubymap::Normalizer::ProcessSymbolsStep.new }
-    let(:context) { Rubymap::Normalizer::PipelineContext.new(
-      input: nil,
-      result: Rubymap::Normalizer::NormalizedResult.new,
-      container: container
-    )}
-    
+    let(:context) {
+      Rubymap::Normalizer::PipelineContext.new(
+        input: nil,
+        result: Rubymap::Normalizer::NormalizedResult.new,
+        container: container
+      )
+    }
+
     it "processes all symbol types in correct order" do
       processor_factory = container.get(:processor_factory)
-      
+
       class_processor = spy("class_processor")
       module_processor = spy("module_processor")
       method_processor = spy("method_processor")
       method_call_processor = spy("method_call_processor")
       mixin_processor = spy("mixin_processor")
-      
+
       allow(processor_factory).to receive(:create_class_processor).and_return(class_processor)
       allow(processor_factory).to receive(:create_module_processor).and_return(module_processor)
       allow(processor_factory).to receive(:create_method_processor).and_return(method_processor)
       allow(processor_factory).to receive(:create_method_call_processor).and_return(method_call_processor)
       allow(processor_factory).to receive(:create_mixin_processor).and_return(mixin_processor)
-      
+
       context.extracted_data = {
         classes: [{name: "Test"}],
         modules: [{name: "Helper"}],
@@ -160,9 +164,9 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         method_calls: [{from: "Test#test", to: "Helper#help"}],
         mixins: [{module: "Helper", target: "Test", type: "include"}]
       }
-      
+
       step.call(context)
-      
+
       # Verify processors were called in correct order
       expect(class_processor).to have_received(:process).ordered
       expect(module_processor).to have_received(:process).ordered
@@ -174,7 +178,7 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
 
     it "indexes symbols before processing mixins" do
       symbol_index = container.get(:symbol_index)
-      
+
       # Add a class that will be indexed
       context.extracted_data = {
         classes: [{name: "TestClass", fqname: "TestClass"}],
@@ -183,9 +187,9 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         method_calls: [],
         mixins: []
       }
-      
+
       step.call(context)
-      
+
       # Verify the class was indexed
       found_class = symbol_index.find("TestClass")
       expect(found_class).to be_a(Rubymap::Normalizer::CoreNormalizedClass)
@@ -193,8 +197,8 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
     end
 
     it "passes errors array to all processors" do
-      processor_factory = container.get(:processor_factory)
-      
+      container.get(:processor_factory)
+
       context.extracted_data = {
         classes: [{name: ""}], # Invalid class
         modules: [],
@@ -203,9 +207,9 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         mixins: []
       }
       context.errors = []
-      
+
       step.call(context)
-      
+
       # Should have collected validation errors
       expect(context.errors.size).to be > 0
       expect(context.errors.first).to be_a(Rubymap::Normalizer::NormalizedError)
@@ -222,19 +226,21 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         [:method_processor, :methods],
         [:method_call_processor, :method_calls]
       ]
-      
+
       expect(Rubymap::Normalizer::ProcessSymbolsStep::PROCESSORS).to eq(expected_processors)
     end
   end
 
   describe "ProcessSymbolsStep - comprehensive processing" do
     let(:step) { Rubymap::Normalizer::ProcessSymbolsStep.new }
-    let(:context) { Rubymap::Normalizer::PipelineContext.new(
-      input: nil,
-      result: Rubymap::Normalizer::NormalizedResult.new,
-      container: container
-    )}
-    
+    let(:context) {
+      Rubymap::Normalizer::PipelineContext.new(
+        input: nil,
+        result: Rubymap::Normalizer::NormalizedResult.new,
+        container: container
+      )
+    }
+
     before do
       # Add target class and module for mixin
       context.result.classes << Rubymap::Normalizer::CoreNormalizedClass.new(
@@ -242,19 +248,19 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         fqname: "Target",
         symbol_id: "target_id"
       )
-      
+
       context.result.modules << Rubymap::Normalizer::CoreNormalizedModule.new(
         name: "Mixin",
         fqname: "Mixin",
         symbol_id: "mixin_id"
       )
-      
+
       # Index them
       symbol_index = container.get(:symbol_index)
       symbol_index.add(context.result.classes.first)
       symbol_index.add(context.result.modules.first)
     end
-    
+
     it "processes all symbol types including mixins" do
       context.extracted_data = {
         classes: [{name: "A"}],
@@ -264,9 +270,9 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
         mixins: [{module: "Mixin", target: "Target", type: "include"}]
       }
       context.errors = []
-      
+
       step.call(context)
-      
+
       # Verify all were processed
       expect(context.result.classes.size).to be >= 1
       expect(context.result.modules.size).to be >= 1
@@ -277,20 +283,19 @@ RSpec.describe "Rubymap::Normalizer::ProcessingPipeline - Resolvers" do
   describe "Pipeline metadata creation" do
     it "creates result with all required metadata fields" do
       result = pipeline.execute({})
-      
+
       expect(result.schema_version).to eq(Rubymap::Normalizer::SCHEMA_VERSION)
       expect(result.normalizer_version).to eq(Rubymap::Normalizer::NORMALIZER_VERSION)
       expect(result.normalized_at).to match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/)
     end
-    
+
     it "uses current UTC time for normalized_at" do
       time_before = Time.now.utc
       result = pipeline.execute({})
       time_after = Time.now.utc + 1 # Add 1 second buffer
-      
+
       normalized_time = Time.parse(result.normalized_at)
       expect(normalized_time).to be_between(time_before - 1, time_after)
     end
   end
-
 end

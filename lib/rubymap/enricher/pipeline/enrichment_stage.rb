@@ -32,7 +32,7 @@ module Rubymap
 
           begin
             process(result)
-          rescue StandardError => e
+          rescue => e
             handle_error(e, result)
           end
 
@@ -79,7 +79,7 @@ module Rubymap
             error: error.message,
             backtrace: error.backtrace&.first(5)
           }
-          
+
           # Re-raise in development/test to catch issues
           raise error if ENV["RACK_ENV"] == "test" || ENV["RAILS_ENV"] == "test"
         end

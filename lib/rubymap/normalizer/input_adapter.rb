@@ -6,7 +6,7 @@ module Rubymap
     # Single Responsibility: Convert input to normalized symbol collections
     class InputAdapter
       SYMBOL_TYPES = [:classes, :modules, :methods, :method_calls, :mixins].freeze
-      
+
       def adapt(input)
         case input
         when Hash
@@ -17,38 +17,38 @@ module Rubymap
           empty_data
         end
       end
-      
+
       private
-      
+
       def normalize_hash(hash)
         SYMBOL_TYPES.each_with_object({}) do |type, result|
           value = hash[type]
           result[type] = case value
-                         when nil then []
-                         when Array then value
-                         else [value]
-                         end
+          when nil then []
+          when Array then value
+          else [value]
+          end
         end
       end
-      
+
       def normalize_extractor_result(result)
-        # ExtractorResult should provide its data in the correct format
-        # We just need to ensure all required keys are present
+        # Use the ExtractorResult's built-in conversion method
+        data = result.to_h
         {
-          classes: result.classes || [],
-          modules: result.modules || [],
-          methods: result.methods || [],
+          classes: data[:classes] || [],
+          modules: data[:modules] || [],
+          methods: data[:methods] || [],
           method_calls: [], # Extractor doesn't provide method_calls
-          mixins: result.mixins || []
+          mixins: data[:mixins] || []
         }
       end
-      
+
       def empty_data
         SYMBOL_TYPES.each_with_object({}) do |type, result|
           result[type] = []
         end
       end
-      
+
       # Duck typing check for Extractor::Result
       class ExtractorResult
         def self.===(obj)

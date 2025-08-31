@@ -11,7 +11,7 @@ module Rubymap
         attr_reader :rails_enrichers
 
         def initialize(config = {}, next_stage = nil)
-          super(config, next_stage)
+          super
           @rails_enrichers = config[:rails_enrichers] || []
         end
 

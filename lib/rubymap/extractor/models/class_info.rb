@@ -38,7 +38,7 @@ module Rubymap
 
       def convert_location_to_hash(location)
         return nil unless location
-        
+
         # Handle Prism::Location objects
         if location.respond_to?(:start_line)
           {

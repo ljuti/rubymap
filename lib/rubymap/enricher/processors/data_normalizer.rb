@@ -13,7 +13,7 @@ module Rubymap
         # @return [Float] Normalized age between 0.0 and 1.0
         def self.normalize_age(days)
           return 0.0 if days.nil? || days < 0
-          
+
           (days / 365.0).clamp(0.0, 1.0)
         end
 
@@ -24,7 +24,7 @@ module Rubymap
         # @return [Float] Normalized churn between 0.0 and 1.0
         def self.normalize_churn(score)
           return 0.0 if score.nil? || score < 0
-          
+
           (score / 100.0).clamp(0.0, 1.0)
         end
 
@@ -35,7 +35,7 @@ module Rubymap
         # @return [Float] Normalized coupling between 0.0 and 1.0
         def self.normalize_coupling(strength)
           return 0.0 if strength.nil? || strength < 0
-          
+
           (strength / 10.0).clamp(0.0, 1.0)
         end
 
@@ -45,7 +45,7 @@ module Rubymap
         # @return [Float] Normalized coverage between 0.0 and 1.0
         def self.normalize_coverage(coverage)
           return 0.0 if coverage.nil? || coverage < 0
-          
+
           (coverage / 100.0).clamp(0.0, 1.0)
         end
 
@@ -55,7 +55,7 @@ module Rubymap
         # @return [String] Severity level: "high", "medium", or "low"
         def self.coverage_severity(coverage)
           return "high" if coverage.nil?
-          
+
           case coverage
           when 0...30 then "high"
           when 30...60 then "medium"
@@ -70,7 +70,7 @@ module Rubymap
         # @return [Float] Normalized complexity between 0.0 and 1.0
         def self.normalize_complexity(complexity)
           return 0.0 if complexity.nil? || complexity < 0
-          
+
           (complexity / 10.0).clamp(0.0, 1.0)
         end
       end

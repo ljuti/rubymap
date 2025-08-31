@@ -29,6 +29,16 @@ module Rubymap
       def external
         external?
       end
+
+      def to_h
+        {
+          type: @type,
+          path: @path,
+          location: @location,
+          constant: @constant,
+          external: external?
+        }.compact
+      end
     end
   end
 end

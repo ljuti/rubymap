@@ -53,7 +53,7 @@ module Rubymap
     # @raise [ArgumentError] if format is not supported
     def emit(enriched_result, format: :markdown)
       validate_format!(format)
-      
+
       documentation_data = aggregate_documentation(enriched_result)
       formatter = @formatters[format]
       formatter.format(documentation_data)
@@ -67,10 +67,10 @@ module Rubymap
     # @return [String] Formatted documentation for the specific symbol
     def emit_for_symbol(enriched_result, symbol_name, format: :markdown)
       validate_format!(format)
-      
+
       documentation_data = aggregate_documentation_for_symbol(enriched_result, symbol_name)
       return nil unless documentation_data
-      
+
       formatter = @formatters[format]
       formatter.format(documentation_data)
     end
@@ -90,7 +90,7 @@ module Rubymap
 
     def validate_format!(format)
       unless FORMATS.include?(format)
-        raise ArgumentError, "Unsupported format: #{format}. Supported formats: #{FORMATS.join(', ')}"
+        raise ArgumentError, "Unsupported format: #{format}. Supported formats: #{FORMATS.join(", ")}"
       end
     end
 
@@ -147,7 +147,7 @@ module Rubymap
           superclass: klass.superclass,
           location: format_location(klass.location),
           mixins: klass.mixins,
-          methods: document_methods(klass.respond_to?(:methods) && klass.methods.is_a?(Array) ? klass.methods : []),
+          methods: document_methods((klass.respond_to?(:methods) && klass.methods.is_a?(Array)) ? klass.methods : []),
           constants: klass.respond_to?(:constants) ? klass.constants : [],
           attributes: klass.respond_to?(:attributes) ? klass.attributes : [],
           complexity: klass.respond_to?(:total_complexity) ? klass.total_complexity : nil,
@@ -167,7 +167,7 @@ module Rubymap
           fqname: mod.fqname,
           namespace: mod.namespace_path.join("::"),
           location: format_location(mod.location),
-          methods: document_methods(mod.respond_to?(:methods) && mod.methods.is_a?(Array) ? mod.methods : []),
+          methods: document_methods((mod.respond_to?(:methods) && mod.methods.is_a?(Array)) ? mod.methods : []),
           constants: mod.respond_to?(:constants) ? mod.constants : [],
           included_in: mod.respond_to?(:included_in) ? mod.included_in : [],
           extended_in: mod.respond_to?(:extended_in) ? mod.extended_in : []
@@ -177,12 +177,12 @@ module Rubymap
 
     def document_methods(methods)
       return [] if methods.nil? || methods.empty?
-      
+
       # Filter out non-method objects (like symbols)
       valid_methods = methods.select { |m| m.respond_to?(:name) && m.respond_to?(:visibility) }
-      
+
       methods_to_document = @config[:include_private] ? valid_methods : valid_methods.select { |m| m.visibility == "public" }
-      
+
       methods_to_document.map do |method|
         {
           name: method.name,
@@ -283,7 +283,7 @@ module Rubymap
     def build_call_graph(enriched_result)
       # Build method call relationships
       return {} unless enriched_result.respond_to?(:method_calls) && enriched_result.method_calls
-      
+
       enriched_result.method_calls.group_by { |call| call.respond_to?(:from) ? call.from : nil }.transform_values do |calls|
         calls.map { |call| call.respond_to?(:to) ? call.to : nil }.compact.uniq
       end.compact
@@ -299,7 +299,7 @@ module Rubymap
       enriched_result.methods
         .select { |m| m.respond_to?(:cyclomatic_complexity) && m.cyclomatic_complexity && m.cyclomatic_complexity <= @config[:max_complexity_shown] }
         .max_by { |m| m.cyclomatic_complexity }
-        &.then { |m| { method: "#{m.owner}##{m.name}", complexity: m.cyclomatic_complexity } }
+        &.then { |m| {method: "#{m.owner}##{m.name}", complexity: m.cyclomatic_complexity} }
     end
 
     def build_complexity_distribution(enriched_result)
@@ -312,20 +312,20 @@ module Rubymap
     def find_tightly_coupled(enriched_result)
       enriched_result.classes
         .select { |c| c.respond_to?(:coupling_strength) && c.coupling_strength && c.coupling_strength > 0.7 }
-        .map { |c| { class: c.fqname, coupling: c.coupling_strength } }
+        .map { |c| {class: c.fqname, coupling: c.coupling_strength} }
     end
 
     def find_loosely_coupled(enriched_result)
       enriched_result.classes
         .select { |c| c.respond_to?(:coupling_strength) && c.coupling_strength && c.coupling_strength < 0.3 }
-        .map { |c| { class: c.fqname, coupling: c.coupling_strength } }
+        .map { |c| {class: c.fqname, coupling: c.coupling_strength} }
     end
 
     def find_largest_classes(enriched_result, limit = 5)
       enriched_result.classes
         .sort_by { |c| -c.methods.size }
         .take(limit)
-        .map { |c| { class: c.fqname, method_count: c.methods.size } }
+        .map { |c| {class: c.fqname, method_count: c.methods.size} }
     end
 
     def find_longest_methods(enriched_result, limit = 5)
@@ -333,19 +333,19 @@ module Rubymap
         .select { |m| m.respond_to?(:line_count) && m.line_count }
         .sort_by { |m| -m.line_count }
         .take(limit)
-        .map { |m| { method: "#{m.owner}##{m.name}", lines: m.line_count } }
+        .map { |m| {method: "#{m.owner}##{m.name}", lines: m.line_count} }
     end
 
     def find_high_complexity_items(enriched_result)
       enriched_result.methods
         .select { |m| m.respond_to?(:cyclomatic_complexity) && m.cyclomatic_complexity && m.cyclomatic_complexity > 10 }
-        .map { |m| { method: "#{m.owner}##{m.name}", complexity: m.cyclomatic_complexity } }
+        .map { |m| {method: "#{m.owner}##{m.name}", complexity: m.cyclomatic_complexity} }
     end
 
     def find_low_cohesion_classes(enriched_result)
       enriched_result.classes
         .select { |c| c.respond_to?(:cohesion_score) && c.cohesion_score && c.cohesion_score < 0.3 }
-        .map { |c| { class: c.fqname, cohesion: c.cohesion_score } }
+        .map { |c| {class: c.fqname, cohesion: c.cohesion_score} }
     end
 
     # Symbol-specific documentation builders
@@ -372,11 +372,11 @@ module Rubymap
 
     def build_api_documentation(symbol)
       return {} unless symbol.respond_to?(:methods)
-      
+
       {
         public_methods: document_methods(symbol.methods.select { |m| m.visibility == "public" }),
         protected_methods: document_methods(symbol.methods.select { |m| m.visibility == "protected" }),
-        private_methods: @config[:include_private] ? 
+        private_methods: @config[:include_private] ?
           document_methods(symbol.methods.select { |m| m.visibility == "private" }) : []
       }
     end
@@ -415,19 +415,19 @@ module Rubymap
 
     def build_symbol_issues(symbol)
       issues = []
-      
+
       if symbol.respond_to?(:total_complexity) && symbol.total_complexity && symbol.total_complexity > 50
-        issues << { type: :high_complexity, value: symbol.total_complexity }
+        issues << {type: :high_complexity, value: symbol.total_complexity}
       end
-      
+
       if symbol.respond_to?(:cohesion_score) && symbol.cohesion_score < 0.3
-        issues << { type: :low_cohesion, value: symbol.cohesion_score }
+        issues << {type: :low_cohesion, value: symbol.cohesion_score}
       end
-      
+
       if symbol.respond_to?(:fan_out) && symbol.fan_out > 10
-        issues << { type: :high_coupling, value: symbol.fan_out }
+        issues << {type: :high_coupling, value: symbol.fan_out}
       end
-      
+
       issues
     end
 
@@ -440,7 +440,7 @@ module Rubymap
 
     def find_method_calls_from(symbol, enriched_result)
       return [] unless enriched_result.respond_to?(:method_calls) && enriched_result.method_calls
-      
+
       enriched_result.method_calls
         .select { |call| call.respond_to?(:from) && call.from && call.from.start_with?(symbol.fqname) }
         .map { |call| call.respond_to?(:to) ? call.to : nil }
@@ -450,7 +450,7 @@ module Rubymap
 
     def find_method_calls_to(symbol, enriched_result)
       return [] unless enriched_result.respond_to?(:method_calls) && enriched_result.method_calls
-      
+
       enriched_result.method_calls
         .select { |call| call.respond_to?(:to) && call.to && call.to.start_with?(symbol.fqname) }
         .map { |call| call.respond_to?(:from) ? call.from : nil }

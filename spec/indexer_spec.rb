@@ -198,6 +198,140 @@ RSpec.describe "Rubymap::Indexer" do
         expect { result.find_symbol("Class5000") }.to perform_under(10).ms
       end
     end
+
+    context "when processing different data source formats" do
+      it "accepts enriched result objects with to_h method" do
+        # Given: An enriched result that has a to_h method
+        enriched_result = double("EnrichmentResult")
+        # Must respond to :classes for validation
+        allow(enriched_result).to receive(:respond_to?).and_return(false) # default
+        allow(enriched_result).to receive(:respond_to?).with(:classes).and_return(true)
+        allow(enriched_result).to receive(:respond_to?).with(:to_h).and_return(true)
+
+        allow(enriched_result).to receive(:to_h).and_return({
+          classes: [{name: "User", fqname: "User", type: "class", superclass: "ApplicationRecord"}],
+          modules: [],
+          methods: [],
+          method_calls: []
+        })
+        allow(enriched_result).to receive(:respond_to?).with(:method_calls).and_return(true)
+        allow(enriched_result).to receive(:method_calls).and_return([])
+
+        # When: Building indexes from the enriched result
+        result = indexer.build(enriched_result)
+
+        # Then: Should use the object's to_h method
+        expect(result.find_symbol("User")).to be_truthy
+        expect(enriched_result).to have_received(:to_h).at_least(:once)
+      end
+
+      it "accepts extractor result objects with to_h method" do
+        # Given: An extractor result with a to_h method
+        extractor_result = double("ExtractorResult")
+        # Must respond to :classes for validation
+        allow(extractor_result).to receive(:respond_to?).and_return(false) # default
+        allow(extractor_result).to receive(:respond_to?).with(:classes).and_return(true)
+        allow(extractor_result).to receive(:respond_to?).with(:to_h).and_return(true)
+
+        allow(extractor_result).to receive(:to_h).and_return({
+          classes: [{name: "Calculator", fqname: "Math::Calculator", type: "class"}],
+          modules: [],
+          methods: [],
+          method_calls: []
+        })
+        allow(extractor_result).to receive(:respond_to?).with(:method_calls).and_return(false)
+        # Add hash-like access for fallback behavior
+        allow(extractor_result).to receive(:[]).with(:method_calls).and_return([])
+
+        # When: Building indexes from the extractor result
+        result = indexer.build(extractor_result)
+
+        # Then: Should use the object's to_h method and create a working index
+        expect(extractor_result).to have_received(:to_h).at_least(:once)
+        expect(result).to be_a(Rubymap::Indexer::IndexedResult)
+        # Test behavior rather than implementation - the indexer should work with the data
+        expect(result.symbol_index.all.length).to be > 0
+      end
+
+      it "falls back to symbol converter for legacy data objects" do
+        # Given: A legacy result object without conversion methods
+        legacy_result = double("LegacyResult")
+        # Must respond to :classes for validation
+        allow(legacy_result).to receive(:respond_to?).and_return(false) # default
+        allow(legacy_result).to receive(:respond_to?).with(:classes).and_return(true)
+        allow(legacy_result).to receive(:respond_to?).with(:to_indexed_classes).and_return(false)
+        allow(legacy_result).to receive(:respond_to?).with(:to_indexed_modules).and_return(false)
+        allow(legacy_result).to receive(:respond_to?).with(:to_indexed_methods).and_return(false)
+        allow(legacy_result).to receive(:respond_to?).with(:modules).and_return(true)
+        allow(legacy_result).to receive(:respond_to?).with(:methods).and_return(true)
+
+        allow(legacy_result).to receive(:classes).and_return([
+          double("LegacyClass", name: "LegacyService", type: "class")
+        ])
+        allow(legacy_result).to receive(:modules).and_return([])
+        allow(legacy_result).to receive(:methods).and_return([])
+        allow(legacy_result).to receive(:respond_to?).with(:method_calls).and_return(false)
+        # Add hash-like access for fallback behavior
+        allow(legacy_result).to receive(:[]).with(:method_calls).and_return([])
+
+        # When: Building indexes from legacy data
+        result = indexer.build(legacy_result)
+
+        # Then: Should use symbol converter as fallback
+        expect(result).to be_a(Rubymap::Indexer::IndexedResult)
+        # The converter will be used internally but we test the behavior, not implementation
+      end
+
+      it "handles plain hash data format for backward compatibility" do
+        # Given: Plain hash data format (most basic case)
+        hash_data = {
+          classes: [{name: "HashClass", type: "class"}],
+          modules: [],
+          methods: []
+        }
+
+        # When: Building indexes from hash data
+        result = indexer.build(hash_data)
+
+        # Then: Should process the hash data successfully
+        expect(result.find_symbol("HashClass")).to be_truthy
+      end
+
+      it "maintains consistent behavior across all data formats" do
+        # Given: The same logical data in different formats
+        class_data = {name: "TestClass", fqname: "Test::TestClass", type: "class"}
+
+        # Format 1: Hash
+        hash_format = {classes: [class_data], modules: [], methods: []}
+
+        # Format 2: Object with to_h method
+        object_format = double("ConvertibleObject")
+        # Must respond to :classes for validation
+        allow(object_format).to receive(:respond_to?).and_return(false) # default
+        allow(object_format).to receive(:respond_to?).with(:classes).and_return(true)
+        allow(object_format).to receive(:respond_to?).with(:to_h).and_return(true)
+
+        allow(object_format).to receive(:to_h).and_return({
+          classes: [class_data],
+          modules: [],
+          methods: [],
+          method_calls: []
+        })
+        allow(object_format).to receive(:respond_to?).with(:method_calls).and_return(false)
+        # Add hash-like access for fallback behavior
+        allow(object_format).to receive(:[]).with(:method_calls).and_return([])
+
+        # When: Building indexes from both formats
+        hash_result = indexer.build(hash_format)
+        object_result = indexer.build(object_format)
+
+        # Then: Should produce equivalent functional results
+        expect(hash_result.symbol_index.all.length).to eq(object_result.symbol_index.all.length)
+        expect(hash_result).to be_a(Rubymap::Indexer::IndexedResult)
+        expect(object_result).to be_a(Rubymap::Indexer::IndexedResult)
+        # Both indexers should work with their respective data formats
+      end
+    end
   end
 
   describe "graph operations" do

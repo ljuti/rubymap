@@ -14,11 +14,11 @@ module Rubymap
 
       def execute(raw_data)
         context = build_context(raw_data)
-        
+
         steps.each do |step|
           step.call(context)
         end
-        
+
         context.result
       end
 
@@ -99,19 +99,19 @@ module Rubymap
 
       def call(context)
         return unless context.extracted_data
-        
+
         processor_factory = context.container.get(:processor_factory)
-        
+
         # Process all symbol types
         PROCESSORS.each do |processor_type, data_key|
           processor = processor_factory.send("create_#{processor_type}")
           data = context.extracted_data[data_key] || []
           processor.process(data, context.result, context.errors)
         end
-        
+
         # Index symbols
         index_symbols(context)
-        
+
         # Process mixins after indexing
         processor = processor_factory.create_mixin_processor
         mixins = context.extracted_data[:mixins] || []
@@ -122,7 +122,7 @@ module Rubymap
 
       def index_symbols(context)
         symbol_index = context.container.get(:symbol_index)
-        
+
         (context.result.classes + context.result.modules).each do |symbol|
           symbol_index.add(symbol)
         end
@@ -141,7 +141,7 @@ module Rubymap
 
       def call(context)
         resolver_factory = context.container.get(:resolver_factory)
-        
+
         RESOLVER_TYPES.each do |resolver_type|
           resolver = resolver_factory.send("create_#{resolver_type}")
           resolver.resolve(context.result)
@@ -167,4 +167,3 @@ module Rubymap
     end
   end
 end
-

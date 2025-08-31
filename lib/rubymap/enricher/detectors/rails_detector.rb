@@ -63,8 +63,6 @@ module Rubymap
             :channel
           when /ApplicationCable::Connection/
             :connection
-          else
-            nil
           end
         end
 
@@ -85,11 +83,10 @@ module Rubymap
           }
         end
 
-        private
-
         def self.count_by_type(result, type)
           result.classes.count { |klass| rails_class_type(klass) == type }
         end
+        private_class_method :count_by_type
       end
     end
   end

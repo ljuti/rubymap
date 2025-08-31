@@ -12,6 +12,15 @@ module Rubymap
         @location = location
         @namespace = namespace
       end
+
+      def to_h
+        {
+          new_name: @new_name,
+          original_name: @original_name,
+          location: @location,
+          namespace: @namespace
+        }.compact
+      end
     end
   end
 end

@@ -29,10 +29,10 @@ module Rubymap
           doc_factor = DataNormalizer.normalize_coverage(klass.documentation_coverage || 0)
 
           weighted_sum = (age_factor * STABILITY_WEIGHTS[:age]) +
-                        (coverage_factor * STABILITY_WEIGHTS[:coverage]) +
-                        (churn_factor * STABILITY_WEIGHTS[:churn]) +
-                        (doc_factor * STABILITY_WEIGHTS[:documentation])
-          
+            (coverage_factor * STABILITY_WEIGHTS[:coverage]) +
+            (churn_factor * STABILITY_WEIGHTS[:churn]) +
+            (doc_factor * STABILITY_WEIGHTS[:documentation])
+
           weighted_sum.round(2)
         end
 
@@ -48,7 +48,7 @@ module Rubymap
 
           total_complexity = methods.sum { |m| m.cyclomatic_complexity || 1 }
           avg_complexity = total_complexity.to_f / methods.size
-          
+
           DataNormalizer.normalize_complexity(avg_complexity).round(2)
         end
 
@@ -72,7 +72,7 @@ module Rubymap
           klass.stability_score = calculate_stability_score(klass)
           klass.complexity_score = calculate_complexity_score(klass)
           klass.maintainability_score = calculate_maintainability_score(klass)
-          
+
           {
             stability: klass.stability_score,
             complexity: klass.complexity_score,

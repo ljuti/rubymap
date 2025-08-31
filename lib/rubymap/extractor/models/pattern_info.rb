@@ -12,6 +12,15 @@ module Rubymap
         @location = location
         @indicators = indicators
       end
+
+      def to_h
+        {
+          type: @type,
+          target: @target,
+          location: @location,
+          indicators: @indicators
+        }.compact
+      end
     end
   end
 end
