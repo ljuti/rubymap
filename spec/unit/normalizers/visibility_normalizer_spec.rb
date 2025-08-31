@@ -113,7 +113,9 @@ RSpec.describe Rubymap::Normalizer::Normalizers::VisibilityNormalizer do
 
         expect(result).to eq("public")
         expect(errors.size).to eq(1)
-        expect(errors.first.message).to eq("invalid visibility: {:visibility=>\"public\"}")
+        expect(errors.first.message).to include("invalid visibility:")
+        expect(errors.first.message).to include("public")
+        expect(errors.first.data).to eq({visibility: {visibility: "public"}})
       end
     end
 
