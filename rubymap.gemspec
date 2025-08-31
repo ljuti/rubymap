@@ -4,7 +4,7 @@ require_relative "lib/rubymap/version"
 
 Gem::Specification.new do |spec|
   spec.name = "rubymap"
-  spec.version = Rubymap::VERSION
+  spec.version = Rubymap.gem_version
   spec.authors = ["Lauri Jutila"]
   spec.email = ["git@laurijutila.com"]
 

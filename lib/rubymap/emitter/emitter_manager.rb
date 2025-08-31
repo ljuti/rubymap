@@ -245,7 +245,7 @@ module Rubymap
           schema_version: 1,
           generator: {
             name: "rubymap",
-            version: Rubymap::VERSION
+            version: Rubymap.gem_version
           },
           generated_at: Time.now.utc.iso8601,
           source: {

@@ -52,7 +52,7 @@ module Rubymap
     desc "version", "Show version information"
     def version
       pastel = Pastel.new
-      puts pastel.cyan.bold("Rubymap #{Rubymap::VERSION}")
+      puts pastel.cyan.bold("Rubymap #{Rubymap.gem_version}")
       puts pastel.dim("Ruby #{RUBY_VERSION}")
     end
 
@@ -145,10 +145,10 @@ module Rubymap
 
         # Handle exclusion patterns
         patterns = merged_config["exclude"] || merged_config["exclude_patterns"] || []
-        config.exclude_patterns = patterns.is_a?(Array) ? patterns : [patterns]
+        config.filter["exclude_patterns"] = patterns.is_a?(Array) ? patterns : [patterns]
 
         # Always exclude the output directory to prevent recursion
-        config.exclude_patterns << "#{config.output_dir}/**"
+        config.filter["exclude_patterns"] << "#{config.output_dir}/**"
       end
     end
 

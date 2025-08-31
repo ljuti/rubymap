@@ -44,7 +44,7 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         node = double("node")
         allow(visitor.registry).to receive(:handler_for).with(node).and_return(:handle_test)
         expect(visitor).to receive(:handle_test).with(node)
-        
+
         visitor.visit(node)
       end
     end
@@ -54,7 +54,7 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         node = double("node")
         allow(visitor.registry).to receive(:handler_for).with(node).and_return(nil)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.visit(node)
       end
     end
@@ -63,12 +63,12 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
       it "adds error to result and continues" do
         node = double("node", class: double(name: "ErrorNode"))
         error = StandardError.new("Test error")
-        
+
         allow(visitor.registry).to receive(:handler_for).with(node).and_return(:handle_error)
         allow(visitor).to receive(:handle_error).and_raise(error)
-        
+
         expect(result).to receive(:add_error).with(error, "Error processing ErrorNode")
-        
+
         visitor.visit(node)
       end
     end
@@ -80,10 +80,10 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         child1 = double("child1")
         child2 = double("child2")
         node = double("node", child_nodes: [child1, nil, child2])
-        
+
         expect(visitor).to receive(:visit).with(child1).ordered
         expect(visitor).to receive(:visit).with(child2).ordered
-        
+
         visitor.send(:visit_children, node)
       end
     end
@@ -94,9 +94,9 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         node = double("node", body: body)
         allow(node).to receive(:respond_to?).with(:child_nodes).and_return(false)
         allow(node).to receive(:respond_to?).with(:body).and_return(true)
-        
+
         expect(visitor).to receive(:visit).with(body)
-        
+
         visitor.send(:visit_children, node)
       end
     end
@@ -106,9 +106,9 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         node = double("node")
         allow(node).to receive(:respond_to?).with(:child_nodes).and_return(false)
         allow(node).to receive(:respond_to?).with(:body).and_return(false)
-        
+
         expect(visitor).not_to receive(:visit)
-        
+
         visitor.send(:visit_children, node)
       end
     end
@@ -119,10 +119,10 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     it "uses the correct extractor for each node type" do
       # This test verifies the mapping between handlers and extractors
       extractors = visitor.instance_variable_get(:@extractors)
-      
+
       # Test that we have all expected extractors
       expect(extractors.keys).to match_array([:class, :module, :method, :call, :constant, :class_variable, :alias])
-      
+
       # Each extractor should be of the correct type
       expect(extractors[:class]).to be_a(Rubymap::Extractor::ClassExtractor)
       expect(extractors[:module]).to be_a(Rubymap::Extractor::ModuleExtractor)
@@ -132,14 +132,14 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
       expect(extractors[:class_variable]).to be_a(Rubymap::Extractor::ClassVariableExtractor)
       expect(extractors[:alias]).to be_a(Rubymap::Extractor::AliasExtractor)
     end
-    
+
     describe "#handle_program" do
       it "visits the statements" do
         statements = double("statements")
         node = double("program", statements: statements)
-        
+
         expect(visitor).to receive(:visit).with(statements)
-        
+
         visitor.send(:handle_program, node)
       end
     end
@@ -149,18 +149,18 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
         stmt1 = double("stmt1")
         stmt2 = double("stmt2")
         node = double("statements", body: [stmt1, stmt2])
-        
+
         expect(visitor).to receive(:visit).with(stmt1).ordered
         expect(visitor).to receive(:visit).with(stmt2).ordered
-        
+
         visitor.send(:handle_statements, node)
       end
 
       it "handles nil body" do
         node = double("statements", body: nil)
-        
+
         expect(visitor).not_to receive(:visit)
-        
+
         visitor.send(:handle_statements, node)
       end
     end
@@ -169,17 +169,17 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
       it "delegates to class extractor and visits children" do
         node = double("class_node")
         block_called = false
-        
+
         # Mock the extractor to capture the block
         class_extractor = visitor.instance_variable_get(:@extractors)[:class]
         allow(class_extractor).to receive(:extract) do |n, &block|
           expect(n).to eq(node)
-          block.call if block
+          block&.call
           block_called = true
         end
-        
+
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_class, node)
         expect(block_called).to be true
       end
@@ -189,16 +189,16 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
       it "delegates to module extractor and visits children" do
         node = double("module_node")
         block_called = false
-        
+
         module_extractor = visitor.instance_variable_get(:@extractors)[:module]
         allow(module_extractor).to receive(:extract) do |n, &block|
           expect(n).to eq(node)
-          block.call if block
+          block&.call
           block_called = true
         end
-        
+
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_module, node)
         expect(block_called).to be true
       end
@@ -207,11 +207,11 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     describe "#handle_method" do
       it "delegates to method extractor and visits children" do
         node = double("method_node")
-        
+
         method_extractor = visitor.instance_variable_get(:@extractors)[:method]
         expect(method_extractor).to receive(:extract).with(node)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_method, node)
       end
     end
@@ -219,11 +219,11 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     describe "#handle_call" do
       it "delegates to call extractor and visits children" do
         node = double("call_node")
-        
+
         call_extractor = visitor.instance_variable_get(:@extractors)[:call]
         expect(call_extractor).to receive(:extract).with(node)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_call, node)
       end
     end
@@ -231,11 +231,11 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     describe "#handle_constant" do
       it "delegates to constant extractor and visits children" do
         node = double("constant_node")
-        
+
         constant_extractor = visitor.instance_variable_get(:@extractors)[:constant]
         expect(constant_extractor).to receive(:extract).with(node)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_constant, node)
       end
     end
@@ -243,11 +243,11 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     describe "#handle_class_variable" do
       it "delegates to class variable extractor and visits children" do
         node = double("class_var_node")
-        
+
         class_var_extractor = visitor.instance_variable_get(:@extractors)[:class_variable]
         expect(class_var_extractor).to receive(:extract).with(node)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_class_variable, node)
       end
     end
@@ -255,11 +255,11 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     describe "#handle_alias" do
       it "delegates to alias extractor and visits children" do
         node = double("alias_node")
-        
+
         alias_extractor = visitor.instance_variable_get(:@extractors)[:alias]
         expect(alias_extractor).to receive(:extract).with(node)
         expect(visitor).to receive(:visit_children).with(node)
-        
+
         visitor.send(:handle_alias, node)
       end
     end

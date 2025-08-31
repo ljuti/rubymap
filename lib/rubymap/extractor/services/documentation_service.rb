@@ -47,15 +47,15 @@ module Rubymap
           tags = {}
           documentation.lines.each do |line|
             next unless (match = line.match(/@(\w+)\s+(.*)/))
-            
+
             tag_name = match[1].to_sym
             tag_value = match[2].strip
 
-            if tags[tag_name]
+            tags[tag_name] = if tags[tag_name]
               # Handle multiple tags of the same type
-              tags[tag_name] = Array(tags[tag_name]) << tag_value
+              Array(tags[tag_name]) << tag_value
             else
-              tags[tag_name] = tag_value
+              tag_value
             end
           end
           tags
@@ -73,19 +73,19 @@ module Rubymap
 
           # Sort by line number (descending) to process from closest to node
           sorted_comments = preceding_comments.sort_by { |c| -c.location.start_line }
-          
+
           # Collect consecutive comments immediately before the node
           doc_comments = []
           expected_line = node_line - 1
-          
+
           sorted_comments.each do |comment|
             comment_line = comment.location.start_line
             break if comment_line != expected_line # Stop on first gap
-            
+
             doc_comments << comment
             expected_line = comment_line - 1
           end
-          
+
           doc_comments.reverse # Return in original order
         end
 

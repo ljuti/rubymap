@@ -232,7 +232,7 @@ RSpec.describe Rubymap::Extractor::BaseExtractor do
       it "handles constant path where parent is nil" do
         parse_result = Prism.parse("::TopLevel")
         constant_path = parse_result.value.statements.body.first
-        
+
         # Verify this actually creates a path with nil parent
         expect(constant_path.parent).to be_nil
 

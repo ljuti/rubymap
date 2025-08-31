@@ -47,8 +47,8 @@ RSpec.describe "LLM Emitter" do
         user_chunk = chunks.find { |c| c.title.include?("User") }
         controller_chunk = chunks.find { |c| c.title.include?("UsersController") }
 
-        expect(user_chunk.references).to include(controller_chunk.id)
-        expect(controller_chunk.references).to include(user_chunk.id)
+        expect(user_chunk.references).to include(controller_chunk.chunk_id)
+        expect(controller_chunk.references).to include(user_chunk.chunk_id)
       end
     end
 

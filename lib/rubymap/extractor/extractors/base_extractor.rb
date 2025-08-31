@@ -9,7 +9,7 @@ module Rubymap
     # Base class for all specific extractors
     class BaseExtractor
       extend Forwardable
-      
+
       attr_reader :context, :result, :documentation_service, :namespace_service
 
       def initialize(context, result)

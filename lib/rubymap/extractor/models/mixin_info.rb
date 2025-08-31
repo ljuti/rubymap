@@ -20,8 +20,7 @@ module Rubymap
       def to_h
         {
           type: type,
-          module: module_name, # ProcessingPipeline expects :module, not :module_name
-          module_name: module_name, # Keep original for compatibility
+          module_name: module_name,
           target: target,
           location: LocationConverter.to_h(location)
         }.compact

@@ -357,40 +357,6 @@ RSpec.describe Rubymap::Configuration do
     end
   end
 
-  describe "backward compatibility methods" do
-    it "provides include_private accessor" do
-      config.include_private = true
-      expect(config.include_private).to be true
-      expect(config.filter["include_private"]).to be true
-    end
-
-    it "provides include_protected accessor" do
-      config.include_protected = false
-      expect(config.include_protected).to be false
-      expect(config.filter["include_protected"]).to be false
-    end
-
-    it "provides exclude_patterns accessor" do
-      patterns = ["**/tmp/**"]
-      config.exclude_patterns = patterns
-      expect(config.exclude_patterns).to eq(patterns)
-      expect(config.filter["exclude_patterns"]).to eq(patterns)
-    end
-
-    it "provides include_patterns accessor" do
-      patterns = ["**/*.rake"]
-      config.include_patterns = patterns
-      expect(config.include_patterns).to eq(patterns)
-      expect(config.filter["include_patterns"]).to eq(patterns)
-    end
-
-    it "provides runtime_introspection accessor" do
-      config.runtime_introspection = true
-      expect(config.runtime_introspection).to be true
-      expect(config.runtime["enabled"]).to be true
-    end
-  end
-
   describe "#describe" do
     it "provides human-readable description" do
       description = config.describe

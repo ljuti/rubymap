@@ -41,8 +41,7 @@ module Rubymap
           name: name,
           visibility: visibility,
           receiver_type: receiver_type,
-          params: params,
-          parameters: params, # Alias for backward compatibility
+          parameters: params,
           location: LocationConverter.to_h(location),
           doc: doc,
           namespace: namespace,

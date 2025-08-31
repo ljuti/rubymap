@@ -26,7 +26,6 @@ module Rubymap
         {
           name: name,
           value: value,
-          constant: name, # Alias expected by ProcessingPipeline
           type: type,
           location: LocationConverter.to_h(location),
           namespace: namespace

@@ -3,7 +3,7 @@
 RSpec.describe Rubymap do
   describe "module structure" do
     it "has a version number" do
-      expect(Rubymap::VERSION).to be_truthy
+      expect(Rubymap.gem_version).to be_truthy
     end
 
     it "defines an Error class inheriting from StandardError" do

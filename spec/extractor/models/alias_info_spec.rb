@@ -11,7 +11,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         location: "file.rb:10",
         namespace: "MyClass"
       )
-      
+
       result = info.to_h
       expect(result).to eq({
         new_name: "new_method",
@@ -20,7 +20,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         namespace: "MyClass"
       })
     end
-    
+
     it "excludes nil location" do
       info = described_class.new(
         new_name: "new_method",
@@ -28,7 +28,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         location: nil,
         namespace: "MyClass"
       )
-      
+
       result = info.to_h
       expect(result).to eq({
         new_name: "new_method",
@@ -36,7 +36,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         namespace: "MyClass"
       })
     end
-    
+
     it "excludes nil namespace" do
       info = described_class.new(
         new_name: "new_method",
@@ -44,7 +44,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         location: "file.rb:10",
         namespace: nil
       )
-      
+
       result = info.to_h
       expect(result).to eq({
         new_name: "new_method",
@@ -52,20 +52,20 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         location: "file.rb:10"
       })
     end
-    
+
     it "excludes both nil location and namespace" do
       info = described_class.new(
         new_name: "new_method",
         original_name: "old_method"
       )
-      
+
       result = info.to_h
       expect(result).to eq({
         new_name: "new_method",
         original_name: "old_method"
       })
     end
-    
+
     it "preserves false values" do
       info = described_class.new(
         new_name: false,
@@ -73,7 +73,7 @@ RSpec.describe Rubymap::Extractor::AliasInfo do
         location: false,
         namespace: false
       )
-      
+
       result = info.to_h
       expect(result).to eq({
         new_name: false,

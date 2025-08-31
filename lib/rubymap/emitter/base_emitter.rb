@@ -122,7 +122,7 @@ module Rubymap
           schema_version: 1,
           generator: {
             name: "rubymap",
-            version: Rubymap::VERSION,
+            version: Rubymap.gem_version,
             emitter_type: self.class.name.split("::").last.downcase
           },
           generated_at: Time.now.utc.iso8601,

@@ -10,7 +10,7 @@ module Rubymap
       # @return [Hash, nil] Hash representation of location or nil
       def self.to_h(location)
         return nil unless location
-        
+
         case location
         when Hash
           # Already a hash, return as-is
@@ -18,11 +18,9 @@ module Rubymap
         when ->(loc) { loc.respond_to?(:start_line) }
           # Handle Prism::Location objects and similar
           build_location_hash(location)
-        else
-          nil
         end
       end
-      
+
       private_class_method def self.build_location_hash(location)
         {
           line: location.start_line,

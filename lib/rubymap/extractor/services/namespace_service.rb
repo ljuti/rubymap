@@ -17,7 +17,7 @@ module Rubymap
           parts = fqname.to_s.split("::")
           # Take all parts except the last one (which is the simple name)
           # If there's only one part or less, there's no namespace
-          parts.size > 1 ? parts[0...-1] : []
+          (parts.size > 1) ? parts[0...-1] : []
         end
 
         # Get the simple name from a fully qualified name
@@ -82,7 +82,7 @@ module Rubymap
 
           # Use take_while for cleaner logic
           common_parts = parts1.zip(parts2).take_while { |p1, p2| p1 == p2 }.map(&:first)
-          
+
           common_parts.empty? ? nil : common_parts.join("::")
         end
       end

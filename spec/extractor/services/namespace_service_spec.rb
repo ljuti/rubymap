@@ -482,14 +482,14 @@ RSpec.describe Rubymap::Extractor::Services::NamespaceService do
         expect("::Test::More".gsub(/^::/, "")).to eq("Test::More")
         expect("Test::::More".gsub(/^::/, "")).to eq("Test::::More")
       end
-      
+
       it "correctly handles multiple consecutive :: at the beginning" do
         # Test that verifies the exact behavior with multiple leading ::
         # The regex /^::/ only matches the first :: at the beginning
         expect(service.normalize_name("::::User")).to eq("::User")
         expect(service.normalize_name("::::::User")).to eq("::::User")
       end
-      
+
       it "returns exact string object for non-matching input" do
         # When there's no leading ::, the string should be returned as-is
         input = "User"
@@ -498,20 +498,20 @@ RSpec.describe Rubymap::Extractor::Services::NamespaceService do
         # Verify it's a new string object (not the same object)
         expect(result.object_id).not_to eq(input.object_id)
       end
-      
+
       it "handles string with only colons differently than empty" do
         # Edge case to ensure exact pattern matching
         expect(service.normalize_name("::::")).to eq("::")
         expect(service.normalize_name("::")).to eq("")
         expect(service.normalize_name(":")).to eq(":")
       end
-      
+
       it "only removes :: from the beginning of the entire string, not from beginning of lines" do
         # Test that \A:: only matches at string start, not line start
         multiline_input = "First\n::Second"
         # With /\A::/ this stays "First\n::Second" (only matches string start)
         expect(service.normalize_name(multiline_input)).to eq("First\n::Second")
-        
+
         # Removes :: only from the very beginning
         expect(service.normalize_name("::First\n::Second")).to eq("First\n::Second")
       end
@@ -655,11 +655,11 @@ RSpec.describe Rubymap::Extractor::Services::NamespaceService do
       it "returns false for parent longer than child" do
         expect(service.nested_in?("MyApp", "MyApp::Models")).to be false
       end
-      
+
       it "returns false for same namespace" do
         expect(service.nested_in?("MyApp", "MyApp")).to be false
       end
-      
+
       it "returns false for prefix without double colon" do
         expect(service.nested_in?("MyAppUser", "MyApp")).to be false
       end
@@ -668,16 +668,16 @@ RSpec.describe Rubymap::Extractor::Services::NamespaceService do
         expect(service.nested_in?("MyApp::Models::User", "MyApp::Models::User")).to be false
       end
     end
-    
+
     context "with nil values" do
       it "returns false when child namespace is nil" do
         expect(service.nested_in?(nil, "MyApp")).to be false
       end
-      
+
       it "returns false when parent namespace is nil" do
         expect(service.nested_in?("MyApp::User", nil)).to be false
       end
-      
+
       it "returns false when both namespaces are nil" do
         expect(service.nested_in?(nil, nil)).to be false
       end
@@ -976,12 +976,12 @@ RSpec.describe Rubymap::Extractor::Services::NamespaceService do
         parts1 = ["A", "B", "C"]
         parts2 = ["A", "X", "Y"]
         common_parts = []
-        
+
         parts1.zip(parts2).each do |p1, p2|
           break unless p1 == p2
           common_parts << p1
         end
-        
+
         expect(common_parts).to eq(["A"])
         expect(service.common_namespace("A::B::C", "A::X::Y")).to eq("A")
       end

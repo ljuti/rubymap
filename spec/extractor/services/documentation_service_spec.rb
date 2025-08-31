@@ -192,25 +192,25 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         result = service.extract_yard_tags(doc)
         expect(result).to eq({})  # Tag with no content is not extracted
       end
-      
+
       it "handles tags with trailing whitespace" do
         doc = "@param name [String] the name   "
         result = service.extract_yard_tags(doc)
         expect(result[:param]).to eq("name [String] the name")
       end
-      
+
       it "handles tags without space separator" do
         doc = "@paramname [String] the name"
         result = service.extract_yard_tags(doc)
         expect(result[:paramname]).to eq("[String] the name")
       end
-      
+
       it "handles tags with multiple spaces" do
         doc = "@param    name [String] the name"
         result = service.extract_yard_tags(doc)
         expect(result[:param]).to eq("name [String] the name")
       end
-      
+
       it "handles empty tag value after spaces" do
         doc = "@param    "
         result = service.extract_yard_tags(doc)
@@ -340,7 +340,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 5, start_column: 20),
           slice: "# at boundary")
-        
+
         expect(service.extract_inline_comment(node, [comment])).to be_nil
       end
 
@@ -349,7 +349,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
         comment = double("comment",
           location: double(start_line: 5, start_column: 21),
           slice: "# just after")
-        
+
         result = service.extract_inline_comment(node, [comment])
         expect(result).to eq("just after")
       end
@@ -361,7 +361,7 @@ RSpec.describe Rubymap::Extractor::Services::DocumentationService do
           double("comment", location: double(start_line: 5, start_column: 25), slice: "# after1"),
           double("comment", location: double(start_line: 5, start_column: 30), slice: "# after2")
         ]
-        
+
         result = service.extract_inline_comment(node, comments)
         expect(result).to eq("after1")
       end

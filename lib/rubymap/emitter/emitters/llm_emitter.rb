@@ -12,11 +12,10 @@ module Rubymap
       # Wrapper class to provide convenient accessors for chunk data
       class ChunkWrapper
         attr_reader :chunk_id, :symbol_id, :type, :content, :tokens, :metadata, :subtitle
-        attr_accessor :references, :id
+        attr_accessor :references
 
         def initialize(chunk_data)
           @chunk_id = chunk_data[:chunk_id]
-          @id = @chunk_id  # Alias for test compatibility
           @symbol_id = chunk_data[:symbol_id]
           @type = chunk_data[:type]
           @content = chunk_data[:content]
@@ -65,7 +64,7 @@ module Rubymap
           @security_level = :standard
           @redaction_config = nil
           @detail_level = options[:detail_level] || :detailed
-          @use_templates = options.fetch(:use_templates, false)  # Disable templates by default for backward compatibility
+          @use_templates = options.fetch(:use_templates, false)
           @template_dir = options[:template_dir]
         end
 
@@ -126,7 +125,7 @@ module Rubymap
                   # Link User to UsersController, UserService, etc
                   if (chunk_name == "User" && other_name.include?("User")) ||
                       (other_name == "User" && chunk_name.include?("User"))
-                    chunk.references << other.id unless chunk.references.include?(other.id)
+                    chunk.references << other.chunk_id unless chunk.references.include?(other.chunk_id)
                   end
                 end
               end
@@ -507,7 +506,7 @@ module Rubymap
             end
           end
 
-          # Legacy implementation (kept for backward compatibility)
+          # Fallback implementation
           markdown = []
 
           # Include class definition if requested
@@ -684,7 +683,7 @@ module Rubymap
             end
           end
 
-          # Legacy implementation
+          # Fallback implementation
           markdown = []
 
           markdown << "# Module: #{mod[:fqname]}"
@@ -720,7 +719,7 @@ module Rubymap
             end
           end
 
-          # Legacy implementation
+          # Fallback implementation
           markdown = []
 
           markdown << "# Class Hierarchy"
@@ -890,7 +889,7 @@ module Rubymap
             schema_version: 1,
             generator: {
               name: "rubymap",
-              version: Rubymap::VERSION,
+              version: Rubymap.gem_version,
               emitter_type: "llm"
             },
             generated_at: Time.now.utc.iso8601,

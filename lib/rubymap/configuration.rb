@@ -103,47 +103,6 @@ module Rubymap
       }
     )
 
-    # Backward compatibility methods
-    def include_private
-      filter["include_private"]
-    end
-
-    def include_private=(value)
-      filter["include_private"] = value
-    end
-
-    def include_protected
-      filter["include_protected"]
-    end
-
-    def include_protected=(value)
-      filter["include_protected"] = value
-    end
-
-    def exclude_patterns
-      filter["exclude_patterns"]
-    end
-
-    def exclude_patterns=(value)
-      filter["exclude_patterns"] = value
-    end
-
-    def include_patterns
-      filter["include_patterns"]
-    end
-
-    def include_patterns=(value)
-      filter["include_patterns"] = value
-    end
-
-    def runtime_introspection
-      runtime["enabled"]
-    end
-
-    def runtime_introspection=(value)
-      runtime["enabled"] = value
-    end
-
     # Configure the config name (for loading from .rubymap.yml)
     config_name :rubymap
 

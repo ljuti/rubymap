@@ -236,7 +236,7 @@ module Rubymap
     end
 
     def should_exclude?(path)
-      configuration.exclude_patterns.any? do |pattern|
+      configuration.filter["exclude_patterns"].any? do |pattern|
         File.fnmatch?(pattern, path, File::FNM_PATHNAME)
       end
     end
