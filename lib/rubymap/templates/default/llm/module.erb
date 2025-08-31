@@ -1,0 +1,32 @@
+<% presenter = Rubymap::Templates::Presenters::ModulePresenter.new(@module || @mod || @data) -%>
+# Module: <%= presenter.full_name %>
+
+**Type:** <%= presenter.type_label %>
+<% if presenter.has_location? -%>
+**File:** <%= presenter.formatted_location %>
+<% end -%>
+<% if presenter.has_documentation? -%>
+
+## Description
+<%= presenter.documentation %>
+<% end -%>
+<% if presenter.is_used? -%>
+
+## Usage
+<% if presenter.is_included_anywhere? -%>
+**Included in:** <%= to_sentence(presenter.included_in) %>
+<% end -%>
+<% if presenter.is_extended_anywhere? -%>
+**Extended in:** <%= to_sentence(presenter.extended_in) %>
+<% end -%>
+<% if presenter.is_prepended_anywhere? -%>
+**Prepended in:** <%= to_sentence(presenter.prepended_in) %>
+<% end -%>
+<% end -%>
+<% if presenter.has_methods? -%>
+
+## Methods
+<% presenter.methods.each do |method| -%>
+- `<%= method.signature %>`<% if !method.is_public? %> (<%= method.visibility %>)<% end %>
+<% end -%>
+<% end -%>

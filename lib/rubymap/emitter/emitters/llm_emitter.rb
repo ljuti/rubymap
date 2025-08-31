@@ -4,6 +4,7 @@ require "digest"
 require "time"
 require "json"
 require "ostruct"
+require_relative "../../templates"
 
 module Rubymap
   module Emitter
@@ -64,6 +65,8 @@ module Rubymap
           @security_level = :standard
           @redaction_config = nil
           @detail_level = options[:detail_level] || :detailed
+          @use_templates = options.fetch(:use_templates, false)  # Disable templates by default for backward compatibility
+          @template_dir = options[:template_dir]
         end
 
         def configure(options = {})
@@ -488,6 +491,23 @@ module Rubymap
           if klass.nil? || klass[:fqname].nil?
             return "# No class information available\n\nThe class information for this entity is not available or was not properly extracted."
           end
+
+          # Try to use template system if available
+          if use_templates?
+            begin
+              renderer = Templates::Renderer.new(:llm)
+              context_data = {
+                class: klass,
+                klass: klass, # Support both names
+                include_class_keyword: include_class_keyword
+              }
+              return renderer.render(:class, context_data)
+            rescue Templates::TemplateNotFoundError
+              # Fall back to legacy implementation
+            end
+          end
+
+          # Legacy implementation (kept for backward compatibility)
           markdown = []
 
           # Include class definition if requested
@@ -654,6 +674,17 @@ module Rubymap
         end
 
         def generate_module_markdown(mod)
+          # Try to use template system if available
+          if use_templates?
+            begin
+              renderer = Templates::Renderer.new(:llm, @template_dir)
+              return renderer.render(:module, {module: mod, mod: mod})
+            rescue Templates::TemplateNotFoundError
+              # Fall back to legacy implementation
+            end
+          end
+
+          # Legacy implementation
           markdown = []
 
           markdown << "# Module: #{mod[:fqname]}"
@@ -679,6 +710,17 @@ module Rubymap
         end
 
         def generate_hierarchy_markdown(inheritance_data)
+          # Try to use template system if available
+          if use_templates?
+            begin
+              renderer = Templates::Renderer.new(:llm, @template_dir)
+              return renderer.render(:hierarchy, {inheritance_data: inheritance_data})
+            rescue Templates::TemplateNotFoundError
+              # Fall back to legacy implementation
+            end
+          end
+
+          # Legacy implementation
           markdown = []
 
           markdown << "# Class Hierarchy"
@@ -985,6 +1027,10 @@ module Rubymap
           else
             "low"
           end
+        end
+
+        def use_templates?
+          @use_templates && defined?(Templates)
         end
       end
     end

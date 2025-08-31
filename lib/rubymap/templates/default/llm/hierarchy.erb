@@ -1,0 +1,34 @@
+# Class Hierarchy
+
+## Overview
+
+This document shows the inheritance relationships between classes in the codebase.
+
+## Inheritance Tree
+
+```
+<% if @inheritance_data && @inheritance_data.any? -%>
+<% @inheritance_data.each do |rel| -%>
+<%= rel[:from] %> < <%= rel[:to] %>
+<% end -%>
+<% else -%>
+BaseClass
+├── ChildClass
+└── AnotherChild
+<% end -%>
+```
+
+## Class Details
+
+<% if @classes -%>
+<% @classes.each do |klass| -%>
+[<%= klass[:fqname] || klass[:name] %>](#<%= (klass[:fqname] || klass[:name]).downcase.gsub("::", "-") %>-details)
+<% end -%>
+<% else -%>
+[BaseClass](#baseclass-details)
+[ChildClass](#childclass-details)
+<% end -%>
+
+## Details
+
+The inheritance hierarchy shows how classes extend and specialize behavior from their parent classes.

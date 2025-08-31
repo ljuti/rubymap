@@ -1,0 +1,91 @@
+<% presenter = Rubymap::Templates::Presenters::ClassPresenter.new(@class || @klass || @data) -%>
+<% if @include_class_keyword -%>
+class <%= presenter.full_name %>
+
+<% end -%>
+# Class: <%= presenter.full_name %>
+
+# File Location
+
+<% if presenter.has_location? -%>
+**File:** <%= presenter.formatted_location %>
+<% end -%>
+**Type:** <%= presenter.type_label %>
+<% if presenter.has_superclass? -%>
+**Inherits from:** <%= presenter.superclass_name %>
+<% end -%>
+
+<% if presenter.has_documentation? -%>
+## Description
+
+<%= presenter.documentation %>
+
+### Purpose and Responsibilities
+
+<%= generate_purpose_text(presenter.to_h) %>
+<% else -%>
+## Overview
+
+<%= generate_overview_text(presenter.to_h) %>
+<% end -%>
+
+<% if presenter.has_metrics? -%>
+## Code Metrics
+
+### Complexity Analysis
+- **Complexity Score:** <%= presenter.complexity_score %>
+- **Public API Surface:** <%= presenter.metrics.public_api_surface %>
+<% if presenter.metrics.has_test_coverage? -%>
+- **Test Coverage:** <%= presenter.metrics.test_coverage %>%
+<% end -%>
+
+These metrics provide insights into the maintainability and quality of this class.
+
+<% end -%>
+# Methods
+
+<% if presenter.has_instance_methods? -%>
+## Instance Methods
+
+The following instance methods define the behavior of <%= presenter.full_name %> objects:
+
+<% presenter.instance_methods.each do |method| -%>
+### `<%= method.signature %>`
+<% if method.is_public? -%>
+Instance method that handles <%= method.name %> operations for this class.
+<% else -%>
+<%= method.visibility.capitalize %> instance method for <%= method.name %> operations.
+<% end -%>
+
+<% end -%>
+<% end -%>
+<% if presenter.has_class_methods? -%>
+## Class Methods
+
+The following class methods provide factory methods and class-level operations:
+
+<% presenter.class_methods.each do |method| -%>
+### `<%= method.signature %>`
+Class method that provides <%= method.name %> functionality at the class level.
+
+<% end -%>
+<% end -%>
+---
+
+# Relationships
+
+This class is part of the application's domain model and interacts with other components through:
+- Inheritance from <%= presenter.superclass_name %>
+<% if presenter.has_mixins? -%>
+<% if presenter.included_modules.any? -%>
+- Included modules: <%= presenter.included_modules.map(&:name).join(", ") %>
+<% end -%>
+<% if presenter.extended_modules.any? -%>
+- Extended modules: <%= presenter.extended_modules.map(&:name).join(", ") %>
+<% end -%>
+<% if presenter.prepended_modules.any? -%>
+- Prepended modules: <%= presenter.prepended_modules.map(&:name).join(", ") %>
+<% end -%>
+<% end -%>
+- Method calls to related classes
+- Shared interfaces and protocols
