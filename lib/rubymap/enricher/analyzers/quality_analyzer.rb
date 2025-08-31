@@ -112,7 +112,9 @@ module Rubymap
           
           result.quality_issues.each do |quality_issue|
             quality_issue.issues.each do |issue|
-              severity = issue[:severity].to_sym
+              severity = issue[:severity]
+              next unless severity
+              severity = severity.to_sym
               severities[severity] = (severities[severity] || 0) + 1
             end
           end
