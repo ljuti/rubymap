@@ -321,7 +321,7 @@ RSpec.describe "rubymap CLI", type: :cli do
 
             expect(result).to be_success
             expect(result.output).to include("Updating Rubymap")
-            
+
             # Restore original file
             File.write("app/models/user.rb", original_content)
           end
