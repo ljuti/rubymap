@@ -92,6 +92,35 @@ module Rubymap
           context: context
         }
       end
+
+      # Convert result to hash representation
+      # @return [Hash] Hash representation with arrays converted to hashes
+      def to_h
+        {
+          classes: convert_array_to_hashes(@classes),
+          modules: convert_array_to_hashes(@modules),
+          methods: convert_array_to_hashes(@methods),
+          constants: convert_array_to_hashes(@constants),
+          attributes: convert_array_to_hashes(@attributes),
+          mixins: convert_array_to_hashes(@mixins),
+          dependencies: convert_array_to_hashes(@dependencies),
+          class_variables: convert_array_to_hashes(@class_variables),
+          aliases: convert_array_to_hashes(@aliases),
+          errors: @errors,
+          patterns: convert_array_to_hashes(@patterns),
+          file_path: @file_path
+        }.compact
+      end
+
+      private
+
+      def convert_array_to_hashes(array)
+        return array if array.empty?
+        
+        array.map do |item|
+          item.respond_to?(:to_h) ? item.to_h : item
+        end
+      end
     end
   end
 end

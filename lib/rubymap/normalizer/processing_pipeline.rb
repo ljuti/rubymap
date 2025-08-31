@@ -38,46 +38,8 @@ module Rubymap
       def process_symbols(raw_data, result, errors)
         return if raw_data.nil?
 
-        processor_factory = container.get(:processor_factory)
-
-        # Handle both Hash and Extractor::Result objects
-        if raw_data.is_a?(Hash)
-          classes = raw_data[:classes] || []
-          modules = raw_data[:modules] || []
-          methods = raw_data[:methods] || []
-          method_calls = raw_data[:method_calls] || []
-        elsif raw_data.respond_to?(:classes) && raw_data.respond_to?(:modules) && raw_data.respond_to?(:methods)
-          # For Extractor::Result objects - convert to hashes
-          classes = convert_to_hashes(raw_data.classes || [])
-          modules = convert_to_hashes(raw_data.modules || [])
-          methods = convert_to_hashes(raw_data.methods || [])
-          method_calls = [] # Result doesn't have method_calls
-        else
-          # Handle invalid input types gracefully - return empty collections
-          classes = []
-          modules = []
-          methods = []
-          method_calls = []
-        end
-
-        # Process in deterministic order
-        processor_factory.create_class_processor.process(classes, result, errors)
-        processor_factory.create_module_processor.process(modules, result, errors)
-        processor_factory.create_method_processor.process(methods, result, errors)
-        processor_factory.create_method_call_processor.process(method_calls, result, errors)
-
-        # Index processed symbols
-        index_symbols(result)
-
-        # Process mixins last
-        if raw_data.is_a?(Hash)
-          mixins = raw_data[:mixins] || []
-        elsif raw_data.respond_to?(:mixins)
-          mixins = convert_to_hashes(raw_data.mixins || [])
-        else
-          mixins = []
-        end
-        processor_factory.create_mixin_processor.process(mixins, result, errors, [])
+        extracted_data = extract_symbol_data(raw_data)
+        execute_processors(extracted_data, result, errors)
       end
 
       def resolve_relationships(result)
@@ -106,46 +68,90 @@ module Rubymap
         end
       end
 
+      # Extract symbol data from raw input, handling different input types
+      def extract_symbol_data(raw_data)
+        if raw_data.is_a?(Hash)
+          extract_from_hash(raw_data)
+        elsif extractor_result?(raw_data)
+          extract_from_result(raw_data)
+        else
+          create_empty_symbol_data
+        end
+      end
+
+      # Extract symbol data from hash format
+      def extract_from_hash(raw_data)
+        {
+          classes: raw_data[:classes] || [],
+          modules: raw_data[:modules] || [],
+          methods: raw_data[:methods] || [],
+          method_calls: raw_data[:method_calls] || [],
+          mixins: raw_data[:mixins] || []
+        }
+      end
+
+      # Extract symbol data from Extractor::Result object
+      def extract_from_result(raw_data)
+        {
+          classes: convert_to_hashes(raw_data.classes || []),
+          modules: convert_to_hashes(raw_data.modules || []),
+          methods: convert_to_hashes(raw_data.methods || []),
+          method_calls: [], # Result doesn't have method_calls
+          mixins: convert_to_hashes(raw_data.mixins || [])
+        }
+      end
+
+      # Create empty symbol data for invalid input types
+      def create_empty_symbol_data
+        {
+          classes: [],
+          modules: [],
+          methods: [],
+          method_calls: [],
+          mixins: []
+        }
+      end
+
+      # Check if raw_data is an Extractor::Result object
+      def extractor_result?(raw_data)
+        raw_data.respond_to?(:classes) && 
+        raw_data.respond_to?(:modules) && 
+        raw_data.respond_to?(:methods)
+      end
+
+      # Execute all processors in the correct order
+      def execute_processors(extracted_data, result, errors)
+        processor_factory = container.get(:processor_factory)
+
+        # Process main symbol types in deterministic order
+        process_main_symbols(processor_factory, extracted_data, result, errors)
+        
+        # Index processed symbols
+        index_symbols(result)
+        
+        # Process mixins last (they depend on other symbols being processed first)
+        process_mixins(processor_factory, extracted_data[:mixins], result, errors)
+      end
+
+      # Process the main symbol types (classes, modules, methods, method_calls)
+      def process_main_symbols(processor_factory, extracted_data, result, errors)
+        processor_factory.create_class_processor.process(extracted_data[:classes], result, errors)
+        processor_factory.create_module_processor.process(extracted_data[:modules], result, errors)
+        processor_factory.create_method_processor.process(extracted_data[:methods], result, errors)
+        processor_factory.create_method_call_processor.process(extracted_data[:method_calls], result, errors)
+      end
+
+      # Process mixins separately as they have special requirements
+      def process_mixins(processor_factory, mixins, result, errors)
+        processor_factory.create_mixin_processor.process(mixins, result, errors, [])
+      end
+
+      # Convert items to hashes using their to_h method if available
       def convert_to_hashes(items)
         return items if items.empty? || items.first.is_a?(Hash)
         
         items.map do |item|
-          # Convert objects to hashes by extracting their attributes
-          hash = {}
-          
-          # Common attributes
-          [:name, :type, :kind, :namespace, :superclass, :doc, :rubymap,
-           :visibility, :receiver_type, :params, :parameters, :owner,
-           :module_name, :target, :path, :constant, :value].each do |attr|
-            if item.respond_to?(attr)
-              value = item.send(attr)
-              # Convert location objects to hashes
-              if attr == :location && value && !value.is_a?(Hash)
-                value = convert_location_to_hash(value)
-              end
-              # MixinProcessor expects :module, not :module_name
-              key = attr == :module_name ? :module : attr
-              hash[key] = value unless value.nil?
-            end
-          end
-          
-          hash
-        end
-      end
-
-      def convert_location_to_hash(location)
-        return nil unless location
-        
-        # Handle Prism::Location objects
-        if location.respond_to?(:start_line)
-          {
-            line: location.start_line,
-            column: location.respond_to?(:start_column) ? location.start_column : nil,
-            end_line: location.respond_to?(:end_line) ? location.end_line : nil,
-            end_column: location.respond_to?(:end_column) ? location.end_column : nil
-          }.compact
-        else
-          location
+          item.respond_to?(:to_h) ? item.to_h : item
         end
       end
     end
