@@ -2,30 +2,43 @@
 
 module Rubymap
   class Normalizer
-    # Processing pipeline that orchestrates the normalization process
-    # Implements Chain of Responsibility pattern for processing steps
+    # Improved processing pipeline with better testability and reduced coupling
+    # Uses Strategy pattern and dependency injection for flexibility
     class ProcessingPipeline
+      attr_reader :steps
+
       def initialize(container)
         @container = container
+        @steps = build_default_steps
       end
 
       def execute(raw_data)
-        errors = []
-        result = create_result
+        context = build_context(raw_data)
+        
+        steps.each do |step|
+          step.call(context)
+        end
+        
+        context.result
+      end
 
-        # Execute processing steps in order
-        process_symbols(raw_data, result, errors)
-        resolve_relationships(result)
-        deduplicate_symbols(result)
-        format_output(result)
-
-        result.errors = errors
-        result
+      # Allow customization of pipeline steps for testing and flexibility
+      def with_steps(custom_steps)
+        @steps = custom_steps
+        self
       end
 
       private
 
       attr_reader :container
+
+      def build_context(raw_data)
+        PipelineContext.new(
+          input: raw_data,
+          result: create_result,
+          container: container
+        )
+      end
 
       def create_result
         NormalizedResult.new(
@@ -35,46 +48,51 @@ module Rubymap
         )
       end
 
-      def process_symbols(raw_data, result, errors)
-        extracted_data = extract_symbol_data(raw_data)
-        execute_processors(extracted_data, result, errors)
+      def build_default_steps
+        [
+          ExtractSymbolsStep.new,
+          ProcessSymbolsStep.new,
+          ResolveRelationshipsStep.new,
+          DeduplicateSymbolsStep.new,
+          FormatOutputStep.new
+        ]
+      end
+    end
+
+    # Context object that flows through the pipeline
+    class PipelineContext
+      attr_accessor :input, :result, :errors, :container, :extracted_data
+
+      def initialize(input:, result:, container:)
+        @input = input
+        @result = result
+        @container = container
+        @errors = []
+      end
+    end
+
+    # Base class for pipeline steps
+    class PipelineStep
+      def call(context)
+        raise NotImplementedError
+      end
+    end
+
+    # Step 1: Extract symbols from input
+    class ExtractSymbolsStep < PipelineStep
+      def call(context)
+        context.extracted_data = extract_symbol_data(context.input)
       end
 
-      def resolve_relationships(result)
-        resolver_factory = container.get(:resolver_factory)
+      private
 
-        # Execute resolvers in dependency order
-        resolver_factory.create_namespace_resolver.resolve(result)
-        resolver_factory.create_inheritance_resolver.resolve(result)
-        resolver_factory.create_cross_reference_resolver.resolve(result)
-        resolver_factory.create_mixin_method_resolver.resolve(result)
-      end
-
-      def deduplicate_symbols(result)
-        container.get(:deduplicator).deduplicate_symbols(result)
-      end
-
-      def format_output(result)
-        container.get(:output_formatter).format(result)
-      end
-
-      def index_symbols(result)
-        symbol_index = container.get(:symbol_index)
-
-        (result.classes + result.modules).each do |symbol|
-          symbol_index.add(symbol)
-        end
-      end
-
-      # Extract symbol data from raw input, handling different input types
       def extract_symbol_data(raw_data)
-        return create_empty_symbol_data unless raw_data
+        return empty_symbol_data unless raw_data
         return extract_from_hash(raw_data) if raw_data.is_a?(Hash)
         return extract_from_result(raw_data) if extractor_result?(raw_data)
-        create_empty_symbol_data
+        empty_symbol_data
       end
 
-      # Extract symbol data from hash format
       def extract_from_hash(raw_data)
         {
           classes: raw_data[:classes] || [],
@@ -85,19 +103,17 @@ module Rubymap
         }
       end
 
-      # Extract symbol data from Extractor::Result object
       def extract_from_result(raw_data)
         {
           classes: convert_to_hashes(raw_data.classes || []),
           modules: convert_to_hashes(raw_data.modules || []),
           methods: convert_to_hashes(raw_data.methods || []),
-          method_calls: [], # Result doesn't have method_calls
+          method_calls: [],
           mixins: convert_to_hashes(raw_data.mixins || [])
         }
       end
 
-      # Create empty symbol data for invalid input types
-      def create_empty_symbol_data
+      def empty_symbol_data
         {
           classes: [],
           modules: [],
@@ -107,44 +123,95 @@ module Rubymap
         }
       end
 
-      # Check if raw_data is an Extractor::Result object
       def extractor_result?(raw_data)
         raw_data.respond_to?(:classes) && raw_data.respond_to?(:modules)
       end
 
-      # Execute all processors in the correct order
-      def execute_processors(extracted_data, result, errors)
-        processor_factory = container.get(:processor_factory)
-
-        # Process main symbol types in deterministic order
-        process_main_symbols(processor_factory, extracted_data, result, errors)
-        
-        # Index processed symbols
-        index_symbols(result)
-        
-        # Process mixins last (they depend on other symbols being processed first)
-        process_mixins(processor_factory, extracted_data[:mixins], result, errors)
-      end
-
-      # Process the main symbol types (classes, modules, methods, method_calls)
-      def process_main_symbols(processor_factory, extracted_data, result, errors)
-        processor_factory.create_class_processor.process(extracted_data[:classes], result, errors)
-        processor_factory.create_module_processor.process(extracted_data[:modules], result, errors)
-        processor_factory.create_method_processor.process(extracted_data[:methods], result, errors)
-        processor_factory.create_method_call_processor.process(extracted_data[:method_calls], result, errors)
-      end
-
-      # Process mixins separately as they have special requirements
-      def process_mixins(processor_factory, mixins, result, errors)
-        processor_factory.create_mixin_processor.process(mixins, result, errors, [])
-      end
-
-      # Convert items to hashes using their to_h method if available
       def convert_to_hashes(items)
         return items if items.empty?
         return items if items.first.is_a?(Hash)
         items.map(&:to_h)
       end
     end
+
+    # Step 2: Process symbols through processors
+    class ProcessSymbolsStep < PipelineStep
+      def call(context)
+        return unless context.extracted_data
+        
+        processor_factory = context.container.get(:processor_factory)
+        
+        # Process main symbols
+        process_main_symbols(processor_factory, context)
+        
+        # Index symbols
+        index_symbols(context)
+        
+        # Process mixins (after indexing)
+        process_mixins(processor_factory, context)
+      end
+
+      private
+
+      def process_main_symbols(factory, context)
+        data = context.extracted_data
+        
+        factory.create_class_processor.process(data[:classes], context.result, context.errors)
+        factory.create_module_processor.process(data[:modules], context.result, context.errors)
+        factory.create_method_processor.process(data[:methods], context.result, context.errors)
+        factory.create_method_call_processor.process(data[:method_calls], context.result, context.errors)
+      end
+
+      def index_symbols(context)
+        symbol_index = context.container.get(:symbol_index)
+        
+        (context.result.classes + context.result.modules).each do |symbol|
+          symbol_index.add(symbol)
+        end
+      end
+
+      def process_mixins(factory, context)
+        mixins = context.extracted_data[:mixins] || []
+        factory.create_mixin_processor.process(mixins, context.result, context.errors, [])
+      end
+    end
+
+    # Step 3: Resolve relationships
+    class ResolveRelationshipsStep < PipelineStep
+      # Make resolvers configurable for better testability
+      RESOLVER_TYPES = [
+        :namespace_resolver,
+        :inheritance_resolver,
+        :cross_reference_resolver,
+        :mixin_method_resolver
+      ].freeze
+
+      def call(context)
+        resolver_factory = context.container.get(:resolver_factory)
+        
+        RESOLVER_TYPES.each do |resolver_type|
+          resolver = resolver_factory.send("create_#{resolver_type}")
+          resolver.resolve(context.result)
+        end
+      end
+    end
+
+    # Step 4: Deduplicate symbols
+    class DeduplicateSymbolsStep < PipelineStep
+      def call(context)
+        deduplicator = context.container.get(:deduplicator)
+        deduplicator.deduplicate_symbols(context.result)
+      end
+    end
+
+    # Step 5: Format output
+    class FormatOutputStep < PipelineStep
+      def call(context)
+        formatter = context.container.get(:output_formatter)
+        formatter.format(context.result)
+        context.result.errors = context.errors
+      end
+    end
   end
 end
+
