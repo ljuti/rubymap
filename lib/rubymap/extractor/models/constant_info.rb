@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../location_converter"
+
 module Rubymap
   class Extractor
     # Information about a Ruby constant definition
@@ -26,7 +28,7 @@ module Rubymap
           value: value,
           constant: name, # Alias expected by ProcessingPipeline
           type: type,
-          location: convert_location_to_hash(location),
+          location: LocationConverter.to_h(location),
           namespace: namespace
         }.compact
       end
@@ -47,22 +49,6 @@ module Rubymap
         when /^nil$/ then "nil"
         when /^[A-Z]/ then "constant_ref"
         else "expression"
-        end
-      end
-
-      def convert_location_to_hash(location)
-        return nil unless location
-
-        # Handle Prism::Location objects
-        if location.respond_to?(:start_line)
-          {
-            line: location.start_line,
-            column: location.respond_to?(:start_column) ? location.start_column : nil,
-            end_line: location.respond_to?(:end_line) ? location.end_line : nil,
-            end_column: location.respond_to?(:end_column) ? location.end_column : nil
-          }.compact
-        else
-          location
         end
       end
     end
