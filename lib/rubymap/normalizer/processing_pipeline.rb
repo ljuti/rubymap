@@ -36,8 +36,6 @@ module Rubymap
       end
 
       def process_symbols(raw_data, result, errors)
-        return if raw_data.nil?
-
         extracted_data = extract_symbol_data(raw_data)
         execute_processors(extracted_data, result, errors)
       end
@@ -70,13 +68,10 @@ module Rubymap
 
       # Extract symbol data from raw input, handling different input types
       def extract_symbol_data(raw_data)
-        if raw_data.is_a?(Hash)
-          extract_from_hash(raw_data)
-        elsif extractor_result?(raw_data)
-          extract_from_result(raw_data)
-        else
-          create_empty_symbol_data
-        end
+        return create_empty_symbol_data unless raw_data
+        return extract_from_hash(raw_data) if raw_data.is_a?(Hash)
+        return extract_from_result(raw_data) if extractor_result?(raw_data)
+        create_empty_symbol_data
       end
 
       # Extract symbol data from hash format
@@ -114,9 +109,7 @@ module Rubymap
 
       # Check if raw_data is an Extractor::Result object
       def extractor_result?(raw_data)
-        raw_data.respond_to?(:classes) && 
-        raw_data.respond_to?(:modules) && 
-        raw_data.respond_to?(:methods)
+        raw_data.respond_to?(:classes) && raw_data.respond_to?(:modules)
       end
 
       # Execute all processors in the correct order
@@ -148,11 +141,9 @@ module Rubymap
 
       # Convert items to hashes using their to_h method if available
       def convert_to_hashes(items)
-        return items if items.empty? || items.first.is_a?(Hash)
-        
-        items.map do |item|
-          item.respond_to?(:to_h) ? item.to_h : item
-        end
+        return items if items.empty?
+        return items if items.first.is_a?(Hash)
+        items.map(&:to_h)
       end
     end
   end

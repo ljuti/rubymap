@@ -4,15 +4,16 @@ module Rubymap
   class Extractor
     # Information about a Ruby module definition
     class ModuleInfo
-      attr_accessor :name, :location, :doc, :namespace, :is_concern, :type
+      attr_accessor :name, :location, :doc, :namespace, :is_concern, :type, :rubymap
 
-      def initialize(name:, location: nil, doc: nil, namespace: nil, is_concern: false, type: "module")
+      def initialize(name:, location: nil, doc: nil, namespace: nil, is_concern: false, type: "module", rubymap: nil)
         @name = name
         @location = location
         @doc = doc
         @namespace = namespace
         @is_concern = is_concern
         @type = type
+        @rubymap = rubymap
       end
 
       def full_name

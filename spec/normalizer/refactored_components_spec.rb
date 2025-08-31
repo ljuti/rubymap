@@ -64,6 +64,11 @@ RSpec.describe "Refactored Normalizer Components" do
         expect(result.modules).to eq([])
       end
 
+      it "processes nil input without errors" do
+        result = pipeline.execute(nil)
+        expect(result.errors).to eq([])
+      end
+
       it "processes classes" do
         data = {
           classes: [
