@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require_relative "error_collector"
+require_relative "retry_handler"
 
 module Rubymap
   # Orchestrates the complete code analysis pipeline from extraction to output.
@@ -45,6 +47,9 @@ module Rubymap
     # @return [Configuration] Pipeline configuration settings
     attr_reader :configuration
 
+    # @return [ErrorCollector] Error collector for the pipeline
+    attr_reader :error_collector
+
     # Creates a new Pipeline instance.
     #
     # @param configuration [Configuration] Configuration object with processing options
@@ -54,6 +59,13 @@ module Rubymap
     #   pipeline = Rubymap::Pipeline.new(config)
     def initialize(configuration)
       @configuration = configuration
+      @error_collector = ErrorCollector.new(
+        max_errors: configuration.respond_to?(:max_errors) ? configuration.max_errors : 100
+      )
+      @retry_handler = RetryHandler.new(
+        max_retries: configuration.respond_to?(:retry_max) ? configuration.retry_max : 3,
+        base_delay: 0.1
+      )
     end
 
     # Executes the complete analysis pipeline.
@@ -74,6 +86,7 @@ module Rubymap
     #   result = pipeline.run(["."])
     def run(paths)
       log "Starting Rubymap pipeline..."
+      @error_collector.clear  # Clear any previous errors
 
       # Step 1: Extract data from source files
       log "Step 1/5: Extracting data from Ruby files..."
@@ -100,7 +113,15 @@ module Rubymap
       result = emit(enriched_data)
       log "  → Generated output in #{configuration.format} format"
 
-      log "Pipeline completed successfully!"
+      # Add error summary to result
+      if @error_collector.any?
+        log ""
+        log @error_collector.report(verbose: configuration.verbose)
+        result[:error_summary] = @error_collector.summary
+        result[:errors] = @error_collector.to_h[:errors] if configuration.verbose
+      end
+
+      log "Pipeline completed #{@error_collector.critical? ? 'with critical errors' : 'successfully'}!"
       result
     end
 
@@ -129,16 +150,49 @@ module Rubymap
 
             log "  Processing: #{file}" if configuration.verbose
             begin
-              result = extractor.extract_from_file(file)
+              # Use retry handler for file operations
+              result = @retry_handler.with_retry(error_collector: @error_collector, file: file) do
+                extractor.extract_from_file(file)
+              end
               merge_result!(all_data, result)
+              # Merge errors from extraction result
+              if result.respond_to?(:error_collector) && result.error_collector.any?
+                @error_collector.merge!(result.error_collector)
+              end
             rescue => e
+              @error_collector.add_error(
+                :filesystem,
+                "Failed to extract from file: #{e.message}",
+                severity: :error,
+                file: file
+              )
               log "  Warning: Failed to extract from #{file}: #{e.message}"
             end
           end
         elsif File.file?(path) && path.end_with?(".rb")
           log "  Processing: #{path}" if configuration.verbose
-          result = extractor.extract_from_file(path)
-          merge_result!(all_data, result)
+          begin
+            result = extractor.extract_from_file(path)
+            merge_result!(all_data, result)
+            # Merge errors from extraction result
+            if result.respond_to?(:error_collector) && result.error_collector.any?
+              @error_collector.merge!(result.error_collector)
+            end
+          rescue => e
+            @error_collector.add_error(
+              :filesystem,
+              "Failed to extract from file: #{e.message}",
+              severity: :error,
+              file: path
+            )
+            log "  Warning: Failed to extract from #{path}: #{e.message}"
+          end
+        else
+          @error_collector.add_warning(
+            :filesystem,
+            "Path is not a directory or Ruby file",
+            file: path
+          ) unless File.directory?(path)
         end
       end
 
@@ -147,7 +201,17 @@ module Rubymap
 
     def index(data)
       indexer = Indexer.new
-      indexed_result = indexer.build(data)
+      begin
+        indexed_result = indexer.build(data)
+      rescue => e
+        @error_collector.add_error(
+          :runtime,
+          "Indexing failed: #{e.message}",
+          severity: :error
+        )
+        log "  Error during indexing: #{e.message}"
+        return data  # Return original data on failure
+      end
 
       # Merge indexed data into original data structure
       data[:index] = indexed_result.symbols if indexed_result.respond_to?(:symbols)
@@ -179,7 +243,18 @@ module Rubymap
 
     def normalize(data)
       normalizer = Normalizer.new
-      normalized_result = normalizer.normalize(data)
+      begin
+        normalized_result = normalizer.normalize(data)
+      rescue => e
+        @error_collector.add_error(
+          :runtime,
+          "Normalization failed: #{e.message}",
+          severity: :error
+        )
+        log "  Error during normalization: #{e.message}"
+        # Return a basic normalized result on failure
+        return data
+      end
 
       # Keep graphs from indexed data if available
       graphs = data[:graphs] if data.is_a?(Hash) && data[:graphs]
@@ -191,7 +266,29 @@ module Rubymap
 
     def enrich(normalized_result)
       enricher = Enricher.new
-      enrichment_result = enricher.enrich(normalized_result)
+      begin
+        enrichment_result = enricher.enrich(normalized_result)
+      rescue => e
+        @error_collector.add_error(
+          :runtime,
+          "Enrichment failed: #{e.message}",
+          severity: :warning  # Warning because enrichment is optional
+        )
+        log "  Warning during enrichment: #{e.message}"
+        # Return a basic result on enrichment failure
+        return {
+          classes: normalized_result.respond_to?(:classes) ? normalized_result.classes.map(&:to_h) : [],
+          modules: normalized_result.respond_to?(:modules) ? normalized_result.modules.map(&:to_h) : [],
+          methods: normalized_result.respond_to?(:methods) ? normalized_result.methods.map(&:to_h) : [],
+          metadata: {
+            enriched_at: Time.now.iso8601,
+            project_name: "Ruby Project",
+            ruby_version: RUBY_VERSION,
+            enrichment_failed: true
+          },
+          graphs: @graphs_cache || {}
+        }
+      end
 
       # Convert EnrichmentResult to hash format expected by emitters
       {
@@ -211,7 +308,16 @@ module Rubymap
 
     def emit(data)
       # Ensure output directory exists
-      FileUtils.mkdir_p(configuration.output_dir)
+      begin
+        FileUtils.mkdir_p(configuration.output_dir)
+      rescue => e
+        @error_collector.add_critical(
+          :output,
+          "Failed to create output directory: #{e.message}",
+          file: configuration.output_dir
+        )
+        raise ConfigurationError, "Cannot create output directory: #{configuration.output_dir}"
+      end
 
       case configuration.format
       when :json
@@ -224,15 +330,37 @@ module Rubymap
         write_output("map.yaml", output)
       when :llm
         emitter = Emitters::LLM.new
-        emitter.emit_to_directory(data, configuration.output_dir)
+        begin
+          emitter.emit_to_directory(data, configuration.output_dir)
+        rescue => e
+          @error_collector.add_error(
+            :output,
+            "Failed to emit LLM format: #{e.message}",
+            severity: :error
+          )
+          raise
+        end
         {format: :llm, output_dir: configuration.output_dir}
       when :graphviz, :dot
         emitter = Emitters::GraphViz.new
         output = emitter.emit(data)
         write_output("map.dot", output)
       else
+        @error_collector.add_critical(
+          :config,
+          "Unknown output format: #{configuration.format}"
+        )
         raise ConfigurationError, "Unknown format: #{configuration.format}"
       end
+    rescue => e
+      unless e.is_a?(ConfigurationError)
+        @error_collector.add_error(
+          :output,
+          "Output generation failed: #{e.message}",
+          severity: :critical
+        )
+      end
+      raise
     end
 
     def should_exclude?(path)
@@ -300,7 +428,23 @@ module Rubymap
 
     def write_output(filename, content)
       output_path = File.join(configuration.output_dir, filename)
-      File.write(output_path, content)
+      begin
+        File.write(output_path, content)
+      rescue Errno::EACCES => e
+        @error_collector.add_critical(
+          :output,
+          "Permission denied writing output file: #{e.message}",
+          file: output_path
+        )
+        raise ConfigurationError, "Cannot create output directory: #{configuration.output_dir} - Permission denied"
+      rescue => e
+        @error_collector.add_critical(
+          :output,
+          "Failed to write output file: #{e.message}",
+          file: output_path
+        )
+        raise
+      end
       {format: configuration.format, path: output_path}
     end
 

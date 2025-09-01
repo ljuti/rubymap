@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require_relative "../error_collector"
+
 module Rubymap
   class Extractor
     # Container for symbols and metadata extracted from Ruby source code.
     #
     # The Result object aggregates all structural information discovered during
     # extraction, including classes, modules, methods, and their relationships.
-    # It also tracks any errors encountered during parsing.
+    # It also tracks any errors encountered during parsing using the ErrorCollector.
     #
     # @example Accessing extracted symbols
     #   result = extractor.extract_from_file("user.rb")
@@ -54,8 +56,11 @@ module Rubymap
       # @return [Array<AliasInfo>] Extracted method aliases
       attr_accessor :aliases
 
-      # @return [Array<Hash>] Parse errors and extraction failures
-      attr_accessor :errors
+      # @return [Array<Hash>] Parse errors and extraction failures (legacy compatibility)
+      attr_reader :errors
+
+      # @return [ErrorCollector] Error collector for detailed error tracking
+      attr_reader :error_collector
 
       # @return [String, nil] Source file path if extracted from a file
       attr_accessor :file_path
@@ -74,8 +79,9 @@ module Rubymap
         @dependencies = []
         @class_variables = []
         @aliases = []
-        @errors = []
+        @errors = []  # Keep for backward compatibility
         @patterns = []
+        @error_collector = ErrorCollector.new
       end
 
       # Records an error encountered during extraction.
@@ -86,11 +92,48 @@ module Rubymap
       # @example
       #   result.add_error(SyntaxError.new("unexpected token"), "line 42")
       def add_error(error, context = nil)
+        # Add to legacy errors array for backward compatibility
         @errors << {
           message: error.message,
           type: error.class.name,
           context: context
         }
+
+        # Add to error collector with proper categorization
+        category = case error
+                   when SyntaxError, Prism::ParseError
+                     :parse
+                   when EncodingError
+                     :encoding
+                   when Errno::ENOENT, Errno::EACCES
+                     :filesystem
+                   when NoMemoryError
+                     :memory
+                   else
+                     :unknown
+                   end
+
+        severity = case error
+                   when SyntaxError
+                     :critical
+                   when EncodingError
+                     :error
+                   else
+                     # For StandardError with Prism::ParseError class method
+                     if error.class.name == "Prism::ParseError"
+                       :critical
+                     else
+                       :error
+                     end
+                   end
+
+        @error_collector.add_error(
+          category,
+          error.message,
+          severity: severity,
+          file: @file_path,
+          context: {original_context: context, error_class: error.class.name}
+        )
       end
 
       # Convert result to hash representation

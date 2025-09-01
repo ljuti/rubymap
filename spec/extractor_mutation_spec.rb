@@ -98,7 +98,7 @@ RSpec.describe Rubymap::Extractor do
 
         expect(result).to be_a(Rubymap::Extractor::Result)
         expect(result.errors.any?).to be true
-        expect(result.errors.first[:context]).to eq("Parse error")
+        expect(result.errors.first[:context]).to include("Parse error")
       end
 
       it "returns empty collections for invalid code" do

@@ -116,7 +116,17 @@ module Rubymap
         visitor.visit(parse_result.value)
       else
         parse_result.errors.each do |error|
-          result.add_error(error, "Parse error")
+          # Create a proper exception object for the error
+          parse_error = StandardError.new(error.message)
+          # Mark it as a parse error for proper categorization
+          parse_error.define_singleton_method(:class) do
+            Class.new(StandardError) do
+              def self.name
+                "Prism::ParseError"
+              end
+            end
+          end
+          result.add_error(parse_error, "Parse error at line #{error.location&.start_line}")
         end
       end
 
