@@ -1,0 +1,230 @@
+# Quality Analysis Rules Configuration
+# This file defines rules for analyzing code quality in Ruby projects
+
+version: "1.0"
+
+# Method-level rules
+method_rules:
+  - id: long_method
+    description: "Method has too many lines"
+    enabled: true
+    threshold:
+      metric: line_count
+      operator: ">"
+      value: 20
+    severity: 
+      ranges:
+        - max: 30
+          level: low
+        - max: 50
+          level: medium
+        - max: 100
+          level: high
+        - default: critical
+    message_template: "Method is {value} lines (threshold: {threshold})"
+    suggestion: "Consider extracting logic into smaller methods"
+
+  - id: too_many_parameters
+    description: "Method has too many parameters"
+    enabled: true
+    threshold:
+      metric: parameter_count
+      operator: ">"
+      value: 4
+    severity: medium
+    message_template: "Method has {value} parameters (threshold: {threshold})"
+    suggestion: "Consider using a parameter object or configuration hash"
+
+  - id: high_complexity
+    description: "Method has high cyclomatic complexity"
+    enabled: true
+    threshold:
+      metric: complexity
+      operator: ">"
+      value: 10
+    severity:
+      ranges:
+        - max: 15
+          level: low
+        - max: 20
+          level: medium
+        - default: high
+    message_template: "Method complexity is {value} (threshold: {threshold})"
+    suggestion: "Simplify logic using guard clauses or extract complex conditions"
+
+  - id: short_method_name
+    description: "Method name is too short to be meaningful"
+    enabled: true
+    condition:
+      type: regex
+      pattern: "^.{1,2}$"
+      exclude: ["+", "-", "*", "/", "==", "!=", "<", ">", "<=", ">=", "[]", "[]=", "<<", ">>", "&", "|", "^"]
+    severity: low
+    message_template: "Method name '{name}' is too short to be meaningful"
+    suggestion: "Use descriptive method names"
+
+  - id: java_style_getter
+    description: "Method uses Java-style getter prefix"
+    enabled: true
+    condition:
+      type: regex
+      pattern: "^get_"
+      context: ruby_class_method
+    severity: low
+    message_template: "Method uses 'get_' prefix which is not idiomatic Ruby"
+    suggestion: "Use Ruby attribute readers instead"
+
+  - id: duplicate_indicator
+    description: "Method name suggests code duplication"
+    enabled: true
+    condition:
+      type: regex
+      pattern: "(_copy|_duplicate|_2|_old|_new|_temp|_backup)$"
+    severity: medium
+    message_template: "Method name suggests code duplication"
+    suggestion: "Remove duplication and use proper abstractions"
+
+# Class-level rules
+class_rules:
+  - id: god_class
+    description: "Class has too many responsibilities"
+    enabled: true
+    indicators:
+      - metric: loc
+        operator: ">"
+        value: 500
+      - metric: method_count
+        operator: ">"
+        value: 30
+      - metric: dependency_count
+        operator: ">"
+        value: 15
+      - metric: total_complexity
+        operator: ">"
+        value: 50
+    min_indicators: 2
+    severity: high
+    message_template: "Class has too many responsibilities"
+    suggestion: "Apply Single Responsibility Principle"
+
+  - id: low_cohesion
+    description: "Class has low cohesion"
+    enabled: true
+    threshold:
+      metric: cohesion
+      operator: "<"
+      value: 0.5
+    severity: medium
+    message_template: "Class has low cohesion ({value}%)"
+    suggestion: "Consider splitting into multiple focused classes"
+
+  - id: data_class
+    description: "Class is primarily a data container"
+    enabled: true
+    conditions:
+      accessor_ratio:
+        operator: ">"
+        value: 0.7
+      behavior_method_count:
+        operator: "<"
+        value: 3
+      min_method_count: 5
+    severity: low
+    message_template: "Class is primarily a data container with little behavior"
+    suggestion: "Consider moving behavior from other classes"
+
+  - id: feature_envy
+    description: "Class uses other classes more than its own data"
+    enabled: true
+    threshold:
+      metric: external_call_ratio
+      operator: ">"
+      value: 0.7
+    severity: medium
+    message_template: "Class uses other classes' data more than its own"
+    suggestion: "Consider moving methods to the classes whose data they use"
+
+  - id: mixed_abstraction_levels
+    description: "Class mixes different abstraction levels"
+    enabled: true
+    patterns:
+      high_level: ["^(process|handle|manage|coordinate)"]
+      low_level: ["^(get|set|read|write|fetch)"]
+    pattern_threshold:
+      min_ratio: 0.3
+    severity: medium
+    message_template: "Class mixes high-level orchestration with low-level operations"
+    suggestion: "Separate concerns into different classes"
+
+# Code smell patterns
+code_smells:
+  - id: long_parameter_list
+    description: "Method call has too many arguments"
+    enabled: true
+    threshold: 5
+    severity: low
+    message_template: "Method makes calls with many arguments"
+    suggestion: "Consider using builder pattern or parameter objects"
+
+  - id: commented_code
+    description: "Method contains commented code"
+    enabled: true
+    severity: low
+    message_template: "Method contains commented code"
+    suggestion: "Remove commented code or move to version control"
+
+# Quality scoring configuration
+scoring:
+  method:
+    base_score: 1.0
+    penalties:
+      critical: 0.4
+      high: 0.25
+      medium: 0.15
+      low: 0.05
+    complexity_factor:
+      threshold: 5
+      max_penalty: 0.3
+      scale: 20
+
+  class:
+    base_score: 1.0
+    penalties:
+      critical: 0.3
+      high: 0.2
+      medium: 0.1
+      low: 0.05
+    stability_weight: 0.3
+
+  overall:
+    quality_levels:
+      excellent:
+        min: 0.9
+        max: 1.0
+      good:
+        min: 0.7
+        max: 0.9
+      fair:
+        min: 0.5
+        max: 0.7
+      poor:
+        min: 0.3
+        max: 0.5
+      needs_improvement:
+        min: 0.0
+        max: 0.3
+
+# Custom rule extensions (for project-specific rules)
+custom_rules:
+  # Add project-specific rules here
+  # Example:
+  # - id: no_puts_in_production
+  #   description: "Avoid using puts in production code"
+  #   enabled: true
+  #   condition:
+  #     type: contains
+  #     value: "puts"
+  #     exclude_paths: ["spec/", "test/"]
+  #   severity: medium
+  #   message_template: "Found puts statement in production code"
+  #   suggestion: "Use proper logging instead of puts"

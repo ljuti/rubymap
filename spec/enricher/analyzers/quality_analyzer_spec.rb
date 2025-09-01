@@ -653,6 +653,10 @@ RSpec.describe Rubymap::Enricher::Analyzers::QualityAnalyzer do
       allow(result).to receive(:classes).and_return(nil)
       allow(result).to receive(:quality_issues).and_return([])
 
+      # Ensure quality_metrics is initialized
+      metrics = Rubymap::Enricher::Analyzers::QualityMetrics.new
+      allow(result).to receive(:quality_metrics).and_return(metrics)
+
       analyzer.send(:calculate_overall_quality, result)
 
       expect(result.quality_metrics.overall_score).to eq(0.7)
@@ -682,6 +686,10 @@ RSpec.describe Rubymap::Enricher::Analyzers::QualityAnalyzer do
       allow(result).to receive(:methods).and_return(nil)
       allow(result).to receive(:classes).and_return(nil)
       allow(result).to receive(:quality_issues).and_return([])
+
+      # Ensure quality_metrics is initialized
+      metrics = Rubymap::Enricher::Analyzers::QualityMetrics.new
+      allow(result).to receive(:quality_metrics).and_return(metrics)
 
       analyzer.send(:calculate_overall_quality, result)
 
