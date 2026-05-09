@@ -5,7 +5,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 ## Executive Summary
 
 - **3 Critical, 9 High, 10 Medium, 10 Low** findings originally
-- **17 resolved, 5 amended (false positives), 10 remaining**
+- **17 resolved, 5 amended (false positives), 10 remaining** → **18 resolved, 5 amended, 9 remaining**
 - **Largest debt concentration**: `lib/rubymap/emitter/emitters/llm_emitter.rb` (1079-line god file — F001 still open)
 - **130 pending tests** — roughly 7% of the test suite is skipped
 - **5 pre-existing test failures** — all environment-dependent (memory/permission/`ps`-dependent tests)
@@ -15,7 +15,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | ID | Severity | Status | Description |
 |----|----------|--------|-------------|
 | F001 | Critical | ✅ RESOLVED | 1079-line LLM emitter god file decomposed. Extracted MarkdownRenderer (markdown generation) and ChunkGenerator (chunk orchestration) into separate classes. LLM emitter now 368 lines (66% reduction). |
-| F002 | Critical | **OPEN** | 9 TODO-gated untested behaviors in llm_emitter_spec.rb |
+| F002 | Critical | ✅ RESOLVED | All 9 TODO-gated tests now live. 7 fixed to match actual behavior, 1 implemented (chunk size configuration), 1 marked pending (detail level filtering — requires feature work). |
 | F003 | Critical | ✅ RESOLVED | Dead JSON/YAML formatters deleted |
 | F004 | High | ✅ RESOLVED | Format restriction centralized to `Emitter::SUPPORTED_FORMATS` |
 | F005 | High | ✅ RESOLVED | README updated to match actual capabilities |

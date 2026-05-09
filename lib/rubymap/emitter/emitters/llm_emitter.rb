@@ -237,7 +237,8 @@ module Rubymap
             markdown_renderer: @markdown_renderer,
             redactor: @redactor,
             progress_callback: @progress_callback,
-            cross_linker: @cross_linker
+            cross_linker: @cross_linker,
+            max_tokens_per_chunk: @max_chunk_size
           )
         end
 

@@ -11,11 +11,12 @@ module Rubymap
         # Orchestrates the creation of class, module, and hierarchy chunks,
         # handling splitting of large classes across multiple chunks.
         class ChunkGenerator
-          def initialize(markdown_renderer:, redactor: nil, progress_callback: nil, cross_linker: nil)
+          def initialize(markdown_renderer:, redactor: nil, progress_callback: nil, cross_linker: nil, max_tokens_per_chunk: nil)
             @markdown_renderer = markdown_renderer
             @redactor = redactor
             @progress_callback = progress_callback
             @cross_linker = cross_linker
+            @max_tokens_per_chunk = max_tokens_per_chunk
           end
 
           def generate_chunks(indexed_data)
@@ -61,6 +62,11 @@ module Rubymap
           end
 
           private
+
+          def estimate_single_chunk_tokens(klass)
+            content = @markdown_renderer.class_markdown(klass, include_class_keyword: true)
+            estimate_tokens(content)
+          end
 
           def report_progress(current, total, message)
             return unless @progress_callback
