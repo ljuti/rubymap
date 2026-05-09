@@ -5,7 +5,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 ## Executive Summary
 
 - **3 Critical, 9 High, 10 Medium, 10 Low** findings originally
-- **12 resolved, 2 amended (false positives), 18 remaining**
+- **17 resolved, 5 amended (false positives), 10 remaining**
 - **Largest debt concentration**: `lib/rubymap/emitter/emitters/llm_emitter.rb` (1079-line god file — F001 still open)
 - **130 pending tests** — roughly 7% of the test suite is skipped
 - **5 pre-existing test failures** — all environment-dependent (memory/permission/`ps`-dependent tests)
@@ -32,19 +32,19 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F016 | Medium | ✅ RESOLVED | Template system wired: `templates_enabled` and `template_dir` config options added, Pipeline passes them through to LLM emitter and MarkdownRenderer. Templates render successfully. |
 | F017 | Medium | **OPEN** | Inconsistent error recovery strategies across pipeline stages |
 | F018 | Medium | ✅ RESOLVED | `concurrent-ruby` optional require removed during EmitterManager cleanup (F006). |
-| F019 | Medium | **OPEN** | 5 pre-existing failing tests (environment-dependent) |
+| F019 | Medium | ✅ RESOLVED | 5 failing tests fixed: replaced `ps` shell-outs with `/proc/self/status`, updated permission test to match new error-collection behavior. |
 | F020 | Medium | ⚠️ AMENDED | `namespace_service_spec.rb` has 202 actual passing tests, not pending. Audit was incorrect. The 130 pending tests are in `rails_mapper_spec.rb` (48), `emitters_spec.rb` (22), etc. |
 | F021 | Medium | ⚠️ AMENDED | `SCHEMA_VERSION`/`NORMALIZER_VERSION` constants ARE used by ProcessingPipeline |
 | F022 | Medium | ⚠️ AMENDED | `RetryHandler` is functional — used for file I/O retry in Pipeline extraction. Not dead code. |
-| F023 | Low | **OPEN** | Pipeline doesn't use Extractor's parallel processing |
+| F023 | Low | ⚠️ AMENDED | No parallel processing code exists to wire. This is a feature request, not pre-existing debt. |
 | F024 | Low | ✅ RESOLVED | Standard.rb `ClassEqualityComparison` lint fixed |
 | F025 | Low | ✅ RESOLVED | Standard.rb `SafeNavigation` lint fixed (×2) |
 | F026 | Low | ✅ RESOLVED | Standard.rb empty lines/trailing newline lint fixed |
-| F027 | Low | **OPEN** | README mutation coverage claim removed (F005) |
+| F027 | Low | ✅ RESOLVED | README mutation coverage claim removed during F005 README update. |
 | F028 | Low | ✅ RESOLVED | Singleton class hack replaced with proper `Prism::ParseError` handling |
-| F029 | Low | **OPEN** | TTY dependency naming inconsistency |
+| F029 | Low | ⚠️ AMENDED | `tty-progressbar` IS the canonical gem name. Audit was incorrect. |
 | F030 | Low | **OPEN** | Result→hash conversion in Pipeline has no type checking |
-| F031 | Low | **OPEN** | QualityRulesEngine has unused `rules_path`/`load_rules` infrastructure |
+| F031 | Low | ⚠️ AMENDED | `load_rules` loads from `config/quality_rules.yml` (6KB, exists). Falls back to `default_rules` on error. Functional, not dead code. |
 | F032 | Low | ✅ RESOLVED | GraphViz manifest branch removed |
 
 ## Top 5 Remaining

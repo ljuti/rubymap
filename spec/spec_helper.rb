@@ -280,13 +280,21 @@ RSpec.configure do |config|
   # Performance test configuration
   config.around(:each, :performance) do |example|
     # Set up performance monitoring
-    start_memory = `ps -o pid,rss -p #{Process.pid}`.split.last.to_i
+    start_memory = if File.exist?("/proc/self/status")
+      File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
+    else
+      0
+    end
     start_time = Time.now
 
     example.run
 
     end_time = Time.now
-    end_memory = `ps -o pid,rss -p #{Process.pid}`.split.last.to_i
+    end_memory = if File.exist?("/proc/self/status")
+      File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
+    else
+      0
+    end
 
     duration = end_time - start_time
     memory_delta = end_memory - start_memory

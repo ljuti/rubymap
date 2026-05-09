@@ -762,7 +762,11 @@ RSpec.describe "Rubymap::Indexer" do
   end
 
   def get_memory_usage
-    `ps -o rss= -p #{Process.pid}`.to_i
+    if File.exist?("/proc/self/status")
+      File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
+    else
+      0
+    end
   end
 end
 

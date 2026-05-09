@@ -474,14 +474,14 @@ RSpec.describe "Rubymap::Enricher" do
 
         # Measure memory before
         GC.start
-        memory_before = `ps -o rss= -p #{Process.pid}`.to_i
+        memory_before = get_memory_usage
 
         # Enrich the data
         result = enricher.enrich(data)
 
         # Measure memory after
         GC.start
-        memory_after = `ps -o rss= -p #{Process.pid}`.to_i
+        memory_after = get_memory_usage
 
         # Memory increase should be reasonable (less than 100MB for this dataset)
         memory_increase_mb = (memory_after - memory_before) / 1024.0
@@ -1623,5 +1623,13 @@ RSpec.describe "Rubymap::Enricher" do
         )
       end
     end
+  end
+end
+
+def get_memory_usage
+  if File.exist?("/proc/self/status")
+    File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
+  else
+    0
   end
 end

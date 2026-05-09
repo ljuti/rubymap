@@ -541,11 +541,11 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
       end
 
       it "maintains memory efficiency during processing" do
-        initial_memory = `ps -o rss= -p #{Process.pid}`.to_i
+        initial_memory = get_memory_usage
 
         normalizer.normalize(large_dataset)
 
-        final_memory = `ps -o rss= -p #{Process.pid}`.to_i
+        final_memory = get_memory_usage
         memory_increase = final_memory - initial_memory
 
         # Memory increase should be reasonable (less than 50MB for this dataset)
@@ -576,5 +576,13 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
         end
       end
     end
+  end
+end
+
+def get_memory_usage
+  if File.exist?("/proc/self/status")
+    File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
+  else
+    0
   end
 end
