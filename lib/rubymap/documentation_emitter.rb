@@ -1,15 +1,13 @@
 # frozen_string_literal: true
 
 require_relative "documentation_emitter/markdown_formatter"
-require_relative "documentation_emitter/json_formatter"
-require_relative "documentation_emitter/yaml_formatter"
 
 module Rubymap
   # Generates comprehensive documentation from enriched pipeline results.
   #
   # The DocumentationEmitter aggregates outputs from all pipeline stages
   # (Extractor, Normalizer, Indexer, Enricher) and produces structured
-  # documentation in various formats (Markdown, JSON, YAML, HTML).
+  # documentation in Markdown format.
   #
   # @rubymap Generates documentation in multiple formats from enriched data
   #
@@ -18,14 +16,10 @@ module Rubymap
   #   emitter = Rubymap::DocumentationEmitter.new
   #   documentation = emitter.emit(enriched_result, format: :markdown)
   #
-  # @example Generate multiple formats
-  #   emitter = Rubymap::DocumentationEmitter.new
-  #   markdown_doc = emitter.emit(enriched_result, format: :markdown)
-  #   json_doc = emitter.emit(enriched_result, format: :json)
-  #
+
   class DocumentationEmitter
     # Supported output formats
-    FORMATS = %i[markdown json yaml].freeze
+    FORMATS = %i[markdown].freeze
 
     attr_reader :config
 
@@ -39,16 +33,14 @@ module Rubymap
     def initialize(config = {})
       @config = default_config.merge(config)
       @formatters = {
-        markdown: MarkdownFormatter.new(@config),
-        json: JsonFormatter.new(@config),
-        yaml: YamlFormatter.new(@config)
+        markdown: MarkdownFormatter.new(@config)
       }
     end
 
     # Generates documentation from enriched pipeline results.
     #
     # @param enriched_result [Enricher::EnrichmentResult] The enriched data from pipeline
-    # @param format [Symbol] Output format (:markdown, :json, :yaml)
+    # @param format [Symbol] Output format (:markdown)
     # @return [String] Formatted documentation
     # @raise [ArgumentError] if format is not supported
     def emit(enriched_result, format: :markdown)

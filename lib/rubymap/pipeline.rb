@@ -66,6 +66,13 @@ module Rubymap
         max_retries: configuration.respond_to?(:retry_max) ? configuration.retry_max : 3,
         base_delay: 0.1
       )
+      @on_step = nil
+    end
+
+    # Register a callback for pipeline step progress.
+    # @yield [step_number, step_name, total_steps] Called at each pipeline step
+    def on_step(&block)
+      @on_step = block
     end
 
     # Executes the complete analysis pipeline.
@@ -89,27 +96,27 @@ module Rubymap
       @error_collector.clear  # Clear any previous errors
 
       # Step 1: Extract data from source files
-      log "Step 1/5: Extracting data from Ruby files..."
+      step(1, 5, "Extracting data from Ruby files...")
       extracted_data = extract(paths)
       log "  → Extracted #{extracted_data[:classes]&.size || 0} classes, #{extracted_data[:modules]&.size || 0} modules"
 
       # Step 2: Index the extracted data
-      log "Step 2/5: Indexing extracted data..."
+      step(2, 5, "Indexing extracted data...")
       indexed_data = index(extracted_data)
       log "  → Created index with #{indexed_data[:index]&.size || 0} symbols"
 
       # Step 3: Normalize the data
-      log "Step 3/5: Normalizing data..."
+      step(3, 5, "Normalizing data...")
       normalized_data = normalize(indexed_data)
       log "  → Normalized and deduplicated data"
 
       # Step 4: Enrich with additional metadata
-      log "Step 4/5: Enriching with metadata..."
+      step(4, 5, "Enriching with metadata...")
       enriched_data = enrich(normalized_data)
       log "  → Added metrics and relationships"
 
       # Step 5: Emit output in requested format
-      log "Step 5/5: Emitting output..."
+      step(5, 5, "Emitting output...")
       result = emit(enriched_data)
       log "  → Generated output in #{configuration.format} format"
 
@@ -321,13 +328,14 @@ module Rubymap
         raise ConfigurationError, "Cannot create output directory: #{configuration.output_dir}"
       end
 
-      # Simplified emit phase - only LLM format is supported
-      if configuration.format != :llm
+      # Validate format is supported
+      supported = Emitter::SUPPORTED_FORMATS
+      unless supported.include?(configuration.format.to_sym)
         @error_collector.add_critical(
           :config,
-          "Only :llm format is supported. Got: #{configuration.format}"
+          "Unsupported format: #{configuration.format}. Supported: #{supported.map(&:inspect).join(", ")}"
         )
-        raise ConfigurationError, "Only :llm format is supported. Please use --format llm"
+        raise ConfigurationError, "Unsupported format: #{configuration.format}. Supported: #{supported.map(&:inspect).join(", ")}"
       end
 
       emitter = Emitters::LLM.new
@@ -440,6 +448,11 @@ module Rubymap
 
     def log(message)
       puts message if configuration.verbose || configuration.progress
+    end
+
+    def step(number, total, name)
+      @on_step&.call(number, name, total)
+      log "Step #{number}/#{total}: #{name}"
     end
   end
 end

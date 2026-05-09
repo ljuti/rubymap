@@ -191,21 +191,6 @@ RSpec.describe Rubymap::Configuration do
         expect(config.static["parse_rbs"]).to be false
       end
 
-      it "coerces output flags" do
-        config.deep_merge!({
-          "output" => {
-            "split_files" => "true",
-            "include_source" => "false",
-            "include_todos" => "true",
-            "redact_sensitive" => "false"
-          }
-        })
-        expect(config.output["split_files"]).to be true
-        expect(config.output["include_source"]).to be false
-        expect(config.output["include_todos"]).to be true
-        expect(config.output["redact_sensitive"]).to be false
-      end
-
       it "coerces filter flags" do
         config.deep_merge!({
           "filter" => {
@@ -325,12 +310,10 @@ RSpec.describe Rubymap::Configuration do
       other = described_class.new
 
       config.static["paths"] = ["changed/"]
-      config.output["format"] = "changed"
 
       diff = config.diff(other)
 
       expect(diff[:static]).to be_a(Hash)
-      expect(diff[:output]).to be_a(Hash)
     end
 
     it "returns empty hash when configs are identical" do
@@ -340,7 +323,6 @@ RSpec.describe Rubymap::Configuration do
 
       # Only nested configs might differ in their internal state
       diff.delete(:static) if diff[:static]
-      diff.delete(:output) if diff[:output]
       diff.delete(:runtime) if diff[:runtime]
       diff.delete(:filter) if diff[:filter]
       diff.delete(:cache) if diff[:cache]
@@ -454,13 +436,6 @@ RSpec.describe Rubymap::Configuration do
       config.static["paths"] = ["${BASE_PATH}/app"]
       config.resolve_environment_variables
       expect(config.static["paths"]).to eq(["/base/app"])
-    end
-
-    it "expands environment variables in output directory" do
-      ENV["OUTPUT"] = "/output"
-      config.output["directory"] = "${OUTPUT}/dir"
-      config.resolve_environment_variables
-      expect(config.output["directory"]).to eq("/output/dir")
     end
 
     it "expands environment variables in cache directory" do

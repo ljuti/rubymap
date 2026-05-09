@@ -24,12 +24,8 @@ RSpec.describe Rubymap::Configuration do
     end
 
     it "sets default output settings" do
-      expect(config.output["directory"]).to eq(".rubymap")
-      expect(config.output["format"]).to eq("llm")
-      expect(config.output["split_files"]).to be false
-      expect(config.output["include_source"]).to be false
-      expect(config.output["include_todos"]).to be false
-      expect(config.output["redact_sensitive"]).to be true
+      expect(config.output_dir).to eq(".rubymap")
+      expect(config.format).to eq(:llm)
     end
 
     it "sets default runtime settings" do
@@ -62,6 +58,9 @@ RSpec.describe Rubymap::Configuration do
       context "with valid YAML" do
         let(:yaml_content) do
           <<~YAML
+            output_dir: custom_output
+            format: llm
+
             static:
               paths:
                 - app/
@@ -70,11 +69,6 @@ RSpec.describe Rubymap::Configuration do
                 - tmp/
               follow_requires: true
               parse_yard: true
-              
-            output:
-              directory: custom_output
-              format: llm
-              split_files: true
               
             runtime:
               enabled: true
@@ -100,9 +94,8 @@ RSpec.describe Rubymap::Configuration do
         it "loads output configuration" do
           config = described_class.load_from_string(yaml_content)
 
-          expect(config.output["directory"]).to eq("custom_output")
-          expect(config.output["format"]).to eq("llm")
-          expect(config.output["split_files"]).to be true
+          expect(config.output_dir).to eq("custom_output")
+          expect(config.format).to eq(:llm)
         end
 
         it "loads runtime configuration" do
@@ -219,7 +212,7 @@ RSpec.describe Rubymap::Configuration do
       it "applies development profile settings" do
         expect(config.verbose).to be true
         expect(config.output_dir).to eq("tmp/rubymap")
-        expect(config.output["directory"]).to eq("tmp/rubymap")
+        expect(config.output_dir).to eq("tmp/rubymap")
         expect(config.runtime["safe_mode"]).to be false
         expect(config.cache["enabled"]).to be false
         expect(config.filter["include_private"]).to be true
@@ -232,11 +225,9 @@ RSpec.describe Rubymap::Configuration do
       it "applies production profile settings" do
         expect(config.verbose).to be false
         expect(config.output_dir).to eq("docs/rubymap")
-        expect(config.output["directory"]).to eq("docs/rubymap")
         expect(config.runtime["safe_mode"]).to be true
         expect(config.cache["enabled"]).to be true
         expect(config.filter["include_private"]).to be false
-        expect(config.output["redact_sensitive"]).to be true
       end
     end
 
@@ -246,7 +237,7 @@ RSpec.describe Rubymap::Configuration do
       it "applies CI profile settings" do
         expect(config.verbose).to be true
         expect(config.output_dir).to eq("artifacts/rubymap")
-        expect(config.output["directory"]).to eq("artifacts/rubymap")
+        expect(config.output_dir).to eq("artifacts/rubymap")
         expect(config.runtime["enabled"]).to be false
         expect(config.parallel).to be false
         expect(config.progress).to be false
@@ -447,8 +438,8 @@ RSpec.describe Rubymap::Configuration do
       yaml = config.to_yaml
       parsed = YAML.safe_load(yaml)
 
-      expect(parsed["output"]["directory"]).to eq(".rubymap")
-      expect(parsed["output"]["format"]).to eq("llm")
+      expect(parsed["output_dir"]).to eq("test_dir")
+      expect(parsed["format"]).to eq("llm")
     end
   end
 
@@ -457,7 +448,6 @@ RSpec.describe Rubymap::Configuration do
       hash = config.to_h
 
       expect(hash).to have_key(:static)
-      expect(hash).to have_key(:output)
       expect(hash).to have_key(:runtime)
       expect(hash).to have_key(:filter)
       expect(hash).to have_key(:cache)
@@ -467,7 +457,6 @@ RSpec.describe Rubymap::Configuration do
       hash = config.to_hash
 
       expect(hash[:static]["paths"]).to eq(["."])
-      expect(hash[:output]["format"]).to eq("llm")
       expect(hash[:runtime]["enabled"]).to be false
     end
   end
@@ -512,17 +501,17 @@ RSpec.describe Rubymap::Configuration do
     it "expands environment variables in paths" do
       ENV["CUSTOM_DIR"] = "/custom/path"
 
-      config.output["directory"] = "${CUSTOM_DIR}/output"
+      config.cache["directory"] = "${CUSTOM_DIR}/output"
       config.resolve_environment_variables
 
-      expect(config.output["directory"]).to eq("/custom/path/output")
+      expect(config.cache["directory"]).to eq("/custom/path/output")
     end
 
     it "handles missing environment variables" do
-      config.output["directory"] = "${MISSING_VAR}/output"
+      config.cache["directory"] = "${MISSING_VAR}/output"
       config.resolve_environment_variables
 
-      expect(config.output["directory"]).to eq("${MISSING_VAR}/output")
+      expect(config.cache["directory"]).to eq("${MISSING_VAR}/output")
     end
 
     it "expands simple environment variable format" do

@@ -260,9 +260,6 @@ module Rubymap
     end
 
     def run_mapping_with_progress(path)
-      Pastel.new
-      result = nil
-
       # Create a multi-spinner for pipeline steps
       spinners = TTY::Spinner::Multi.new("[:spinner] :title", format: :dots)
 
@@ -278,29 +275,13 @@ module Rubymap
         spinners.register("[:spinner] #{step}", format: :dots)
       end
 
-      # Start the pipeline with progress tracking
-      thread = Thread.new do
-        # Monkey-patch Pipeline#log to update spinners
-        original_log = Rubymap::Pipeline.instance_method(:log)
-        current_step = 0
-
-        Rubymap::Pipeline.define_method(:log) do |message|
-          if message.start_with?("Step")
-            step_spinners[current_step].success if current_step < step_spinners.length
-            current_step += 1
-            step_spinners[current_step].auto_spin if current_step < step_spinners.length
-          end
-          original_log.bind_call(self, message) if Rubymap.configuration.verbose
+      # Run pipeline with progress callback
+      result = Rubymap.map(path) do |step_number, _step_name, _total|
+        if step_number > 1
+          step_spinners[step_number - 2].success
         end
-
-        result = Rubymap.map(path)
-
-        # Restore original log method
-        Rubymap::Pipeline.define_method(:log, original_log)
+        step_spinners[step_number - 1].auto_spin
       end
-
-      step_spinners.first.auto_spin
-      thread.join
 
       # Mark final spinner as complete
       step_spinners.each { |s| s.success unless s.done? }

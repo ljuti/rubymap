@@ -94,7 +94,6 @@ RSpec.describe "rubymap CLI", type: :cli do
   end
 
   describe "output format" do
-
     describe "LLM format (default and only format)" do
       context "when generating LLM-friendly output" do
         it "creates chunked documentation files" do
@@ -140,7 +139,6 @@ RSpec.describe "rubymap CLI", type: :cli do
         end
       end
     end
-
   end
 
   describe "output directory options" do

@@ -33,6 +33,10 @@ module Rubymap
   #   )
   #
   module Emitter
+    # Currently supported output formats.
+    # When adding a new format, register it here and update create_emitter.
+    SUPPORTED_FORMATS = [:llm].freeze
+
     class << self
       # Emits indexed data in the specified format.
       #
@@ -87,7 +91,7 @@ module Rubymap
         when :llm
           Emitters::LLM.new(**options)
         else
-          raise ArgumentError, "Unknown emitter format: #{format}. Only :llm format is supported."
+          raise ArgumentError, "Unknown emitter format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end
       end
     end

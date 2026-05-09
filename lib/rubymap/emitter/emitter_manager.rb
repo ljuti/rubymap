@@ -6,16 +6,25 @@ require "time"
 
 module Rubymap
   module Emitter
+    # Manages emission of indexed data to output formats.
+    #
+    # Coordinates format-specific emitters and generates unified manifest
+    # metadata for the output directory.
+    #
+    # @rubymap Coordinates emission across formats and generates output manifests
     class EmitterManager
       attr_reader :options
 
       def initialize(**options)
         @options = options
-        @parallel = options[:parallel] || false
-        @continue_on_error = options[:continue_on_error] || false
-        @transactional = options[:transactional] || false
       end
 
+      # Emits data in the specified formats and generates a unified manifest.
+      #
+      # @param indexed_data [Hash] Indexed codebase data
+      # @param output_dir [String] Directory for output files
+      # @param formats [Array<Symbol>] Formats to emit (currently only :llm)
+      # @return [Hash] Result with formats, files, errors, manifest path, and duration
       def emit_all(indexed_data, output_dir, formats: [:llm])
         ensure_output_directory(output_dir)
 
@@ -23,15 +32,14 @@ module Rubymap
         errors = []
         start_time = Time.now
 
-        if @transactional
-          emit_transactional(indexed_data, output_dir, formats, results, errors)
-        elsif @parallel
-          emit_parallel(indexed_data, output_dir, formats, results, errors)
-        else
-          emit_sequential(indexed_data, output_dir, formats, results, errors)
+        formats.each do |format|
+          emitter = create_emitter(format, **@options)
+          results[format] = emit_format(emitter, indexed_data, output_dir, format)
+        rescue => e
+          errors << "#{format.capitalize} emission failed: #{e.message}"
+          raise
         end
 
-        # Generate unified manifest
         manifest_path = generate_unified_manifest(output_dir, results, errors, indexed_data, start_time)
 
         {
@@ -43,6 +51,13 @@ module Rubymap
         }
       end
 
+      # Emits data in specified formats with per-format configuration.
+      #
+      # @param indexed_data [Hash] Indexed codebase data
+      # @param output_dir [String] Directory for output files
+      # @param formats [Array<Symbol>] Formats to emit
+      # @param configs [Hash] Per-format configuration overrides
+      # @return [Hash] Results keyed by format
       def emit(indexed_data, output_dir, formats:, configs: {})
         ensure_output_directory(output_dir)
 
@@ -51,62 +66,10 @@ module Rubymap
         formats.each do |format|
           config = configs[format] || {}
           emitter = create_emitter(format, **config)
-
-          case format
-          when :llm
-            results[format] = emitter.emit_to_directory(indexed_data, output_dir)
-          else
-            raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
-          end
+          results[format] = emit_format(emitter, indexed_data, output_dir, format)
         end
 
         results
-      end
-
-      def emit_incremental(updated_data, output_dir)
-        # Load existing manifest to determine what changed
-        manifest_path = File.join(output_dir, "manifest.json")
-        previous_manifest = load_previous_manifest(manifest_path)
-
-        # Determine changes
-        changes = detect_changes(previous_manifest, updated_data)
-
-        updated_files = []
-        unchanged_files = []
-
-        # Update only changed files
-        changes[:added].each do |symbol|
-          files = emit_symbol(symbol, updated_data, output_dir)
-          updated_files.concat(files)
-        end
-
-        changes[:modified].each do |symbol|
-          files = emit_symbol(symbol, updated_data, output_dir)
-          updated_files.concat(files)
-        end
-
-        # Update manifest with delta information
-        update_manifest_with_delta(manifest_path, changes, updated_data)
-
-        {
-          updated_files: updated_files,
-          unchanged_files: unchanged_files,
-          delta: changes
-        }
-      end
-
-      def create_package(output_dir, package_path)
-        begin
-          require "zip"
-        rescue
-          nil
-        end # Optional dependency
-
-        if defined?(Zip)
-          create_zip_package(output_dir, package_path)
-        else
-          create_tar_package(output_dir, package_path)
-        end
       end
 
       private
@@ -115,102 +78,12 @@ module Rubymap
         FileUtils.mkdir_p(dir) unless File.directory?(dir)
       end
 
-      def emit_sequential(indexed_data, output_dir, formats, results, errors)
-        formats.each do |format|
-          emitter = create_emitter(format, **@options)
-          results[format] = emit_format(emitter, indexed_data, output_dir, format)
-        rescue => e
-          errors << "#{format.capitalize} emission failed: #{e.message}"
-          raise unless @continue_on_error
-        end
-      end
-
-      def emit_parallel(indexed_data, output_dir, formats, results, errors)
-        begin
-          require "concurrent"
-        rescue
-          nil
-        end
-
-        if defined?(Concurrent)
-          emit_with_concurrent(indexed_data, output_dir, formats, results, errors)
-        else
-          emit_with_threads(indexed_data, output_dir, formats, results, errors)
-        end
-      end
-
-      def emit_with_threads(indexed_data, output_dir, formats, results, errors)
-        threads = formats.map do |format|
-          Thread.new do
-            emitter = create_emitter(format, **@options)
-            Thread.current[:result] = emit_format(emitter, indexed_data, output_dir, format)
-            Thread.current[:format] = format
-          rescue => e
-            Thread.current[:error] = "#{format.capitalize} emission failed: #{e.message}"
-          end
-        end
-
-        threads.each do |thread|
-          thread.join
-          if thread[:error]
-            errors << thread[:error]
-            raise thread[:error] unless @continue_on_error
-          else
-            results[thread[:format]] = thread[:result]
-          end
-        end
-      end
-
-      def emit_with_concurrent(indexed_data, output_dir, formats, results, errors)
-        pool = Concurrent::FixedThreadPool.new(formats.size)
-        futures = {}
-
-        formats.each do |format|
-          futures[format] = Concurrent::Future.execute(executor: pool) do
-            emitter = create_emitter(format, **@options)
-            emit_format(emitter, indexed_data, output_dir, format)
-          end
-        end
-
-        futures.each do |format, future|
-          results[format] = future.value!
-        rescue => e
-          errors << "#{format.capitalize} emission failed: #{e.message}"
-          raise unless @continue_on_error
-        end
-
-        pool.shutdown
-        pool.wait_for_termination
-      end
-
-      def emit_transactional(indexed_data, output_dir, formats, results, errors)
-        temp_dir = "#{output_dir}.tmp.#{Process.pid}"
-
-        begin
-          ensure_output_directory(temp_dir)
-
-          # Emit all formats to temp directory
-          formats.each do |format|
-            emitter = create_emitter(format, **@options)
-            results[format] = emit_format(emitter, indexed_data, temp_dir, format)
-          end
-
-          # If all successful, move temp to final location
-          FileUtils.rm_rf(output_dir) if File.exist?(output_dir)
-          FileUtils.mv(temp_dir, output_dir)
-        rescue => e
-          # Rollback on any failure
-          FileUtils.rm_rf(temp_dir) if File.exist?(temp_dir)
-          raise e
-        end
-      end
-
       def emit_format(emitter, indexed_data, output_dir, format)
         case format
         when :llm
           emitter.emit_to_directory(indexed_data, output_dir)
         else
-          raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
+          raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end
       end
 
@@ -219,7 +92,7 @@ module Rubymap
         when :llm
           Emitters::LLM.new(**config)
         else
-          raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
+          raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end
       end
 
@@ -240,141 +113,28 @@ module Rubymap
           },
           outputs: {},
           performance: {
-            total_duration_ms: duration_ms,
-            format_durations: {}
+            total_duration_ms: duration_ms
           },
           errors: errors
         }
 
-        # Add output information for each format
         results.each do |format, files|
           manifest[:outputs][format] = {
             file_count: files.size,
             total_size: files.sum { |f| f[:size] || 0 }
           }
 
-          # Add format-specific metadata
-          case format
-          when :llm
+          if format == :llm
             manifest[:outputs][:llm_chunks] = {
               index_url: "index.md",
               chunk_count: files.count { |f| f[:relative_path]&.include?("chunks/") }
-            }
-          when :graphviz
-            manifest[:outputs][:graphs] = {
-              viewer_url: "graphs/complete.dot",
-              graph_count: files.count { |f| f[:relative_path]&.end_with?(".dot") }
             }
           end
         end
 
         manifest_path = File.join(output_dir, "manifest.json")
         File.write(manifest_path, JSON.pretty_generate(manifest))
-
-        # Generate checksums file
-        generate_checksums(output_dir, results)
-
         manifest_path
-      end
-
-      def generate_checksums(output_dir, results)
-        checksums = []
-
-        results.each do |_format, files|
-          files.each do |file|
-            if file[:checksum] && file[:relative_path]
-              checksums << "#{file[:checksum]}  #{file[:relative_path]}"
-            end
-          end
-        end
-
-        checksums_path = File.join(output_dir, "checksums.sha256")
-        File.write(checksums_path, checksums.join("\n"))
-      end
-
-      def detect_changes(previous_manifest, updated_data)
-        changes = {
-          added: [],
-          modified: [],
-          removed: []
-        }
-
-        # Simple change detection - would be more sophisticated in production
-        previous_classes = previous_manifest.dig("source", "total_classes") || 0
-        current_classes = updated_data.dig(:metadata, :total_classes) || 0
-
-        if current_classes > previous_classes
-          # Assume new classes were added
-          new_count = current_classes - previous_classes
-          changes[:added] = updated_data[:classes].last(new_count) if updated_data[:classes]
-        end
-
-        changes
-      end
-
-      def load_previous_manifest(manifest_path)
-        return {} unless File.exist?(manifest_path)
-
-        JSON.parse(File.read(manifest_path))
-      rescue JSON::ParserError
-        {}
-      end
-
-      def emit_symbol(symbol, indexed_data, output_dir)
-        # Emit a single symbol across all formats
-        []
-
-        # Would implement per-symbol emission logic here
-        # For now, returning empty array
-      end
-
-      def update_manifest_with_delta(manifest_path, changes, updated_data)
-        manifest = load_previous_manifest(manifest_path)
-
-        manifest["last_update"] = Time.now.utc.iso8601
-        manifest["delta"] = {
-          "added_classes" => changes[:added].map { |c| c[:fqname] },
-          "modified_classes" => changes[:modified].map { |c| c[:fqname] },
-          "removed_classes" => changes[:removed].map { |c| c[:fqname] }
-        }
-
-        File.write(manifest_path, JSON.pretty_generate(manifest))
-      end
-
-      def create_zip_package(output_dir, package_path)
-        require "zip"
-
-        file_count = 0
-        total_size = 0
-
-        Zip::File.open(package_path, Zip::File::CREATE) do |zipfile|
-          Dir.glob("#{output_dir}/**/*").each do |file|
-            next if File.directory?(file)
-
-            relative_path = file.sub("#{output_dir}/", "")
-            zipfile.add(relative_path, file)
-            file_count += 1
-            total_size += File.size(file)
-          end
-        end
-
-        {
-          path: package_path,
-          size_mb: (File.size(package_path) / 1024.0 / 1024.0).round(2),
-          file_count: file_count,
-          uncompressed_size_mb: (total_size / 1024.0 / 1024.0).round(2)
-        }
-      end
-
-      def create_tar_package(output_dir, package_path)
-        # Fallback to tar if zip gem not available
-        system("tar", "-czf", package_path, "-C", File.dirname(output_dir), File.basename(output_dir))
-
-        {
-          path: package_path,
-          size_mb: (File.size(package_path) / 1024.0 / 1024.0).round(2),
-          file_count: Dir.glob("#{output_dir}/**/*").count { |f| !File.directory?(f) }
-        }
       end
     end
   end

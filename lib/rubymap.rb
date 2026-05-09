@@ -62,7 +62,7 @@ module Rubymap
     # @example
     #   result = Rubymap.map("app/models")
     #   result[:classes].each { |c| puts c.name }
-    def map(paths = Dir.pwd, **options)
+    def map(paths = Dir.pwd, **options, &on_step)
       paths = Array(paths)
 
       # Validate paths exist
@@ -72,6 +72,7 @@ module Rubymap
 
       # Create and run the pipeline
       pipeline = Pipeline.new(configuration.merge(options))
+      pipeline.on_step(&on_step) if on_step
       pipeline.run(paths)
     end
 

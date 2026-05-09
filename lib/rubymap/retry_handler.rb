@@ -66,26 +66,22 @@ module Rubymap
           delay = calculate_delay(attempt)
 
           # Log retry attempt if error collector provided
-          if error_collector
-            error_collector.add_info(
-              :runtime,
-              "Retry attempt #{attempt}/#{@max_retries} after #{e.class}: #{e.message}",
-              **context
-            )
-          end
+          error_collector&.add_info(
+            :runtime,
+            "Retry attempt #{attempt}/#{@max_retries} after #{e.class}: #{e.message}",
+            **context
+          )
 
           sleep(delay)
           retry
         else
           # Log final failure if error collector provided
-          if error_collector
-            error_collector.add_error(
-              :runtime,
-              "Failed after #{@max_retries} retries: #{e.message}",
-              severity: :error,
-              **context
-            )
-          end
+          error_collector&.add_error(
+            :runtime,
+            "Failed after #{@max_retries} retries: #{e.message}",
+            severity: :error,
+            **context
+          )
 
           raise
         end

@@ -56,17 +56,7 @@ module Rubymap
         max_file_size: 1_000_000
       },
 
-      # Output settings (nested)
-      output: {
-        directory: ".rubymap",
-        format: "llm",
-        split_files: false,
-        include_source: false,
-        include_todos: false,
-        redact_sensitive: true
-      },
-
-      # Runtime analysis settings
+      # Runtime analysis settings (experimental, not yet fully implemented)
       runtime: {
         enabled: false,
         timeout: 30,
@@ -124,12 +114,6 @@ module Rubymap
         parse_yard: :boolean,
         parse_rbs: :boolean,
         max_file_size: :integer
-      },
-      output: {
-        split_files: :boolean,
-        include_source: :boolean,
-        include_todos: :boolean,
-        redact_sensitive: :boolean
       },
       runtime: {
         enabled: :boolean,
@@ -207,22 +191,18 @@ module Rubymap
       when :development
         self.verbose = true
         self.output_dir = "tmp/rubymap"
-        output["directory"] = "tmp/rubymap"
         runtime["safe_mode"] = false
         cache["enabled"] = false
         filter["include_private"] = true
       when :production
         self.verbose = false
         self.output_dir = "docs/rubymap"
-        output["directory"] = "docs/rubymap"
         runtime["safe_mode"] = true
         cache["enabled"] = true
         filter["include_private"] = false
-        output["redact_sensitive"] = true
       when :ci
         self.verbose = true
         self.output_dir = "artifacts/rubymap"
-        output["directory"] = "artifacts/rubymap"
         runtime["enabled"] = false
         self.parallel = false
         self.progress = false
@@ -236,10 +216,10 @@ module Rubymap
     def validate!
       errors = []
 
-      # Validate format - only LLM format is supported
-      valid_formats = [:llm]
-      unless valid_formats.include?(format.to_sym)
-        errors << "Invalid format: #{format}. Only :llm format is supported."
+      # Validate format against supported formats
+      supported = Rubymap::Emitter::SUPPORTED_FORMATS
+      unless supported.include?(format.to_sym)
+        errors << "Invalid format: #{format}. Supported: #{supported.map(&:inspect).join(", ")}"
       end
 
       # Validate output directory is writable (if it exists)
@@ -299,10 +279,8 @@ module Rubymap
           Parse RBS: #{static["parse_rbs"]}
         
         Output:
-          Directory: #{output["directory"]}
-          Format: #{output["format"]}
-          Split Files: #{output["split_files"]}
-          Include Source: #{output["include_source"]}
+          Directory: #{output_dir}
+          Format: #{format}
         
         Runtime Analysis:
           Enabled: #{runtime["enabled"]}
@@ -327,7 +305,7 @@ module Rubymap
       end
 
       # Copy nested configs
-      %w[static output runtime filter cache].each do |section|
+      %w[static runtime filter cache].each do |section|
         result.send(section).replace(send(section).dup)
       end
 
@@ -341,7 +319,7 @@ module Rubymap
         end
 
         # Merge nested configs
-        %w[static output runtime filter cache].each do |section|
+        %w[static runtime filter cache].each do |section|
           result.send(section).merge!(other_config.send(section))
         end
       end
@@ -355,10 +333,10 @@ module Rubymap
         key_str = key.to_s
 
         # Handle top-level attributes
-        if respond_to?("#{key_str}=") && !%w[static output runtime filter cache].include?(key_str)
+        if respond_to?("#{key_str}=") && !%w[static runtime filter cache].include?(key_str)
           send("#{key_str}=", value)
         # Handle nested configuration sections
-        elsif %w[static output runtime filter cache].include?(key_str)
+        elsif %w[static runtime filter cache].include?(key_str)
           if value.is_a?(Hash)
             current = send(key_str)
             value.each do |k, v|
@@ -370,7 +348,7 @@ module Rubymap
               elsif key_str == "static" && k.to_s == "max_file_size" && v.is_a?(String)
                 v.to_i
               # Apply type coercion for known nested boolean fields
-              elsif %w[enabled safe_mode follow_requires parse_yard parse_rbs split_files include_source include_todos redact_sensitive include_private include_protected].include?(k.to_s) && v.is_a?(String)
+              elsif %w[enabled safe_mode follow_requires parse_yard parse_rbs include_private include_protected].include?(k.to_s) && v.is_a?(String)
                 to_bool(v)
               else
                 v
@@ -398,7 +376,7 @@ module Rubymap
       end
 
       # Compare nested configs
-      %w[static output runtime filter cache].each do |section|
+      %w[static runtime filter cache].each do |section|
         section_sym = section.to_sym
         mine = send(section)
         theirs = other.send(section)
@@ -419,8 +397,9 @@ module Rubymap
     # Override to_h to match expected structure
     def to_hash
       {
+        output_dir: output_dir,
+        format: format,
         static: static,
-        output: output,
         runtime: runtime,
         filter: filter,
         cache: cache
@@ -434,9 +413,6 @@ module Rubymap
       # anyway_config handles this automatically, but we can add custom logic if needed
       if static["paths"]
         static["paths"] = static["paths"].map { |path| expand_env_vars(path) }
-      end
-      if output["directory"]
-        output["directory"] = expand_env_vars(output["directory"])
       end
       if cache["directory"]
         cache["directory"] = expand_env_vars(cache["directory"])

@@ -119,8 +119,8 @@ module Rubymap
         when EncodingError
           :error
         else
-          # For StandardError with Prism::ParseError class method
-          if error.class.name == "Prism::ParseError"
+          # Prism::ParseError is not an Exception subclass, check by class instance
+          if error.instance_of?(Prism::ParseError)
             :critical
           else
             :error
