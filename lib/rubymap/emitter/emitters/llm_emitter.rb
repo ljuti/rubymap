@@ -6,6 +6,7 @@ require "json"
 require "ostruct"
 require_relative "../../templates"
 require_relative "llm/markdown_renderer"
+require_relative "llm/chunk_generator"
 
 module Rubymap
   module Emitter
@@ -71,6 +72,7 @@ module Rubymap
             use_templates: @use_templates,
             template_dir: @template_dir
           )
+          @chunk_generator = nil  # Lazy init after redactor/progress set
         end
 
         def configure(options = {})
@@ -87,22 +89,23 @@ module Rubymap
             security_level: @security_level
           )
           @options[:redact] = true
+          reset_chunk_generator
         end
 
         def configure_security_level(level)
           @security_level = level
-          # Reconfigure redactor if it exists
           if @redactor
             @redactor = Processors::Redactor.new(
               @redaction_config[:patterns],
               security_level: level
             )
           end
+          reset_chunk_generator
         end
 
-        # Progress callback support
         def on_progress(&block)
           @progress_callback = block
+          reset_chunk_generator
         end
 
         def emit(indexed_data)
@@ -229,244 +232,25 @@ module Rubymap
 
         private
 
-        def generate_chunks(indexed_data)
-          chunks = []
-
-          # Handle completely empty or nil data
-          if indexed_data.nil? || indexed_data.empty?
-            return [{
-              chunk_id: "empty_analysis",
-              symbol_id: nil,
-              type: "analysis",
-              content: "# Code Analysis\n\nNote: Some metadata unavailable\n\nNo code structure data was provided for analysis.",
-              tokens: 50,
-              metadata: {
-                chunk_type: "analysis",
-                primary_symbols: [],
-                complexity_level: "low",
-                prerequisites: []
-              }
-            }]
-          end
-
-          # Handle missing classes
-          if indexed_data[:classes].nil? || indexed_data[:classes].empty?
-            chunks << {
-              chunk_id: "no_classes",
-              symbol_id: nil,
-              type: "analysis",
-              content: "# Code Analysis\n\nNo class information available\n\nThe codebase analysis did not find any class definitions.",
-              tokens: 50,
-              metadata: {
-                chunk_type: "analysis",
-                primary_symbols: [],
-                complexity_level: "low",
-                prerequisites: []
-              }
-            }
-          end
-
-          total_items = count_total_items(indexed_data)
-          processed = 0
-
-          # Process classes if available
-          if indexed_data[:classes] && !indexed_data[:classes].empty?
-            indexed_data[:classes].each do |klass|
-              chunks.concat(create_class_chunks(klass))
-              processed += 1
-              report_progress(processed, total_items, "Processing class #{klass[:fqname]}")
-            end
-          end
-
-          # Process modules
-          indexed_data[:modules]&.each do |mod|
-            chunks.concat(create_module_chunks(mod))
-            processed += 1
-            report_progress(processed, total_items, "Processing module #{mod[:fqname]}")
-          end
-
-          # Add hierarchy chunks if we have inheritance data
-          if indexed_data[:graphs] && indexed_data[:graphs][:inheritance]
-            chunks << create_hierarchy_chunk(indexed_data[:graphs][:inheritance])
-            report_progress(processed, total_items, "Generating hierarchy")
-          end
-
-          # Apply cross-linking if enabled
-          if @cross_linker
-            chunks = @cross_linker.link_chunks(chunks)
-          end
-
-          chunks
+        def chunk_generator
+          @chunk_generator ||= ChunkGenerator.new(
+            markdown_renderer: @markdown_renderer,
+            redactor: @redactor,
+            progress_callback: @progress_callback,
+            cross_linker: @cross_linker
+          )
         end
 
-        private
+        def reset_chunk_generator
+          @chunk_generator = nil
+        end
+
+        def generate_chunks(indexed_data)
+          chunk_generator.generate_chunks(indexed_data)
+        end
 
         def count_total_items(indexed_data)
-          count = 0
-          count += indexed_data[:classes].size if indexed_data[:classes]
-          count += indexed_data[:modules].size if indexed_data[:modules]
-          count += 1 if indexed_data.dig(:graphs, :inheritance) # For hierarchy chunk
-          count
-        end
-
-        def report_progress(current, total, message)
-          return unless @progress_callback
-
-          percentage = (current.to_f / total * 100).round(2)
-          @progress_callback.call({
-            current: current,
-            total: total,
-            percentage: percentage,
-            message: message
-          })
-        end
-
-        def create_class_chunks(klass)
-          chunks = []
-
-          # Check if class is large (many methods)
-          total_methods = (klass[:instance_methods]&.size || 0) + (klass[:class_methods]&.size || 0)
-
-          if total_methods > 10  # Split if more than 10 methods
-            # Split large classes across multiple chunks
-            chunks.concat(create_split_class_chunks(klass))
-          else
-            # Single chunk for small classes
-            chunks << create_single_class_chunk(klass)
-          end
-
-          chunks
-        end
-
-        def create_single_class_chunk(klass)
-          content = generate_class_markdown(klass, include_class_keyword: true)
-
-          # Don't add filler - let content be its natural size based on actual data
-
-          {
-            chunk_id: generate_chunk_id(klass[:fqname]),
-            symbol_id: klass[:fqname],
-            type: "class",
-            content: apply_redaction(content),
-            tokens: estimate_tokens(content),
-            metadata: {
-              fqname: klass[:fqname],
-              type: "class",
-              complexity: klass.dig(:metrics, :complexity_score),
-              chunk_type: "class",
-              primary_symbols: [klass[:fqname]],
-              complexity_level: determine_complexity_level(klass),
-              prerequisites: []
-            }
-          }
-        end
-
-        def create_split_class_chunks(klass)
-          chunks = []
-
-          # Overview chunk
-          overview_content = generate_class_overview(klass)
-          chunks << {
-            chunk_id: "#{generate_chunk_id(klass[:fqname])}_overview",
-            symbol_id: klass[:fqname],
-            type: "class_overview",
-            content: apply_redaction(overview_content),
-            tokens: estimate_tokens(overview_content),
-            subtitle: "Overview and Constants",
-            metadata: {
-              fqname: klass[:fqname],
-              part: "overview",
-              chunk_type: "class",
-              primary_symbols: [klass[:fqname]],
-              complexity_level: determine_complexity_level(klass),
-              prerequisites: []
-            }
-          }
-
-          # Core methods chunk (first half of instance methods)
-          if klass[:instance_methods] && !klass[:instance_methods].empty?
-            core_methods = klass[:instance_methods][0...klass[:instance_methods].size / 2]
-            core_content = generate_methods_chunk_content(klass, core_methods, "Core Methods", 2, 3)
-            chunks << {
-              chunk_id: "#{generate_chunk_id(klass[:fqname])}_core",
-              symbol_id: klass[:fqname],
-              type: "methods",
-              content: apply_redaction(core_content),
-              tokens: estimate_tokens(core_content),
-              subtitle: "Core Methods",
-              metadata: {
-                fqname: klass[:fqname],
-                part: "core_methods",
-                chunk_type: "methods",
-                primary_symbols: [klass[:fqname]],
-                complexity_level: "medium",
-                prerequisites: []
-              }
-            }
-          end
-
-          # Helper methods chunk (second half)
-          if klass[:instance_methods] && klass[:instance_methods].size > 1
-            helper_methods = klass[:instance_methods][klass[:instance_methods].size / 2..]
-            helper_content = generate_methods_chunk_content(klass, helper_methods, "Helper Methods", 3, 3)
-            chunks << {
-              chunk_id: "#{generate_chunk_id(klass[:fqname])}_helpers",
-              symbol_id: klass[:fqname],
-              type: "methods",
-              content: apply_redaction(helper_content),
-              tokens: estimate_tokens(helper_content),
-              subtitle: "Helper Methods",
-              metadata: {
-                fqname: klass[:fqname],
-                part: "helper_methods",
-                chunk_type: "methods",
-                primary_symbols: [klass[:fqname]],
-                complexity_level: "low",
-                prerequisites: []
-              }
-            }
-          end
-
-          chunks
-        end
-
-        def create_module_chunks(mod)
-          content = generate_module_markdown(mod)
-
-          [{
-            chunk_id: generate_chunk_id(mod[:fqname]),
-            symbol_id: mod[:fqname],
-            type: "module",
-            content: apply_redaction(content),
-            tokens: estimate_tokens(content),
-            metadata: {
-              fqname: mod[:fqname],
-              type: "module",
-              chunk_type: "module",
-              primary_symbols: [mod[:fqname]],
-              complexity_level: "low",
-              prerequisites: []
-            }
-          }]
-        end
-
-        def create_hierarchy_chunk(inheritance_data)
-          content = generate_hierarchy_markdown(inheritance_data)
-
-          {
-            chunk_id: "hierarchy_overview",
-            symbol_id: nil,
-            type: "hierarchy",
-            content: content,
-            tokens: estimate_tokens(content),
-            metadata: {
-              type: "inheritance_hierarchy",
-              chunk_type: "hierarchy",
-              primary_symbols: [],
-              complexity_level: "low",
-              prerequisites: []
-            }
-          }
+          chunk_generator.count_total_items(indexed_data)
         end
 
         def generate_class_markdown(klass, include_class_keyword: false)
@@ -558,63 +342,12 @@ module Rubymap
           manifest_path
         end
 
-        def estimate_content_size(klass)
-          # Rough estimation based on content
-          size = 100  # Base size
-          size += (klass[:instance_methods]&.size || 0) * 50
-          size += (klass[:class_methods]&.size || 0) * 50
-          size += klass[:documentation]&.length || 0
-          size
-        end
-
-        def estimate_tokens(content)
-          # More accurate approximation: ~4 characters per token for markdown
-          # This accounts for markdown formatting and typical code documentation
-          (content.length / 4.0).ceil
-        end
-
-        def generate_chunk_id(symbol_name)
-          # Create deterministic chunk ID
-          "chunk_#{Digest::MD5.hexdigest(symbol_name.to_s)[0..7]}"
-        end
-
         def format_chunk_filename(chunk, _index)
           @markdown_renderer.chunk_filename(chunk)
         end
 
-        def filter_methods_by_visibility(klass, visibility)
-          # This would filter methods based on visibility
-          # For now, returning empty array as methods don't have visibility in our test data
-          []
-        end
-
         def format_parameters(params)
           @markdown_renderer.format_parameters(params)
-        end
-
-        def build_inheritance_tree(inheritance_data)
-          # Build a tree structure from flat inheritance data
-          tree = {}
-
-          inheritance_data.each do |rel|
-            tree[rel[:to]] ||= []
-            tree[rel[:to]] << rel[:from]
-          end
-
-          tree
-        end
-
-        def render_tree(node, children_hash, level)
-          indent = "  " * level
-          output = "#{indent}- #{node}\n"
-
-          if children_hash.is_a?(Hash) && children_hash[node]
-            children_hash[node].each do |child|
-              output += render_tree(child, children_hash, level + 1)
-            end
-          end
-
-          output
         end
 
         def create_file_info(relative_path, full_path)
@@ -626,49 +359,8 @@ module Rubymap
           }
         end
 
-        def apply_redaction(content)
-          return content unless @redactor
-          @redactor.process_content(content)
-        end
-
-        def apply_class_redaction(klass)
-          return klass unless @redactor
-
-          redacted = klass.dup
-
-          # Redact sensitive method names
-          if redacted[:instance_methods]
-            redacted[:instance_methods] = redacted[:instance_methods].map do |method|
-              @redactor.process_content(method.to_s)
-            end
-          end
-
-          # Redact documentation
-          if redacted[:documentation]
-            redacted[:documentation] = @redactor.process_content(redacted[:documentation])
-          end
-
-          # Sanitize file paths
-          if redacted[:file]
-            redacted[:file] = sanitize_path(redacted[:file])
-          end
-
-          redacted
-        end
-
         def sanitize_path(path)
           @markdown_renderer.sanitize_path(path)
-        end
-
-        def determine_complexity_level(klass)
-          score = klass.dig(:metrics, :complexity_score) || 0
-          if score > 7
-            "high"
-          elsif score > 4
-            "medium"
-          else
-            "low"
-          end
         end
       end
     end

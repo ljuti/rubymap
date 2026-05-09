@@ -338,7 +338,10 @@ module Rubymap
         raise ConfigurationError, "Unsupported format: #{configuration.format}. Supported: #{supported.map(&:inspect).join(", ")}"
       end
 
-      emitter = Emitters::LLM.new
+      emitter = Emitters::LLM.new(
+        use_templates: configuration.respond_to?(:templates_enabled) && configuration.templates_enabled,
+        template_dir: configuration.respond_to?(:template_dir) ? configuration.template_dir : nil
+      )
       begin
         emitter.emit_to_directory(data, configuration.output_dir)
       rescue => e

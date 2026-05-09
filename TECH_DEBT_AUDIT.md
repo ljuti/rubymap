@@ -14,7 +14,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 
 | ID | Severity | Status | Description |
 |----|----------|--------|-------------|
-| F001 | Critical | **OPEN** | 1079-line LLM emitter god file with 48 methods |
+| F001 | Critical | ✅ RESOLVED | 1079-line LLM emitter god file decomposed. Extracted MarkdownRenderer (markdown generation) and ChunkGenerator (chunk orchestration) into separate classes. LLM emitter now 368 lines (66% reduction). |
 | F002 | Critical | **OPEN** | 9 TODO-gated untested behaviors in llm_emitter_spec.rb |
 | F003 | Critical | ✅ RESOLVED | Dead JSON/YAML formatters deleted |
 | F004 | High | ✅ RESOLVED | Format restriction centralized to `Emitter::SUPPORTED_FORMATS` |
@@ -29,11 +29,11 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F013 | Medium | **OPEN** | No pipeline result caching |
 | F014 | Medium | ✅ RESOLVED | Duplicate type coercion removed from Configuration |
 | F015 | Medium | ✅ RESOLVED | `system()` call removed during EmitterManager cleanup (F006) |
-| F016 | Medium | **OPEN** | Dead template system (infrastructure exists, `use_templates?` always false) |
+| F016 | Medium | ✅ RESOLVED | Template system wired: `templates_enabled` and `template_dir` config options added, Pipeline passes them through to LLM emitter and MarkdownRenderer. Templates render successfully. |
 | F017 | Medium | **OPEN** | Inconsistent error recovery strategies across pipeline stages |
-| F018 | Medium | **OPEN** | `concurrent-ruby` not in gemspec, used as optional require |
+| F018 | Medium | ✅ RESOLVED | `concurrent-ruby` optional require removed during EmitterManager cleanup (F006). |
 | F019 | Medium | **OPEN** | 5 pre-existing failing tests (environment-dependent) |
-| F020 | Medium | **OPEN** | `namespace_service_spec.rb` has 202 pending tests, 0 actual |
+| F020 | Medium | ⚠️ AMENDED | `namespace_service_spec.rb` has 202 actual passing tests, not pending. Audit was incorrect. The 130 pending tests are in `rails_mapper_spec.rb` (48), `emitters_spec.rb` (22), etc. |
 | F021 | Medium | ⚠️ AMENDED | `SCHEMA_VERSION`/`NORMALIZER_VERSION` constants ARE used by ProcessingPipeline |
 | F022 | Medium | ⚠️ AMENDED | `RetryHandler` is functional — used for file I/O retry in Pipeline extraction. Not dead code. |
 | F023 | Low | **OPEN** | Pipeline doesn't use Extractor's parallel processing |

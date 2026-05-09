@@ -39,6 +39,10 @@ module Rubymap
       output_dir: ".rubymap",
       format: :llm,
 
+      # Template settings
+      templates_enabled: false,
+      template_dir: nil,
+
       # General settings
       verbose: false,
       parallel: true,
