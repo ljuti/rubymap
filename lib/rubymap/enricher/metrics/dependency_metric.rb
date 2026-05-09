@@ -80,6 +80,9 @@ module Rubymap
 
           # Fan-in: number of classes that depend on this class
           klass.fan_in = graph[:dependents][klass.name].size
+
+          # Also populate the dependencies field with the actual dependencies
+          klass.dependencies = graph[:dependencies][klass.name] if klass.respond_to?(:dependencies=)
         end
 
         def calculate_coupling_strength(klass, graph)

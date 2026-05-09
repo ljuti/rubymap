@@ -44,7 +44,7 @@ module Rubymap
       @max_delay = max_delay
       @exponential_base = exponential_base
       @retry_on = retry_on
-      
+
       yield self if block_given?
     end
 
@@ -57,17 +57,14 @@ module Rubymap
     # @raise The last exception if all retries are exhausted
     def with_retry(error_collector: nil, **context)
       attempt = 0
-      last_error = nil
 
       begin
         attempt += 1
         yield
       rescue *@retry_on => e
-        last_error = e
-
         if attempt <= @max_retries
           delay = calculate_delay(attempt)
-          
+
           # Log retry attempt if error collector provided
           if error_collector
             error_collector.add_info(
@@ -113,7 +110,7 @@ module Rubymap
     private
 
     def calculate_delay(attempt)
-      delay = @base_delay * (@exponential_base ** (attempt - 1))
+      delay = @base_delay * (@exponential_base**(attempt - 1))
       [delay, @max_delay].min
     end
   end

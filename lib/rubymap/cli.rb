@@ -14,8 +14,6 @@ module Rubymap
     end
 
     desc "map [PATH]", "Map a Ruby codebase at the specified path"
-    option :format, type: :string, enum: %w[json yaml llm dot graphviz], default: "llm",
-      desc: "Output format (json, yaml, llm, dot, graphviz)"
     option :output, type: :string, aliases: "-o", default: "rubymap_output",
       desc: "Output directory for the generated map"
     option :exclude, type: :array, aliases: "-e",
@@ -40,7 +38,7 @@ module Rubymap
       puts pastel.cyan.bold("\n🗺️  Rubymap - Ruby Codebase Mapper\n")
       puts pastel.dim("Mapping: #{File.expand_path(path)}")
       puts pastel.dim("Output:  #{options[:output]}")
-      puts pastel.dim("Format:  #{options[:format]}\n")
+      puts pastel.dim("Format:  LLM-optimized documentation\n")
 
       # Run the mapping with progress indicators
       result = if options[:no_progress] || options[:verbose]
@@ -62,29 +60,23 @@ module Rubymap
       puts pastel.dim("Ruby #{RUBY_VERSION}")
     end
 
-    desc "formats", "List available output formats"
+    desc "formats", "Display information about the output format"
     def formats
       pastel = Pastel.new
 
-      formats_info = [
-        ["json", "Machine-readable, ideal for tool integration"],
-        ["yaml", "Human-readable, good for configuration"],
-        ["llm", "Optimized for AI/LLM consumption"],
-        ["dot", "GraphViz format for visualization"]
-      ]
-
-      puts pastel.cyan.bold("\n📋 Available Output Formats\n")
-
-      table = TTY::Table.new(["Format", "Description"], formats_info)
-      renderer = TTY::Table::Renderer::Unicode.new(table, padding: [0, 1])
-
-      puts renderer.render
+      puts pastel.cyan.bold("\n📋 Output Format\n")
+      puts pastel.green("LLM-Optimized Documentation")
+      puts pastel.dim("\nRubymap generates documentation optimized for AI/LLM consumption.")
+      puts pastel.dim("The output includes structured markdown files with:")
+      puts pastel.dim("  • Class and module documentation")
+      puts pastel.dim("  • Method signatures and relationships")
+      puts pastel.dim("  • Dependency analysis and metrics")
+      puts pastel.dim("  • Organized chunk-based structure for efficient processing")
       puts
     end
 
     desc "update [PATH]", "Update existing map with changes"
     option :since, type: :string, desc: "Update files changed since timestamp"
-    option :format, type: :string, enum: %w[json yaml llm dot graphviz], default: "llm"
     option :output, type: :string, aliases: "-o", default: "rubymap_output"
     option :verbose, type: :boolean, aliases: "-v", default: false
     def update(path = ".")
@@ -106,7 +98,6 @@ module Rubymap
     end
 
     desc "view SYMBOL", "Display information about a class or module"
-    option :format, type: :string, default: "text", enum: %w[text json yaml]
     def view(symbol_name)
       pastel = Pastel.new
 
@@ -159,9 +150,7 @@ module Rubymap
       # Gather configuration options
       config = {}
 
-      config["format"] = prompt.select("Default output format:",
-        %w[json yaml llm dot],
-        default: "llm")
+      # Format is always LLM, no need to ask
 
       config["output_dir"] = prompt.ask("Default output directory:",
         default: "rubymap_output")
@@ -230,7 +219,7 @@ module Rubymap
       merged_config = (file_config || {}).merge(cli_options.transform_keys(&:to_s))
 
       Rubymap.configure do |config|
-        config.format = merged_config["format"].to_sym if merged_config["format"]
+        # Format is always LLM
         config.output_dir = merged_config["output"] || merged_config["output_dir"] || "rubymap_output"
         config.verbose = merged_config["verbose"] || false
         config.progress = !merged_config["no_progress"]

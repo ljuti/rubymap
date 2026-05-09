@@ -101,31 +101,31 @@ module Rubymap
 
         # Add to error collector with proper categorization
         category = case error
-                   when SyntaxError, Prism::ParseError
-                     :parse
-                   when EncodingError
-                     :encoding
-                   when Errno::ENOENT, Errno::EACCES
-                     :filesystem
-                   when NoMemoryError
-                     :memory
-                   else
-                     :unknown
-                   end
+        when SyntaxError, Prism::ParseError
+          :parse
+        when EncodingError
+          :encoding
+        when Errno::ENOENT, Errno::EACCES
+          :filesystem
+        when NoMemoryError
+          :memory
+        else
+          :unknown
+        end
 
         severity = case error
-                   when SyntaxError
-                     :critical
-                   when EncodingError
-                     :error
-                   else
-                     # For StandardError with Prism::ParseError class method
-                     if error.class.name == "Prism::ParseError"
-                       :critical
-                     else
-                       :error
-                     end
-                   end
+        when SyntaxError
+          :critical
+        when EncodingError
+          :error
+        else
+          # For StandardError with Prism::ParseError class method
+          if error.class.name == "Prism::ParseError"
+            :critical
+          else
+            :error
+          end
+        end
 
         @error_collector.add_error(
           category,

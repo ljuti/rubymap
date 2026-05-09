@@ -22,7 +22,7 @@ module Rubymap
       :namespace_path, :children, :inheritance_chain,
       :instance_methods, :class_methods,
       :available_instance_methods, :available_class_methods,
-      :mixins, :provenance, :doc, :rubymap,
+      :mixins, :dependencies, :provenance, :doc, :rubymap,
       keyword_init: true
     ) do
       def initialize(**args)
@@ -35,6 +35,7 @@ module Rubymap
         args[:available_instance_methods] ||= []
         args[:available_class_methods] ||= []
         args[:mixins] ||= []
+        args[:dependencies] ||= []
         super
         # Note: Not freezing to allow resolvers to modify
       end

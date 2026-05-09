@@ -246,8 +246,8 @@ module Rubymap
       return nil unless location
       {
         file: location.file,
-        line: location.start_line,
-        column: location.start_column
+        line: location.respond_to?(:start_line) ? location.start_line : location.line,
+        column: location.respond_to?(:start_column) ? location.start_column : nil
       }
     end
 
@@ -420,11 +420,11 @@ module Rubymap
         issues << {type: :high_complexity, value: symbol.total_complexity}
       end
 
-      if symbol.respond_to?(:cohesion_score) && symbol.cohesion_score < 0.3
+      if symbol.respond_to?(:cohesion_score) && symbol.cohesion_score && symbol.cohesion_score < 0.3
         issues << {type: :low_cohesion, value: symbol.cohesion_score}
       end
 
-      if symbol.respond_to?(:fan_out) && symbol.fan_out > 10
+      if symbol.respond_to?(:fan_out) && symbol.fan_out && symbol.fan_out > 10
         issues << {type: :high_coupling, value: symbol.fan_out}
       end
 

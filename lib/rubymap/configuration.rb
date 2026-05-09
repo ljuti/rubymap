@@ -236,10 +236,10 @@ module Rubymap
     def validate!
       errors = []
 
-      # Validate format
-      valid_formats = [:json, :yaml, :llm, :graphviz, :dot]
+      # Validate format - only LLM format is supported
+      valid_formats = [:llm]
       unless valid_formats.include?(format.to_sym)
-        errors << "Invalid format: #{format}. Must be one of: #{valid_formats.join(", ")}"
+        errors << "Invalid format: #{format}. Only :llm format is supported."
       end
 
       # Validate output directory is writable (if it exists)

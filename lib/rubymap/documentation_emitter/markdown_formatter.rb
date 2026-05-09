@@ -323,10 +323,12 @@ module Rubymap
             lines << if info[:parent]
               "#{class_name} < #{info[:parent]}"
             else
-              class_name.to_s
+              "#{class_name} (base class)"
             end
-            info[:children].each do |child|
-              lines << "  └── #{child}"
+            if info[:children] && !info[:children].empty?
+              info[:children].each do |child|
+                lines << "  └── #{child}"
+              end
             end
           end
           lines << "```"
@@ -335,17 +337,20 @@ module Rubymap
 
         if relationships[:dependencies] && !relationships[:dependencies].empty?
           lines << "### Dependencies"
+          has_deps = false
           relationships[:dependencies].each do |class_name, deps|
             depends_on = deps[:depends_on] || []
             depended_by = deps[:depended_by] || []
             next if depends_on.empty? && depended_by.empty?
 
+            has_deps = true
             lines << ""
             lines << "**#{class_name}**"
             lines << "- Depends on: #{depends_on.map { |d| "`#{d}`" }.join(", ")}" unless depends_on.empty?
             lines << "- Depended by: #{depended_by.map { |d| "`#{d}`" }.join(", ")}" unless depended_by.empty?
           end
-          lines << ""
+          lines << "" if has_deps
+          lines << "*No external dependencies detected*" unless has_deps
         end
 
         if relationships[:circular_dependencies] && !relationships[:circular_dependencies].empty?
@@ -370,14 +375,14 @@ module Rubymap
           end
 
           if metrics[:complexity][:average]
-            lines << "- **Average Complexity**: #{metrics[:complexity][:average]}"
+            lines << "- **Average Complexity**: #{sprintf("%.2f", metrics[:complexity][:average])}"
           end
 
-          if metrics[:complexity][:distribution]
+          if metrics[:complexity][:distribution] && !metrics[:complexity][:distribution].empty?
             lines << ""
             lines << "**Distribution**:"
             metrics[:complexity][:distribution].each do |category, count|
-              lines << "- #{category}: #{count} methods"
+              lines << "- #{category.to_s.capitalize}: #{count} method#{(count == 1) ? "" : "s"}"
             end
           end
 

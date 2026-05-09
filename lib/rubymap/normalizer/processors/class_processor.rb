@@ -58,6 +58,7 @@ module Rubymap
             superclass: data[:superclass],
             location: normalize_location(data[:location]),
             namespace_path: extract_namespace_path(fqname),
+            dependencies: normalize_dependencies(data[:dependencies]),
             provenance: create_provenance(data),
             doc: data[:doc],
             rubymap: data[:rubymap]
@@ -94,6 +95,21 @@ module Rubymap
 
         def extract_namespace_path(fqname)
           normalizers.name_normalizer.extract_namespace_path(fqname)
+        end
+
+        def normalize_dependencies(dependencies_data)
+          return [] unless dependencies_data
+
+          # Handle DependencyInfo objects from the extractor
+          dependencies_data.map do |dep|
+            if dep.respond_to?(:name)
+              # It's a DependencyInfo object
+              dep.name
+            else
+              # It's already a string
+              dep
+            end
+          end.compact.uniq
         end
 
         def process_mixins(raw_data, normalized_class)

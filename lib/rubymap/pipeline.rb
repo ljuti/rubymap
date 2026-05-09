@@ -121,7 +121,7 @@ module Rubymap
         result[:errors] = @error_collector.to_h[:errors] if configuration.verbose
       end
 
-      log "Pipeline completed #{@error_collector.critical? ? 'with critical errors' : 'successfully'}!"
+      log "Pipeline completed #{@error_collector.critical? ? "with critical errors" : "successfully"}!"
       result
     end
 
@@ -188,11 +188,13 @@ module Rubymap
             log "  Warning: Failed to extract from #{path}: #{e.message}"
           end
         else
-          @error_collector.add_warning(
-            :filesystem,
-            "Path is not a directory or Ruby file",
-            file: path
-          ) unless File.directory?(path)
+          unless File.directory?(path)
+            @error_collector.add_warning(
+              :filesystem,
+              "Path is not a directory or Ruby file",
+              file: path
+            )
+          end
         end
       end
 
@@ -319,39 +321,27 @@ module Rubymap
         raise ConfigurationError, "Cannot create output directory: #{configuration.output_dir}"
       end
 
-      case configuration.format
-      when :json
-        emitter = Emitters::JSON.new
-        output = emitter.emit(data)
-        write_output("map.json", output)
-      when :yaml
-        emitter = Emitters::YAML.new
-        output = emitter.emit(data)
-        write_output("map.yaml", output)
-      when :llm
-        emitter = Emitters::LLM.new
-        begin
-          emitter.emit_to_directory(data, configuration.output_dir)
-        rescue => e
-          @error_collector.add_error(
-            :output,
-            "Failed to emit LLM format: #{e.message}",
-            severity: :error
-          )
-          raise
-        end
-        {format: :llm, output_dir: configuration.output_dir}
-      when :graphviz, :dot
-        emitter = Emitters::GraphViz.new
-        output = emitter.emit(data)
-        write_output("map.dot", output)
-      else
+      # Simplified emit phase - only LLM format is supported
+      if configuration.format != :llm
         @error_collector.add_critical(
           :config,
-          "Unknown output format: #{configuration.format}"
+          "Only :llm format is supported. Got: #{configuration.format}"
         )
-        raise ConfigurationError, "Unknown format: #{configuration.format}"
+        raise ConfigurationError, "Only :llm format is supported. Please use --format llm"
       end
+
+      emitter = Emitters::LLM.new
+      begin
+        emitter.emit_to_directory(data, configuration.output_dir)
+      rescue => e
+        @error_collector.add_error(
+          :output,
+          "Failed to emit LLM format: #{e.message}",
+          severity: :error
+        )
+        raise
+      end
+      {format: :llm, output_dir: configuration.output_dir}
     rescue => e
       unless e.is_a?(ConfigurationError)
         @error_collector.add_error(

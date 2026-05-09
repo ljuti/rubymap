@@ -336,28 +336,7 @@ module Rubymap
         def create_single_class_chunk(klass)
           content = generate_class_markdown(klass, include_class_keyword: true)
 
-          # Always ensure minimum content size - expand content to meet requirements
-          while content.length < 2000
-            content += "\n\n## Additional Details\n\n"
-            content += "### Design Considerations\n\n"
-            content += "The #{klass[:fqname]} class follows object-oriented design principles to ensure maintainability and extensibility.\n"
-            content += "It encapsulates related functionality and data, providing a clean interface for interaction with other parts of the system.\n\n"
-
-            content += "### Usage Patterns\n\n"
-            content += "This class is typically used in the following contexts:\n"
-            content += "- Creating and managing #{(klass[:fqname] || "entity").to_s.split("::").last.downcase} instances\n"
-            content += "- Performing operations specific to the #{klass[:fqname]} domain\n"
-            content += "- Integrating with other components through well-defined interfaces\n\n"
-
-            content += "### Testing Approach\n\n"
-            content += "When testing #{klass[:fqname]}, consider:\n"
-            content += "- Unit tests for individual methods and behaviors\n"
-            content += "- Integration tests for interactions with dependencies\n"
-            content += "- Edge cases and error handling scenarios\n\n"
-
-            # Break if we've added enough
-            break if content.length >= 2000
-          end
+          # Don't add filler - let content be its natural size based on actual data
 
           {
             chunk_id: generate_chunk_id(klass[:fqname]),
@@ -547,16 +526,40 @@ module Rubymap
           end
           markdown << ""
 
-          # Metrics
-          if klass[:metrics]
-            markdown << "## Code Metrics"
-            markdown << ""
+          # Real Metrics from enriched data
+          markdown << "## Quality Metrics"
+          markdown << ""
+
+          # Complexity metrics
+          if klass[:cyclomatic_complexity] || klass[:total_complexity] || klass.dig(:metrics, :complexity_score)
             markdown << "### Complexity Analysis"
-            markdown << "- **Complexity Score:** #{klass.dig(:metrics, :complexity_score) || "N/A"}"
-            markdown << "- **Public API Surface:** #{klass.dig(:metrics, :public_api_surface) || "N/A"}"
-            markdown << "- **Test Coverage:** #{klass.dig(:metrics, :test_coverage) || "N/A"}%"
+            markdown << "- **Cyclomatic Complexity**: #{klass[:cyclomatic_complexity] || klass.dig(:metrics, :cyclomatic_complexity) || "N/A"}"
+            markdown << "- **Total Complexity**: #{klass[:total_complexity] || klass.dig(:metrics, :total_complexity) || "N/A"}"
+            markdown << "- **Complexity Score**: #{klass[:complexity_score] || klass.dig(:metrics, :complexity_score) || "N/A"}"
             markdown << ""
-            markdown << "These metrics provide insights into the maintainability and quality of this class."
+          end
+
+          # Quality scores
+          if klass[:quality_score] || klass[:maintainability_score]
+            markdown << "### Quality Scores"
+            markdown << "- **Quality Score**: #{sprintf("%.2f", klass[:quality_score] || 0)}"
+            markdown << "- **Maintainability Score**: #{sprintf("%.2f", klass[:maintainability_score] || 0)}"
+            markdown << ""
+          end
+
+          # API metrics
+          if klass[:public_api_surface] || klass.dig(:metrics, :public_api_surface)
+            markdown << "### API Metrics"
+            markdown << "- **Public API Surface**: #{klass[:public_api_surface] || klass.dig(:metrics, :public_api_surface)} public methods"
+            markdown << "- **Instance Methods**: #{klass[:instance_methods]&.count || 0}"
+            markdown << "- **Class Methods**: #{klass[:class_methods]&.count || 0}"
+            markdown << ""
+          end
+
+          # Test coverage if available
+          if klass[:test_coverage] || klass.dig(:metrics, :test_coverage)
+            markdown << "### Test Coverage"
+            markdown << "- **Coverage**: #{sprintf("%.1f%%", klass[:test_coverage] || klass.dig(:metrics, :test_coverage) || 0.0)}"
             markdown << ""
           end
 
@@ -593,11 +596,50 @@ module Rubymap
           markdown << ""
           markdown << "# Relationships"
           markdown << ""
-          markdown << "This class is part of the application's domain model and interacts with other components through:"
-          markdown << "- Inheritance from #{klass[:superclass] || "Object"}"
-          markdown << "- Method calls to related classes"
-          markdown << "- Shared interfaces and protocols"
-          markdown << ""
+
+          # Show actual inheritance
+          if klass[:superclass] && !klass[:superclass].empty?
+            markdown << "## Inheritance"
+            markdown << "- Inherits from: #{klass[:superclass]}"
+            markdown << ""
+          end
+
+          # Show actual dependencies
+          if klass[:dependencies] && !klass[:dependencies].empty?
+            markdown << "## Dependencies"
+            klass[:dependencies].each do |dep|
+              markdown << "- #{dep}"
+            end
+            markdown << ""
+          end
+
+          # Show actual mixins
+          if klass[:mixins] && !klass[:mixins].empty?
+            markdown << "## Mixins"
+            klass[:mixins].each do |mixin|
+              mod = mixin[:module] || mixin["module"]
+              type = mixin[:type] || mixin["type"]
+              markdown << "- #{type}: #{mod}" if mod
+            end
+            markdown << ""
+          end
+
+          # Show coupling metrics
+          if klass[:fan_in] || klass[:fan_out]
+            markdown << "## Coupling Metrics"
+            markdown << "- **Fan-in**: #{klass[:fan_in] || 0} (classes that depend on this class)"
+            markdown << "- **Fan-out**: #{klass[:fan_out] || 0} (classes this class depends on)"
+            markdown << "- **Coupling Strength**: #{klass[:coupling_strength] || 0.0}"
+            markdown << ""
+          end
+
+          # If no relationships, show a simple message
+          if (!klass[:superclass] || klass[:superclass].empty?) &&
+              (!klass[:dependencies] || klass[:dependencies].empty?) &&
+              (!klass[:mixins] || klass[:mixins].empty?)
+            markdown << "This class has no external dependencies or relationships."
+            markdown << ""
+          end
 
           markdown.join("\n")
         end

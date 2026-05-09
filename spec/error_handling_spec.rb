@@ -45,7 +45,7 @@ RSpec.describe "Rubymap Error Handling" do
           Rubymap.configure do |config|
             config.verbose = true
           end
-          
+
           result = Rubymap.map([file_path])
 
           expect(result[:errors]).to be_an(Array) if result[:errors]
@@ -100,12 +100,12 @@ RSpec.describe "Rubymap Error Handling" do
         with_temp_ruby_file(invalid_encoding_code) do |file_path|
           Rubymap.configure { |c| c.verbose = true }
           result = Rubymap.map([file_path])
-          
+
           if result[:errors]
             encoding_errors = result[:errors].select { |e| e[:category] == :encoding }
             expect(encoding_errors).not_to be_empty if encoding_errors.any?
           end
-          
+
           # At minimum, we should have error summary
           expect(result[:error_summary]).to be_a(Hash) if result[:error_summary]
         ensure
