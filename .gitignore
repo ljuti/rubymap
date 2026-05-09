@@ -12,3 +12,5 @@
 .claude/settings.local.json
 .rubymap
 rubymap_output
+.nmux/
+docs/nmux/
