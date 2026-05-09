@@ -73,7 +73,7 @@ RSpec.describe Rubymap::Configuration do
               
             output:
               directory: custom_output
-              format: json
+              format: llm
               split_files: true
               
             runtime:
@@ -101,7 +101,7 @@ RSpec.describe Rubymap::Configuration do
           config = described_class.load_from_string(yaml_content)
 
           expect(config.output["directory"]).to eq("custom_output")
-          expect(config.output["format"]).to eq("json")
+          expect(config.output["format"]).to eq("llm")
           expect(config.output["split_files"]).to be true
         end
 
@@ -139,7 +139,7 @@ RSpec.describe Rubymap::Configuration do
         before do
           config_file.write(<<~YAML)
             output_dir: custom_dir
-            format: json
+            format: llm
             verbose: true
           YAML
           config_file.rewind
@@ -149,7 +149,7 @@ RSpec.describe Rubymap::Configuration do
           config = described_class.load_from_file(config_file.path)
 
           expect(config.output_dir).to eq("custom_dir")
-          expect(config.format).to eq(:json)
+          expect(config.format).to eq(:llm)
           expect(config.verbose).to be true
         end
       end
@@ -167,7 +167,7 @@ RSpec.describe Rubymap::Configuration do
       it "creates configuration from hash" do
         config = described_class.from_hash({
           output_dir: "from_hash",
-          format: "yaml",
+          format: "llm",
           verbose: true,
           static: {
             paths: ["src/"]
@@ -175,7 +175,7 @@ RSpec.describe Rubymap::Configuration do
         })
 
         expect(config.output_dir).to eq("from_hash")
-        expect(config.format).to eq(:yaml)
+        expect(config.format).to eq(:llm)
         expect(config.verbose).to be true
         expect(config.static["paths"]).to eq(["src/"])
       end
@@ -191,13 +191,13 @@ RSpec.describe Rubymap::Configuration do
 
     it "loads from RUBYMAP_ prefixed environment variables" do
       ENV["RUBYMAP_OUTPUT_DIR"] = "env_output"
-      ENV["RUBYMAP_FORMAT"] = "json"
+      ENV["RUBYMAP_FORMAT"] = "llm"
       ENV["RUBYMAP_VERBOSE"] = "true"
 
       config = described_class.new
 
       expect(config.output_dir).to eq("env_output")
-      expect(config.format).to eq(:json)
+      expect(config.format).to eq(:llm)
       expect(config.verbose).to be true
     end
 
@@ -442,7 +442,7 @@ RSpec.describe Rubymap::Configuration do
   describe "#to_yaml" do
     it "serializes to YAML" do
       config.output_dir = "test_dir"
-      config.format = :json
+      config.format = :llm
 
       yaml = config.to_yaml
       parsed = YAML.safe_load(yaml)
@@ -496,9 +496,9 @@ RSpec.describe Rubymap::Configuration do
 
     it "converts format string to symbol" do
       config = described_class.new
-      config.format = "json"
+      config.format = "llm"
 
-      expect(config.format).to eq(:json)
+      expect(config.format).to eq(:llm)
     end
   end
 

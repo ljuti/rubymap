@@ -16,7 +16,7 @@ module Rubymap
         @transactional = options[:transactional] || false
       end
 
-      def emit_all(indexed_data, output_dir, formats: [:json, :yaml, :llm, :graphviz])
+      def emit_all(indexed_data, output_dir, formats: [:llm])
         ensure_output_directory(output_dir)
 
         results = {}
@@ -53,16 +53,10 @@ module Rubymap
           emitter = create_emitter(format, **config)
 
           case format
-          when :json, :yaml
-            results[format] = emitter.emit_to_directory(indexed_data, output_dir)
           when :llm
-            llm_dir = File.join(output_dir, "chunks")
-            results[format] = emitter.emit_to_directory(indexed_data, llm_dir)
-          when :graphviz
-            graphs_dir = File.join(output_dir, "graphs")
-            results[format] = emitter.emit_to_directory(indexed_data, graphs_dir,
-              include_makefile: config[:include_makefile],
-              include_readme: config[:include_readme])
+            results[format] = emitter.emit_to_directory(indexed_data, output_dir)
+          else
+            raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
           end
         end
 
@@ -215,26 +209,17 @@ module Rubymap
         case format
         when :llm
           emitter.emit_to_directory(indexed_data, output_dir)
-        when :graphviz
-          graphs_dir = File.join(output_dir, "graphs")
-          emitter.emit_to_directory(indexed_data, graphs_dir)
         else
-          emitter.emit_to_directory(indexed_data, output_dir)
+          raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
         end
       end
 
       def create_emitter(format, **config)
         case format
-        when :json
-          Emitters::JSON.new(**config)
-        when :yaml
-          Emitters::YAML.new(**config)
         when :llm
           Emitters::LLM.new(**config)
-        when :graphviz, :dot
-          Emitters::GraphViz.new(**config)
         else
-          raise ArgumentError, "Unknown format: #{format}"
+          raise ArgumentError, "Unknown format: #{format}. Only :llm format is supported."
         end
       end
 

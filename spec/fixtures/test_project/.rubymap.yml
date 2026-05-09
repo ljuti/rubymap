@@ -1,5 +1,5 @@
 # Rubymap configuration file
-format: json
+format: llm
 output_dir: .rubymap
 verbose: false
 exclude_patterns:

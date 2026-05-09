@@ -32,11 +32,11 @@ RSpec.describe "rubymap CLI", type: :cli do
 
         it "generates output with project metadata" do
           within_test_project do
-            result = run_cli("map --format json")
+            result = run_cli("map")
 
             expect(result).to be_success
-            json_files = Dir.glob("rubymap_output/**/*.json")
-            expect(json_files).not_to be_empty
+            # LLM format generates markdown and manifest.json
+            expect(File.exist?("rubymap_output/manifest.json")).to be true
           end
         end
       end
@@ -93,70 +93,13 @@ RSpec.describe "rubymap CLI", type: :cli do
     end
   end
 
-  describe "output format options" do
-    describe "--format json" do
-      context "when mapping a simple Ruby project" do
-        it "generates structured JSON output" do
-          within_test_project do
-            result = run_cli("map --format json")
+  describe "output format" do
 
-            expect(result).to be_success
-
-            # Check that JSON files are created
-            json_files = Dir.glob("rubymap_output/**/*.json")
-            expect(json_files).not_to be_empty
-
-            # Verify JSON is valid
-            json_files.each do |file|
-              expect { JSON.parse(File.read(file)) }.not_to raise_error
-            end
-          end
-        end
-
-        it "includes classes, modules, and methods in JSON format" do
-          within_test_project do
-            result = run_cli("map --format json --output json_test")
-
-            expect(result).to be_success
-
-            # Look for manifest or main output file
-            json_files = Dir.glob("json_test/**/*.json")
-            expect(json_files).not_to be_empty
-
-            # Parse one of the JSON files to check structure
-            content = JSON.parse(File.read(json_files.first))
-            expect(content).to be_a(Hash)
-          end
-        end
-      end
-    end
-
-    describe "--format yaml" do
-      it "generates YAML output instead of JSON" do
-        within_test_project do
-          result = run_cli("map --format yaml")
-
-          expect(result).to be_success
-
-          # Check for YAML files
-          yaml_files = Dir.glob("rubymap_output/**/*.{yml,yaml}")
-          expect(yaml_files).not_to be_empty
-
-          # Verify YAML is valid syntax (don't load objects for security)
-          yaml_files.each do |file|
-            content = File.read(file)
-            # Just check it's valid YAML syntax
-            expect { YAML.parse(content) }.not_to raise_error
-          end
-        end
-      end
-    end
-
-    describe "--format llm" do
+    describe "LLM format (default and only format)" do
       context "when generating LLM-friendly output" do
         it "creates chunked documentation files" do
           within_test_project do
-            result = run_cli("map --format llm")
+            result = run_cli("map")
 
             expect(result).to be_success
 
@@ -168,7 +111,7 @@ RSpec.describe "rubymap CLI", type: :cli do
 
         it "includes human-readable descriptions of code structure" do
           within_test_project do
-            result = run_cli("map --format llm")
+            result = run_cli("map")
 
             expect(result).to be_success
 
@@ -183,7 +126,7 @@ RSpec.describe "rubymap CLI", type: :cli do
 
         it "creates markdown files for each major component" do
           within_test_project do
-            result = run_cli("map --format llm")
+            result = run_cli("map")
 
             expect(result).to be_success
 
@@ -198,19 +141,6 @@ RSpec.describe "rubymap CLI", type: :cli do
       end
     end
 
-    describe "--format graphviz" do
-      it "generates dependency diagrams" do
-        within_test_project do
-          result = run_cli("map --format dot")
-
-          expect(result).to be_success
-
-          # Check for DOT files
-          dot_files = Dir.glob("rubymap_output/**/*.{dot,gv}")
-          expect(dot_files).not_to be_empty
-        end
-      end
-    end
   end
 
   describe "output directory options" do
@@ -369,7 +299,7 @@ RSpec.describe "rubymap CLI", type: :cli do
             File.write("test.rb", "class Test; end")
 
             # Create custom config
-            File.write("custom.yml", {format: "json", output_dir: "custom_out"}.to_yaml)
+            File.write("custom.yml", {output_dir: "custom_out"}.to_yaml)
 
             result = run_cli("map --config custom.yml")
 

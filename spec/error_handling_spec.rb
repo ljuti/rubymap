@@ -283,7 +283,7 @@ RSpec.describe "Rubymap Error Handling" do
           begin
             config = Rubymap::Configuration.new(
               output_dir: readonly_dir,
-              format: :json
+              format: :llm
             )
             expect {
               pipeline = Rubymap::Pipeline.new(config)

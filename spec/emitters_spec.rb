@@ -47,112 +47,6 @@ RSpec.describe "Rubymap::Emitters" do
     }
   end
 
-  describe "JSON emitter", skip: "JSON emitter implementation pending" do
-    let(:json_emitter) { Rubymap::Emitters::JSON.new }
-
-    describe "#emit" do
-      context "when generating standard JSON output" do
-        it "creates structured JSON with all symbol information" do
-          # Given: Indexed codebase data
-          # When: Emitting as JSON format
-          # Then: Should create valid, well-structured JSON
-          output = json_emitter.emit(sample_indexed_data)
-
-          parsed_output = JSON.parse(output)
-
-          expect(parsed_output).to have_key("metadata")
-          expect(parsed_output).to have_key("classes")
-          expect(parsed_output).to have_key("graphs")
-          skip "Implementation pending"
-        end
-
-        it "includes project metadata in JSON output" do
-          output = json_emitter.emit(sample_indexed_data)
-          parsed_output = JSON.parse(output)
-
-          metadata = parsed_output["metadata"]
-          expect(metadata["project_name"]).to eq("TestApp")
-          expect(metadata["total_classes"]).to eq(25)
-          skip "Implementation pending"
-        end
-
-        it "preserves class hierarchy information" do
-          output = json_emitter.emit(sample_indexed_data)
-          parsed_output = JSON.parse(output)
-
-          user_class = parsed_output["classes"].find { |c| c["fqname"] == "User" }
-          expect(user_class["superclass"]).to eq("ApplicationRecord")
-          expect(user_class["instance_methods"]).to include("save", "full_name")
-          skip "Implementation pending"
-        end
-
-        it "includes graph relationships" do
-          output = json_emitter.emit(sample_indexed_data)
-          parsed_output = JSON.parse(output)
-
-          inheritance_graph = parsed_output["graphs"]["inheritance"]
-          expect(inheritance_graph).to include(
-            have_attributes("from" => "User", "to" => "ApplicationRecord")
-          )
-          skip "Implementation pending"
-        end
-      end
-
-      context "when handling large datasets" do
-        it "efficiently serializes thousands of classes" do
-          skip "Implementation pending"
-        end
-
-        it "produces properly formatted JSON without corruption" do
-          skip "Implementation pending"
-        end
-      end
-    end
-
-    describe "#emit_to_files" do
-      let(:output_directory) { "spec/tmp/json_output" }
-
-      it "creates organized directory structure" do
-        json_emitter.emit_to_files(sample_indexed_data, output_directory)
-
-        expect(File).to exist("#{output_directory}/map.json")
-        expect(File).to exist("#{output_directory}/symbols/classes.json")
-        expect(File).to exist("#{output_directory}/graphs/inheritance.json")
-        skip "Implementation pending"
-      end
-
-      it "shards large symbol collections into manageable files" do
-        skip "Implementation pending"
-      end
-    end
-  end
-
-  describe "YAML emitter", skip: "YAML emitter implementation pending" do
-    let(:yaml_emitter) { Rubymap::Emitters::YAML.new }
-
-    describe "#emit" do
-      context "when generating YAML output" do
-        it "creates human-readable YAML with proper formatting" do
-          output = yaml_emitter.emit(sample_indexed_data)
-
-          parsed_output = YAML.safe_load(output)
-          expect(parsed_output).to have_key("metadata")
-          expect(parsed_output).to have_key("classes")
-          skip "Implementation pending"
-        end
-
-        it "maintains data integrity in YAML format" do
-          output = yaml_emitter.emit(sample_indexed_data)
-          parsed_output = YAML.safe_load(output)
-
-          user_class = parsed_output["classes"].find { |c| c["fqname"] == "User" }
-          expect(user_class["metrics"]["test_coverage"]).to eq(85.0)
-          skip "Implementation pending"
-        end
-      end
-    end
-  end
-
   describe "LLM-friendly emitter" do
     let(:llm_emitter) { Rubymap::Emitters::LLM.new }
 
@@ -260,52 +154,6 @@ RSpec.describe "Rubymap::Emitters" do
     end
   end
 
-  describe "GraphViz emitter", skip: "GraphViz emitter implementation pending" do
-    let(:graphviz_emitter) { Rubymap::Emitters::GraphViz.new }
-
-    describe "#emit" do
-      context "when generating dependency diagrams" do
-        it "creates valid Graphviz DOT notation" do
-          output = graphviz_emitter.emit(sample_indexed_data)
-
-          expect(output).to include("digraph")
-          expect(output).to include("\"User\" -> \"ApplicationRecord\"")
-          skip "Implementation pending"
-        end
-
-        it "includes visual styling for different node types" do
-          output = graphviz_emitter.emit(sample_indexed_data)
-
-          expect(output).to match(/User.*\[.*shape=box.*\]/)  # Class styling
-          expect(output).to match(/ApplicationRecord.*\[.*color=blue.*\]/)  # Superclass styling
-          skip "Implementation pending"
-        end
-
-        it "handles large graphs without visual clutter" do
-          skip "Implementation pending"
-        end
-      end
-
-      context "when generating inheritance diagrams" do
-        it "creates clear inheritance hierarchies" do
-          output = graphviz_emitter.emit_inheritance_graph(sample_indexed_data)
-
-          expect(output).to include("\"User\" -> \"ApplicationRecord\" [label=\"inherits\"]")
-          skip "Implementation pending"
-        end
-      end
-
-      context "when generating dependency diagrams" do
-        it "shows class-level dependencies" do
-          output = graphviz_emitter.emit_dependency_graph(sample_indexed_data)
-
-          expect(output).to include("\"Admin::UsersController\" -> \"User\" [label=\"depends_on\"]")
-          skip "Implementation pending"
-        end
-      end
-    end
-  end
-
   describe "output validation" do
     context "when validating generated output" do
       it "ensures all referenced symbols are defined" do
@@ -340,10 +188,6 @@ RSpec.describe "Rubymap::Emitters" do
 
   describe "configuration and customization" do
     context "when customizing output format" do
-      it "supports custom JSON schema versions" do
-        skip "Implementation pending"
-      end
-
       it "allows filtering of output content" do
         skip "Implementation pending"
       end
