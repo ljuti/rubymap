@@ -7,10 +7,12 @@ module Rubymap
     # Information about a Ruby method definition
     class MethodInfo
       attr_accessor :name, :visibility, :receiver_type, :params, :location,
-        :doc, :namespace, :owner, :rubymap
+        :doc, :namespace, :owner, :rubymap,
+        :calls_made, :branches, :loops, :conditionals, :body_lines
 
       def initialize(name:, visibility: "public", receiver_type: "instance",
-        params: [], location: nil, doc: nil, namespace: nil, owner: nil, rubymap: nil)
+        params: [], location: nil, doc: nil, namespace: nil, owner: nil, rubymap: nil,
+        calls_made: [], branches: 0, loops: 0, conditionals: 0, body_lines: 0)
         @name = name
         @visibility = visibility
         @receiver_type = receiver_type
@@ -20,6 +22,11 @@ module Rubymap
         @namespace = namespace
         @owner = owner
         @rubymap = rubymap
+        @calls_made = calls_made
+        @branches = branches
+        @loops = loops
+        @conditionals = conditionals
+        @body_lines = body_lines
       end
 
       def full_name
@@ -46,7 +53,12 @@ module Rubymap
           doc: doc,
           namespace: namespace,
           owner: owner,
-          rubymap: rubymap
+          rubymap: rubymap,
+          calls_made: calls_made,
+          branches: branches,
+          loops: loops,
+          conditionals: conditionals,
+          body_lines: body_lines
         }.compact
       end
     end

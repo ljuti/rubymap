@@ -205,8 +205,12 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     end
 
     describe "#handle_method" do
-      it "delegates to method extractor and visits children" do
+      it "delegates to method extractor, runs body visitor, and visits children" do
         node = double("method_node")
+        body_node = double("body_node")
+        allow(node).to receive(:name).and_return(double(to_s: "test_method"))
+        allow(node).to receive(:body).and_return(body_node)
+        allow(node).to receive(:location).and_return(nil)
 
         method_extractor = visitor.instance_variable_get(:@extractors)[:method]
         expect(method_extractor).to receive(:extract).with(node)

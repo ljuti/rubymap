@@ -266,6 +266,58 @@ RSpec.describe Rubymap::Extractor::ExtractionContext do
     end
   end
 
+  describe "method tracking" do
+    describe "#current_method" do
+      it "returns nil by default" do
+        expect(context.current_method).to be_nil
+      end
+    end
+
+    describe "#with_method" do
+      it "sets current_method during block" do
+        context.with_method("save") do
+          expect(context.current_method).to eq("save")
+        end
+        expect(context.current_method).to be_nil
+      end
+
+      it "restores previous current_method after block" do
+        context.instance_variable_set(:@current_method, "old")
+        context.with_method("new") do
+          expect(context.current_method).to eq("new")
+        end
+        expect(context.current_method).to eq("old")
+      end
+
+      it "restores current_method after exception" do
+        context.instance_variable_set(:@current_method, "original")
+        expect {
+          context.with_method("risky") do
+            expect(context.current_method).to eq("risky")
+            raise "test error"
+          end
+        }.to raise_error("test error")
+        expect(context.current_method).to eq("original")
+      end
+    end
+
+    describe "#with_class" do
+      it "sets current_class during block" do
+        context.with_class("User") do
+          expect(context.current_class).to eq("User")
+        end
+        expect(context.current_class).to be_nil
+      end
+
+      it "restores previous current_class after block" do
+        context.instance_variable_set(:@current_class, "OldClass")
+        context.with_class("NewClass") do
+          expect(context.current_class).to eq("NewClass")
+        end
+        expect(context.current_class).to eq("OldClass")
+      end
+    end
+  end
   describe "comments management" do
     it "allows setting comments" do
       comments = [double("comment1"), double("comment2")]

@@ -4,13 +4,14 @@ module Rubymap
   class Extractor
     # Manages the extraction context during AST traversal
     class ExtractionContext
-      attr_reader :current_class
+      attr_reader :current_class, :current_method
       attr_accessor :comments
 
       def initialize
         @namespace_stack = []
         @visibility_stack = [:public]
         @current_class = nil
+        @current_method = nil
         @comments = []
       end
 
@@ -65,11 +66,30 @@ module Rubymap
         pop_visibility
       end
 
+      # Public API for method tracking
+      def with_method(name)
+        old_method = @current_method
+        @current_method = name
+        yield
+      ensure
+        @current_method = old_method
+      end
+
+      # Public API for class tracking (explicit, used alongside with_namespace)
+      def with_class(name)
+        old_class = @current_class
+        @current_class = name
+        yield
+      ensure
+        @current_class = old_class
+      end
+
       # Reset context to initial state
       def reset!
         @namespace_stack.clear
         @visibility_stack = [:public]
         @current_class = nil
+        @current_method = nil
         @comments = []
       end
 
