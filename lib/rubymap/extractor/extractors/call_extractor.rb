@@ -34,9 +34,7 @@ module Rubymap
         end
 
         # Catch validates and validates_* variants that don't match explicit when clauses
-        if node.name.to_s.start_with?('validates')
-          record_rails_dsl(node)
-        end
+        record_rails_dsl(node) if node.name.to_s.start_with?("validates")
       end
 
       private
@@ -165,7 +163,7 @@ module Rubymap
         args = extract_rails_dsl_arguments(node)
 
         pattern = PatternInfo.new(
-          type: 'rails_dsl',
+          type: "rails_dsl",
           method: node.name.to_s,
           target: context.current_class,
           location: node.location,

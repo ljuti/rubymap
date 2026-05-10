@@ -35,9 +35,7 @@ module Rubymap
         result = MethodBodyResult.new
 
         # Compute body lines from the def node
-        if def_node&.location
-          result.body_lines = def_node.location.end_line - def_node.location.start_line
-        end
+        result.body_lines = def_node.location.end_line - def_node.location.start_line if def_node&.location
 
         # Traverse the body
         traverse(body_node, result) if body_node
@@ -62,13 +60,11 @@ module Rubymap
         when Prism::IfNode
           result.branches += 1
           # Only count as conditional when if_keyword is "if" (not ternary ?: or elsif)
-          result.conditionals += 1 if node.if_keyword == 'if'
+          result.conditionals += 1 if node.if_keyword == "if"
           # An ElseNode consequent is an extra branch for if/elsif chains.
           # For ternaries (if_keyword_loc == nil), the ElseNode is the else-side
           # of ?: and already accounted for in the single ternary branch above.
-          if node.consequent.is_a?(Prism::ElseNode) && node.if_keyword_loc
-            result.branches += 1
-          end
+          result.branches += 1 if node.consequent.is_a?(Prism::ElseNode) && node.if_keyword_loc
           traverse_children(node, result)
         when Prism::UnlessNode
           result.branches += 1
@@ -79,7 +75,7 @@ module Rubymap
           result.loops += 1
           traverse_children(node, result)
         when Prism::CaseNode
-          result.branches += 1               # the case itself
+          result.branches += 1 # the case itself
           node.conditions&.each { |_| result.branches += 1 } # each when clause
           result.branches += 1 if node.consequent # else clause
           traverse_children(node, result)
@@ -115,9 +111,7 @@ module Rubymap
         }
 
         # If this is a block iteration call, count it as a loop
-        if has_block && LOOP_METHODS.include?(node.name)
-          result.loops += 1
-        end
+        result.loops += 1 if has_block && LOOP_METHODS.include?(node.name)
 
         # Recurse into arguments and block for nested calls
         traverse_arguments(node.arguments, result)
@@ -136,7 +130,7 @@ module Rubymap
         elsif node.respond_to?(:body)
           traverse(node.body, result)
         end
-      rescue StandardError
+      rescue
         # Gracefully handle nodes that don't support child traversal
         # (some Prism nodes may not have either interface)
       end
@@ -190,7 +184,7 @@ module Rubymap
           # return a single-element array with a string representation.
           [receiver.slice]
         end
-      rescue StandardError
+      rescue
         # If resolution fails, return what we can
         [receiver.respond_to?(:slice) ? receiver.slice : receiver.class.name]
       end
@@ -255,17 +249,17 @@ module Rubymap
         when Prism::GlobalVariableReadNode
           {type: :global_variable, value: node.name.to_s}
         when Prism::SelfNode
-          {type: :self, value: 'self'}
+          {type: :self, value: "self"}
         when Prism::RangeNode
           {type: :range, value: node.slice}
         when Prism::RegularExpressionNode
           {type: :regexp, value: node.slice}
         when Prism::SourceEncodingNode
-          {type: :keyword, value: '__ENCODING__'}
+          {type: :keyword, value: "__ENCODING__"}
         when Prism::SourceFileNode
-          {type: :keyword, value: '__FILE__'}
+          {type: :keyword, value: "__FILE__"}
         when Prism::SourceLineNode
-          {type: :keyword, value: '__LINE__'}
+          {type: :keyword, value: "__LINE__"}
         when Prism::SplatNode
           if node.expression
             inner = encode_argument(node.expression)
@@ -298,7 +292,7 @@ module Rubymap
           # Fallback: use source slice
           {type: :unknown, value: node.respond_to?(:slice) ? node.slice : node.class.name}
         end
-      rescue StandardError
+      rescue
         {type: :error, value: node.respond_to?(:slice) ? node.slice : node.class.name}
       end
 
@@ -319,9 +313,9 @@ module Rubymap
 
       # Reconstruct an interpolated string from its parts.
       def reconstruct_interpolated(node)
-        node.parts.map { |part|
+        node.parts.map do |part|
           part.respond_to?(:unescaped) ? part.unescaped : part.slice
-        }.join
+        end.join
       end
 
       # Encode a CallNode that appears as an argument value.
@@ -337,7 +331,7 @@ module Rubymap
 
       # Extract source text from a node (for lambda blocks, etc.).
       def extract_source(node)
-        node.respond_to?(:slice) ? node.slice : ''
+        node.respond_to?(:slice) ? node.slice : ""
       end
 
       # Resolve a constant path node to a "::"-joined string.

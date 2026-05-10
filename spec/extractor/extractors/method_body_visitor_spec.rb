@@ -9,7 +9,7 @@ RSpec.describe Rubymap::Extractor::MethodBodyVisitor do
   # Helper: parse Ruby code and find a specific DefNode by method name
   def find_def_node(code, method_name)
     parse_result = Prism.parse(code)
-    raise "Parse error: #{parse_result.errors.map(&:message).join(', ')}" unless parse_result.success?
+    raise "Parse error: #{parse_result.errors.map(&:message).join(", ")}" unless parse_result.success?
 
     result = nil
     find_node(parse_result.value, Prism::DefNode) do |node|
@@ -582,7 +582,6 @@ RSpec.describe Rubymap::Extractor::MethodBodyVisitor do
         expect(result.branches).to eq(1)
         expect(result.loops).to eq(3)
       end
-
     end
 
     context "with interpolated string arguments" do
