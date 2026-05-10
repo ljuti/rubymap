@@ -37,7 +37,7 @@ module Rubymap
           results[format] = emit_format(emitter, indexed_data, output_dir, format)
         rescue => e
           errors << "#{format.capitalize} emission failed: #{e.message}"
-          raise
+
         end
 
         manifest_path = generate_unified_manifest(output_dir, results, errors, indexed_data, start_time)
