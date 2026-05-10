@@ -483,11 +483,17 @@ RSpec.describe "Rubymap::Enricher" do
         GC.start
         memory_after = get_memory_usage
 
-        # Memory increase should be reasonable (less than 100MB for this dataset)
-        memory_increase_mb = (memory_after - memory_before) / 1024.0
+        if memory_before && memory_after
+          # Memory increase should be reasonable (less than 100MB for this dataset)
+          memory_increase_mb = (memory_after - memory_before) / 1024.0
 
-        expect(result.classes.size).to eq(100)
-        expect(memory_increase_mb).to be < 100
+          expect(result.classes.size).to eq(100)
+          expect(memory_increase_mb).to be < 100
+        else
+          # Skip memory check on platforms without /proc
+          expect(result.classes.size).to eq(100)
+        end
+
       end
     end
 
@@ -1627,9 +1633,9 @@ RSpec.describe "Rubymap::Enricher" do
 end
 
 def get_memory_usage
-  if File.exist?("/proc/self/status")
-    File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
-  else
-    0
-  end
+  return nil unless File.exist?("/proc/self/status")
+
+  match = File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1]
+  match&.to_i
 end
+
