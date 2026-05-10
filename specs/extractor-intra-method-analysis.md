@@ -95,9 +95,9 @@ Add `calls_made`, `branches`, `loops`, `conditionals`, and `body_lines` accessor
 
 Add `current_method` and `with_method(name, &block)` to `ExtractionContext`. Add `current_class` and `with_class(name, &block)` to `ExtractionContext`. [AC#3]
 
-Extend `CallExtractor#extract`'s existing `case node.name` with Rails DSL patterns. When `context.current_class` is set and the call matches a Rails DSL pattern name, record a `PatternInfo` on `result.patterns`. Use a private `record_rails_dsl(node)` helper. [AC#3][AC#4]
+Extend `CallExtractor#extract`'s existing `case node.name` with Rails DSL patterns. When `context.current_class` is set and the call matches a Rails DSL pattern name, record a `PatternInfo` on `result.patterns`. Use a private `record_rails_dsl(node)` helper. \[AC#3\]\[AC#4\]
 
-The Rails DSL pattern set covers: `has_many`, `has_one`, `belongs_to`, `has_and_belongs_to_many`, `validates` and all `validates_*` variants, `before_action`/`after_action`/`around_action`/`skip_before_action`/`skip_after_action`/`skip_around_action` and their `_filter` aliases, `scope`, `default_scope`, `rescue_from`, `delegate`. [AC#3][AC#4]
+The Rails DSL pattern set covers: `has_many`, `has_one`, `belongs_to`, `has_and_belongs_to_many`, `validates` and all `validates_*` variants, `before_action`/`after_action`/`around_action`/`skip_before_action`/`skip_after_action`/`skip_around_action` and their `_filter` aliases, `scope`, `default_scope`, `rescue_from`, `delegate`. \[AC#3\]\[AC#4\]
 
 Implement `resolve_constant_path(node)` as a private method on both `MethodBodyVisitor` and `CallExtractor` (or extract into a shared module). Walk the receiver chain: `nil` → `nil`, `ConstantReadNode` → `[name]`, `ConstantPathNode` → `resolve(parent) + [name]`, `CallNode` → `resolve(receiver) + [name]`. [AC#1]
 
