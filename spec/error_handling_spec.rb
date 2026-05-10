@@ -257,9 +257,7 @@ RSpec.describe "Rubymap Error Handling" do
   describe "output generation errors" do
     context "when output directory is not writable" do
       it "gracefully handles write permission errors" do
-        pending "Environment-dependent: requires writable parent with read-only output subdirectory"
-        # This test verifies the pipeline collects write errors rather than crashing.
-        # It requires a specific directory setup that varies by filesystem and OS.
+        pending "Environment-dependent: filesystem permission behavior varies by OS"
         Dir.mktmpdir do |dir|
           readonly_dir = File.join(dir, "readonly")
           Dir.mkdir(readonly_dir)

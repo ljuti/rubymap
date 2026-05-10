@@ -136,6 +136,7 @@ module Rubymap
 
     def extract(paths)
       extractor = Extractor.new
+      cache = build_cache
 
       all_data = {
         classes: [],
@@ -151,49 +152,12 @@ module Rubymap
 
       paths.each do |path|
         if File.directory?(path)
-          ruby_files = Dir.glob(File.join(path, "**", "*.rb"))
-          ruby_files.each do |file|
+          Dir.glob(File.join(path, "**", "*.rb")).each do |file|
             next if should_exclude?(file)
-
-            log "  Processing: #{file}" if configuration.verbose
-            begin
-              # Use retry handler for file operations
-              result = @retry_handler.with_retry(error_collector: @error_collector, file: file) do
-                extractor.extract_from_file(file)
-              end
-              merge_result!(all_data, result)
-              # Merge errors from extraction result
-              if result.respond_to?(:error_collector) && result.error_collector.any?
-                @error_collector.merge!(result.error_collector)
-              end
-            rescue => e
-              @error_collector.add_error(
-                :filesystem,
-                "Failed to extract from file: #{e.message}",
-                severity: :error,
-                file: file
-              )
-              log "  Warning: Failed to extract from #{file}: #{e.message}"
-            end
+            extract_file(extractor, cache, file, all_data)
           end
         elsif File.file?(path) && path.end_with?(".rb")
-          log "  Processing: #{path}" if configuration.verbose
-          begin
-            result = extractor.extract_from_file(path)
-            merge_result!(all_data, result)
-            # Merge errors from extraction result
-            if result.respond_to?(:error_collector) && result.error_collector.any?
-              @error_collector.merge!(result.error_collector)
-            end
-          rescue => e
-            @error_collector.add_error(
-              :filesystem,
-              "Failed to extract from file: #{e.message}",
-              severity: :error,
-              file: path
-            )
-            log "  Warning: Failed to extract from #{path}: #{e.message}"
-          end
+          extract_file(extractor, cache, path, all_data)
         else
           unless File.directory?(path)
             @error_collector.add_warning(
@@ -206,6 +170,61 @@ module Rubymap
       end
 
       all_data
+    end
+
+    def build_cache
+      return nil unless configuration.respond_to?(:cache) && configuration.cache.is_a?(Hash)
+      return nil unless configuration.cache["enabled"]
+
+      PipelineCache.new(configuration.cache["directory"] || ".rubymap_cache")
+    end
+
+    def extract_file(extractor, cache, file, all_data)
+      # Check cache first
+      if cache
+        cached = cache.fetch(file)
+        if cached
+          merge_cached_result!(all_data, cached)
+          log "  Cached: #{file}" if configuration.verbose
+          return
+        end
+      end
+
+      log "  Processing: #{file}" if configuration.verbose
+      begin
+        result = @retry_handler.with_retry(error_collector: @error_collector, file: file) do
+          extractor.extract_from_file(file)
+        end
+        merge_result!(all_data, result)
+
+        if result.respond_to?(:error_collector) && result.error_collector.any?
+          @error_collector.merge!(result.error_collector)
+        end
+
+        # Store in cache for future runs
+        cache&.store(file, extract_result_to_cache(result))
+      rescue => e
+        @error_collector.add_error(
+          :filesystem,
+          "Failed to extract from file: #{e.message}",
+          severity: :error,
+          file: file
+        )
+        log "  Warning: Failed to extract from #{file}: #{e.message}"
+      end
+    end
+
+    def extract_result_to_cache(result)
+      temp = {classes: [], modules: [], methods: [], constants: []}
+      merge_result!(temp, result)
+      temp
+    end
+
+    def merge_cached_result!(target, cached)
+      target[:classes].concat(cached[:classes] || [])
+      target[:modules].concat(cached[:modules] || [])
+      target[:methods].concat(cached[:methods] || [])
+      target[:constants].concat(cached[:constants] || [])
     end
 
     def index(data)

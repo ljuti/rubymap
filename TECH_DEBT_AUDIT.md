@@ -25,7 +25,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F010 | High | ✅ RESOLVED | `define_method` monkey-patching replaced with `on_step` observer callback |
 | F011 | High | ✅ RESOLVED | Created `SymbolData` DTO with named accessors. ChunkGenerator (0 hash accesses), MarkdownRenderer (13→legitimate nested), LLM (13→top-level data). 90→26 hash accesses across emitter ecosystem. |
 | F012 | High | ✅ RESOLVED | Pipeline reordered to Extract→Normalize→Enrich→Index→Emit. Removed @graphs_cache workaround. Fixed bug in EnrichmentResult#to_h (start_line→line). |
-| F013 | Medium | **OPEN** | No pipeline result caching |
+| F013 | Medium | ✅ RESOLVED | `PipelineCache` with SHA-256 checksum-based file caching. Cache hit avoids re-parsing unchanged files. Wired into Pipeline#extract when `cache.enabled` is true. 7 specs. |
 | F014 | Medium | ✅ RESOLVED | Duplicate type coercion removed from Configuration |
 | F015 | Medium | ✅ RESOLVED | `system()` call removed during EmitterManager cleanup (F006) |
 | F016 | Medium | ✅ RESOLVED | Template system wired: `templates_enabled` and `template_dir` config options added, Pipeline passes them through to LLM emitter and MarkdownRenderer. Templates render successfully. |
