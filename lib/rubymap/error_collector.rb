@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "json"
+require "time"
+
 module Rubymap
   # Centralized error collection and management for the Rubymap pipeline.
   #
