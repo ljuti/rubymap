@@ -101,7 +101,7 @@ A new dedicated visitor (`MethodBodyVisitor`) traverses method bodies and record
 
 ### Rails DSL patterns added to CallExtractor (B6)
 
-```
+```ruby
 when :has_many, :has_one, :belongs_to, :has_and_belongs_to_many
   → PatternInfo(type: "rails_dsl", method: node.name, target: context.current_class, arguments: extract_call_arguments(node))
 
@@ -183,7 +183,7 @@ Walk up the receiver chain and return array of constant names:
 
 ### CURRENT System (for reference)
 
-```
+```text
 PLACE: Extractor/NodeVisitor
   ┌─────────────────────────────────────────┐
   │ NodeVisitor                             │
@@ -223,7 +223,7 @@ PLACE: Extractor/Context
 
 ### Proposed System (Shape B)
 
-```
+```text
 PLACE: Extractor/NodeVisitor
   ┌──────────────────────────────────────────┐
   │ NodeVisitor (modified)                   │
