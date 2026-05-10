@@ -2,6 +2,7 @@
 
 require "digest"
 require "fileutils"
+require "time"
 
 module Rubymap
   # Caches extracted file data keyed by file checksum.
