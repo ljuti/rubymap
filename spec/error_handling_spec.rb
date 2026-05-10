@@ -257,7 +257,8 @@ RSpec.describe "Rubymap Error Handling" do
   describe "output generation errors" do
     context "when output directory is not writable" do
       it "gracefully handles write permission errors" do
-        pending "Environment-dependent: filesystem permission behavior varies by OS"
+        # Permission tests require non-root user; root bypasses chmod
+        skip "Requires non-root user" if Process.uid == 0
         Dir.mktmpdir do |dir|
           readonly_dir = File.join(dir, "readonly")
           Dir.mkdir(readonly_dir)
