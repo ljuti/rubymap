@@ -218,7 +218,7 @@ Extend `CallExtractor` to recognize Rails DSL patterns at class body level. Add 
 - `CallExtractor` detects `scope`, `default_scope`, `rescue_from`, `delegate`
 - Each Rails DSL pattern records the target class name from `context.current_class`
 - `ExtractionContext` tracks `current_class` with `with_class(name, &block)` that saves/restores state
-- `NodeVisitor#handle_class` wraps children in `context.with_class(clas_name)`
+- `NodeVisitor#handle_class` wraps children in `context.with_class(class_name)`
 - `NodeVisitor#handle_module` wraps children in `context.with_class(module_name)`
 - Existing `CallExtractor` patterns (`attr_*`, `include`, `require`, etc.) continue to work unchanged when Rails DSL calls are also present
 - Non-Rails classes produce no Rails DSL patterns
