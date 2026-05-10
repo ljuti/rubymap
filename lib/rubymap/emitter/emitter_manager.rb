@@ -80,7 +80,7 @@ module Rubymap
 
       def emit_format(emitter, indexed_data, output_dir, format)
         case format
-        when :llm
+        when :llm, :json, :yaml, :dot
           emitter.emit_to_directory(indexed_data, output_dir)
         else
           raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
@@ -91,6 +91,12 @@ module Rubymap
         case format
         when :llm
           Emitters::LLM.new(**config)
+        when :json
+          Emitters::JSON.new(**config)
+        when :yaml
+          Emitters::YAML.new(**config)
+        when :dot
+          Emitters::GraphViz.new(**config)
         else
           raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end

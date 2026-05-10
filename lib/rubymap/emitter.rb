@@ -2,6 +2,9 @@
 
 require_relative "emitter/base_emitter"
 require_relative "emitter/emitters/llm_emitter"
+require_relative "emitter/emitters/json_emitter"
+require_relative "emitter/emitters/yaml_emitter"
+require_relative "emitter/emitters/dot_emitter"
 require_relative "emitter/emitter_manager"
 require_relative "emitter/formatters/deterministic_formatter"
 require_relative "emitter/processors/redactor"
@@ -35,7 +38,7 @@ module Rubymap
   module Emitter
     # Currently supported output formats.
     # When adding a new format, register it here and update create_emitter.
-    SUPPORTED_FORMATS = [:llm].freeze
+    SUPPORTED_FORMATS = [:llm, :json, :yaml, :dot].freeze
 
     class << self
       # Emits indexed data in the specified format.
@@ -90,6 +93,12 @@ module Rubymap
         case format
         when :llm
           Emitters::LLM.new(**options)
+        when :json
+          Emitters::JSON.new(**options)
+        when :yaml
+          Emitters::YAML.new(**options)
+        when :dot
+          Emitters::GraphViz.new(**options)
         else
           raise ArgumentError, "Unknown emitter format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end
@@ -100,5 +109,8 @@ module Rubymap
   # Convenience aliases
   module Emitters
     LLM = Emitter::Emitters::LLM
+    JSON = Emitter::Emitters::JSON
+    YAML = Emitter::Emitters::YAML
+    GraphViz = Emitter::Emitters::GraphViz
   end
 end
