@@ -18,7 +18,7 @@ Four slices, each adding a testable capability:
 
 ### Dependency
 
-```
+```text
 V1 ──► V2 ──► V4
  │
  └──► V3 ──► V4
