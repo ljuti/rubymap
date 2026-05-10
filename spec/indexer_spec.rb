@@ -186,6 +186,8 @@ RSpec.describe "Rubymap::Indexer" do
         large_dataset = build_large_enriched_dataset(classes: 10_000, methods: 50_000)
 
         memory_before = get_memory_usage
+        skip("VmRSS unavailable on this platform") if memory_before.nil?
+
         result = indexer.build(large_dataset)
         memory_after = get_memory_usage
 
@@ -763,11 +765,10 @@ RSpec.describe "Rubymap::Indexer" do
   end
 
   def get_memory_usage
-    if File.exist?("/proc/self/status")
-      File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
-    else
-      0
-    end
+    return nil unless File.exist?("/proc/self/status")
+
+    match = File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1]
+    match&.to_i
   end
 end
 

@@ -542,6 +542,7 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
 
       it "maintains memory efficiency during processing" do
         initial_memory = get_memory_usage
+        skip("VmRSS unavailable on this platform") if initial_memory.nil?
 
         normalizer.normalize(large_dataset)
 
@@ -580,9 +581,8 @@ RSpec.describe Rubymap::Normalizer, type: :integration do
 end
 
 def get_memory_usage
-  if File.exist?("/proc/self/status")
-    File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1].to_i
-  else
-    0
-  end
+  return nil unless File.exist?("/proc/self/status")
+
+  match = File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1]
+  match&.to_i
 end
