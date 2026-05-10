@@ -3,4 +3,4 @@ set -euo pipefail
 
 bundle install
 
-curl -fsSL https://pi.dev/install.sh | sh
+npm install -g @mariozechner/pi-coding-agent
