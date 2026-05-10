@@ -57,42 +57,4 @@ RSpec.describe Rubymap do
       end
     end
   end
-
-  describe "behavior as a developer tool" do
-    context "when mapping a Ruby codebase" do
-      it "extracts classes and modules" do
-        skip "Implementation pending"
-      end
-
-      it "extracts methods and constants" do
-        skip "Implementation pending"
-      end
-
-      it "tracks inheritance relationships" do
-        skip "Implementation pending"
-      end
-
-      it "tracks mixin relationships" do
-        skip "Implementation pending"
-      end
-
-      it "generates LLM-friendly output" do
-        skip "Implementation pending"
-      end
-    end
-
-    context "when mapping with runtime introspection" do
-      it "captures dynamic methods" do
-        skip "Implementation pending"
-      end
-
-      it "extracts ActiveRecord associations" do
-        skip "Implementation pending"
-      end
-
-      it "maps Rails routes" do
-        skip "Implementation pending"
-      end
-    end
-  end
 end

@@ -321,23 +321,4 @@ RSpec.describe "Rubymap::Normalizer" do
       end
     end
   end
-
-  describe "performance and scalability" do
-    context "when normalizing large datasets" do
-      it "handles thousands of symbols efficiently" do
-        # Should normalize 10,000+ symbols in under 1 second
-        skip "Implementation pending"
-      end
-
-      it "uses memory efficiently during normalization" do
-        skip "Implementation pending"
-      end
-    end
-
-    context "when processing deeply nested namespaces" do
-      it "handles complex namespace hierarchies without stack overflow" do
-        skip "Implementation pending"
-      end
-    end
-  end
 end

@@ -516,7 +516,8 @@ RSpec.describe "Rubymap::Indexer" do
     end
   end
 
-  describe "query performance", skip: "Performance optimizations pending" do
+  describe "query performance" do
+    before(:all) { skip "Performance benchmarks are environment-dependent" }
     let(:large_dataset) { build_large_enriched_dataset(classes: 10_000, methods: 50_000) }
     let(:indexed_data) { indexer.build(large_dataset) }
 

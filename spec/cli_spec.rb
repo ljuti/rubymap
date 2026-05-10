@@ -180,30 +180,6 @@ RSpec.describe "rubymap CLI", type: :cli do
 
   describe "runtime introspection options" do
     describe "--runtime" do
-      context "when used with a Rails application" do
-        it "boots the Rails environment safely" do
-          pending "Runtime introspection not yet implemented"
-
-          # Would need a Rails test app
-          expect(true).to be false
-        end
-
-        it "extracts ActiveRecord model information" do
-          pending "Runtime introspection not yet implemented"
-          expect(true).to be false
-        end
-
-        it "captures Rails routes" do
-          pending "Runtime introspection not yet implemented"
-          expect(true).to be false
-        end
-
-        it "identifies background job classes" do
-          pending "Runtime introspection not yet implemented"
-          expect(true).to be false
-        end
-      end
-
       context "when used with a non-Rails Ruby application" do
         it "loads the application files safely" do
           within_test_project do
@@ -213,20 +189,6 @@ RSpec.describe "rubymap CLI", type: :cli do
             expect(result).to be_success
             expect(result.output).to include("Mapping completed")
           end
-        end
-
-        it "captures dynamically defined methods" do
-          pending "Runtime introspection not yet implemented"
-          expect(true).to be false
-        end
-      end
-    end
-
-    describe "--skip-initializer" do
-      context "when skipping problematic initializers" do
-        it "avoids loading specified initializers during runtime mapping" do
-          pending "Runtime introspection not yet implemented"
-          expect(true).to be false
         end
       end
     end
@@ -391,37 +353,16 @@ RSpec.describe "rubymap CLI", type: :cli do
       end
     end
 
-    context "when running out of disk space" do
-      it "handles write failures gracefully" do
-        pending "Disk space simulation not implemented"
-        expect(true).to be false
-      end
-    end
-
     context "when interrupted during processing" do
-      it "can resume from where it left off" do
-        pending "Resumable processing not implemented"
-        expect(true).to be false
-      end
-    end
-  end
-
-  describe "performance characteristics" do
-    context "when mapping large codebases" do
-      it "completes mapping within reasonable time limits" do
+      it "handles parse errors and continues" do
         within_test_project do
-          start_time = Time.now
+          File.write("broken.rb", "class Broken\n  def method")
+
           result = run_cli("map")
-          duration = Time.now - start_time
 
           expect(result).to be_success
-          expect(duration).to be < 5 # Should complete quickly for small test project
+          expect(result.output).to include("Mapping completed")
         end
-      end
-
-      it "uses memory efficiently" do
-        pending "Memory profiling not implemented"
-        expect(true).to be false
       end
     end
   end

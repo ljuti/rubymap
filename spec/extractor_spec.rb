@@ -441,41 +441,13 @@ RSpec.describe "Rubymap::Extractor" do
       let(:malformed_code) { "class User\n  def incomplete_method\n    # missing end" }
 
       it "handles syntax errors gracefully" do
-        # Expects successful execution:
-
-        extractor.extract_from_code(malformed_code)
-
-        skip "Implementation pending"
+        expect { extractor.extract_from_code(malformed_code) }.not_to raise_error
       end
 
       it "includes error information in result" do
         result = extractor.extract_from_code(malformed_code)
         expect(result.errors.any?).to be true
-        skip "Implementation pending"
       end
-    end
-
-    context "when parsing very large files" do
-      it "handles files with thousands of methods efficiently" do
-        skip "Implementation pending"
-      end
-    end
-
-    context "when parsing files with unusual encoding" do
-      it "handles different text encodings correctly" do
-        skip "Implementation pending"
-      end
-    end
-  end
-
-  describe "performance characteristics" do
-    it "parses typical Ruby files within performance thresholds" do
-      # Should process typical Ruby files (< 1000 lines) in under 50ms
-      skip "Implementation pending"
-    end
-
-    it "uses memory efficiently for large files" do
-      skip "Implementation pending"
     end
   end
 end

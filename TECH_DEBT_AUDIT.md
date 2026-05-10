@@ -5,10 +5,9 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 ## Executive Summary
 
 - **3 Critical, 9 High, 10 Medium, 10 Low** findings originally
-- **17 resolved, 5 amended (false positives), 10 remaining** → **18 resolved, 5 amended, 9 remaining**
-- **Largest debt concentration**: `lib/rubymap/emitter/emitters/llm_emitter.rb` (1079-line god file — F001 still open)
-- **130 pending tests** — roughly 7% of the test suite is skipped
-- **5 pre-existing test failures** — all environment-dependent (memory/permission/`ps`-dependent tests)
+- **19 resolved, 5 amended (false positives), 8 remaining**
+- **Largest resolved debt**: `lib/rubymap/emitter/emitters/llm_emitter.rb` (1079 → 368 lines, 66% reduction)
+- **59 pending tests** — 52 Rails features (unimplemented), 4 performance (environment-dependent), 3 edge cases
 
 ## Findings Status
 

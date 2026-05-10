@@ -210,20 +210,6 @@ RSpec.describe "Rubymap Error Handling" do
   end
 
   describe "memory and performance constraints" do
-    context "when processing very large codebases" do
-      it "manages memory usage efficiently for thousands of files", skip: "Implementation pending" do
-        # Would require generating many files and monitoring memory
-      end
-
-      it "provides progress feedback for long-running operations", skip: "Implementation pending" do
-        # Would require progress callback implementation
-      end
-
-      it "can be interrupted gracefully", skip: "Implementation pending" do
-        # Would require signal handling implementation
-      end
-    end
-
     context "when encountering infinite loops in code analysis" do
       it "prevents infinite recursion during analysis" do
         potentially_infinite_code = <<~RUBY
@@ -242,10 +228,6 @@ RSpec.describe "Rubymap Error Handling" do
           expect(result).to have_key(:format)
           expect(result).to have_key(:output_dir)
         end
-      end
-
-      it "respects analysis depth limits", skip: "Implementation pending" do
-        # Would require depth configuration
       end
     end
   end
@@ -303,20 +285,9 @@ RSpec.describe "Rubymap Error Handling" do
           end
         end
       end
-
-      it "suggests alternative output locations", skip: "Implementation pending" do
-        # Would require error message enhancement
-      end
     end
 
     context "when disk space is insufficient" do
-      it "checks available disk space before writing", skip: "Implementation pending" do
-        # Would require disk space checking
-      end
-
-      it "handles write failures gracefully", skip: "Implementation pending" do
-        # Would require write error simulation
-      end
     end
   end
 
@@ -337,20 +308,9 @@ RSpec.describe "Rubymap Error Handling" do
           end
         end
       end
-
-      it "provides helpful error messages for config issues", skip: "Implementation pending" do
-        # Would require enhanced error reporting
-      end
     end
 
     context "when configuration has conflicting options" do
-      it "detects and reports conflicting configuration options", skip: "Implementation pending" do
-        # Would require validation logic
-      end
-
-      it "suggests resolution for configuration conflicts", skip: "Implementation pending" do
-        # Would require suggestion system
-      end
     end
   end
 
@@ -482,46 +442,6 @@ RSpec.describe "Rubymap Error Handling" do
           # The good class should be in the output files
           # (actual verification would require reading the output files)
         end
-      end
-
-      it "can resume processing from checkpoints", skip: "Implementation pending" do
-        # Would require checkpoint/resume functionality
-      end
-
-      it "maintains consistency in output despite errors", skip: "Implementation pending" do
-        # Would require transactional processing
-      end
-    end
-  end
-
-  describe "filesystem error scenarios" do
-    context "when dealing with symlinks" do
-      it "handles circular symlinks gracefully", skip: "Symlink handling pending" do
-        Dir.mktmpdir do |dir|
-          link_a = File.join(dir, "link_a")
-          link_b = File.join(dir, "link_b")
-
-          File.symlink(link_b, link_a)
-          File.symlink(link_a, link_b)
-
-          # Expects successful execution:
-
-          Rubymap.map([dir])
-        end
-      end
-
-      it "follows symlinks when configured to do so", skip: "Symlink configuration pending" do
-        # Would require symlink configuration option
-      end
-    end
-
-    context "when running out of disk space" do
-      it "handles write failures due to insufficient disk space", skip: "Implementation pending" do
-        # Would require disk space simulation
-      end
-
-      it "can recover from partial write failures", skip: "Implementation pending" do
-        # Would require write recovery logic
       end
     end
   end
