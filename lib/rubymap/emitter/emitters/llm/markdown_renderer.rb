@@ -16,7 +16,7 @@ module Rubymap
 
           # Generates full class markdown with metrics, methods, and relationships.
           def class_markdown(klass, include_class_keyword: false)
-            return missing_class_info if klass.nil? || klass[:fqname].nil?
+            return missing_class_info if klass.nil? || klass.fqname.nil?
 
             return template_render(:class, {class: klass, klass: klass, include_class_keyword: include_class_keyword}) if use_templates?
 
@@ -32,7 +32,7 @@ module Rubymap
 
           def methods_chunk_content(klass, methods, title, part_num, total_parts)
             markdown = []
-            markdown << "# #{klass[:fqname]}: #{title} (Part #{part_num} of #{total_parts})"
+            markdown << "# #{klass.fqname}: #{title} (Part #{part_num} of #{total_parts})"
             markdown << ""
             methods.each do |method|
               markdown << "## #{method}"
@@ -49,19 +49,19 @@ module Rubymap
           def class_overview(klass)
             total_parts = 3
             markdown = []
-            markdown << "# Class: #{klass[:fqname]} (Part 1 of #{total_parts})"
+            markdown << "# Class: #{klass.fqname} (Part 1 of #{total_parts})"
             markdown << ""
-            markdown << "**Type:** #{klass[:type]}"
-            markdown << "**Superclass:** #{klass[:superclass]}" if klass[:superclass]
+            markdown << "**Type:** #{klass.type}"
+            markdown << "**Superclass:** #{klass.superclass}" if klass.superclass
             markdown << ""
-            if klass[:documentation]
+            if klass.documentation
               markdown << "## Description"
-              markdown << klass[:documentation]
+              markdown << klass.documentation
               markdown << ""
             end
             markdown << "## Structure"
-            markdown << "- Instance methods: #{klass[:instance_methods]&.size || 0}"
-            markdown << "- Class methods: #{klass[:class_methods]&.size || 0}"
+            markdown << "- Instance methods: #{klass.instance_methods&.size || 0}"
+            markdown << "- Class methods: #{klass.class_methods&.size || 0}"
             markdown << ""
             markdown << "## Related sections:"
             markdown << "- Core Methods (Part 2 of #{total_parts})"
@@ -89,14 +89,14 @@ module Rubymap
             return template_render(:module, {module: mod, mod: mod}) if use_templates?
 
             markdown = []
-            markdown << "# Module: #{mod[:fqname]}"
+            markdown << "# Module: #{mod.fqname}"
             markdown << ""
             markdown << "**Type:** module"
-            markdown << "**File:** #{mod[:file]}:#{mod[:line]}" if mod[:file]
-            if mod[:documentation]
+            markdown << "**File:** #{mod.file}:#{mod.line}" if mod.file
+            if mod.documentation
               markdown << ""
               markdown << "## Description"
-              markdown << mod[:documentation]
+              markdown << mod.documentation
             end
             if mod[:methods] && !mod[:methods].empty?
               markdown << ""
@@ -257,37 +257,37 @@ module Rubymap
 
           def add_class_header(markdown, klass, include_class_keyword)
             if include_class_keyword
-              markdown << "class #{klass[:fqname]}"
+              markdown << "class #{klass.fqname}"
               markdown << ""
             end
-            markdown << "# Class: #{klass[:fqname]}"
+            markdown << "# Class: #{klass.fqname}"
             markdown << ""
           end
 
           def add_file_location(markdown, klass)
             markdown << "# File Location"
             markdown << ""
-            markdown << "**File:** #{klass[:file]}:#{klass[:line]}" if klass[:file]
-            markdown << "**Type:** #{klass[:type]}"
-            markdown << "**Inherits from:** #{klass[:superclass]}" if klass[:superclass]
+            markdown << "**File:** #{klass.file}:#{klass.line}" if klass.file
+            markdown << "**Type:** #{klass.type}"
+            markdown << "**Inherits from:** #{klass.superclass}" if klass.superclass
             markdown << ""
           end
 
           def add_documentation(markdown, klass)
-            if klass[:documentation]
+            if klass.documentation
               markdown << "## Description"
               markdown << ""
-              markdown << klass[:documentation]
+              markdown << klass.documentation
               markdown << ""
               markdown << "### Purpose and Responsibilities"
               markdown << ""
-              markdown << "This class encapsulates the behavior and data for #{klass[:fqname].split("::").last} entities in the system."
-              markdown << "It is responsible for maintaining the state and providing the interface for #{klass[:fqname]} operations."
+              markdown << "This class encapsulates the behavior and data for #{klass.fqname.split("::").last} entities in the system."
+              markdown << "It is responsible for maintaining the state and providing the interface for #{klass.fqname} operations."
             else
               markdown << "## Overview"
               markdown << ""
-              markdown << "The #{klass[:fqname]} class provides core functionality within the application."
-              last_component = klass[:fqname].to_s.split("::").last || klass[:fqname]
+              markdown << "The #{klass.fqname} class provides core functionality within the application."
+              last_component = klass.fqname.to_s.split("::").last || klass.fqname
               markdown << "It defines the structure and behavior for #{last_component} entities."
             end
             markdown << ""
@@ -297,32 +297,32 @@ module Rubymap
             markdown << "## Quality Metrics"
             markdown << ""
 
-            if klass[:cyclomatic_complexity] || klass[:total_complexity] || klass.dig(:metrics, :complexity_score)
+            if klass.cyclomatic_complexity || klass.total_complexity || klass.complexity_score
               markdown << "### Complexity Analysis"
-              markdown << "- **Cyclomatic Complexity**: #{klass[:cyclomatic_complexity] || klass.dig(:metrics, :cyclomatic_complexity) || "N/A"}"
-              markdown << "- **Total Complexity**: #{klass[:total_complexity] || klass.dig(:metrics, :total_complexity) || "N/A"}"
-              markdown << "- **Complexity Score**: #{klass[:complexity_score] || klass.dig(:metrics, :complexity_score) || "N/A"}"
+              markdown << "- **Cyclomatic Complexity**: #{klass.cyclomatic_complexity || "N/A"}"
+              markdown << "- **Total Complexity**: #{klass.total_complexity || "N/A"}"
+              markdown << "- **Complexity Score**: #{klass.complexity_score || "N/A"}"
               markdown << ""
             end
 
-            if klass[:quality_score] || klass[:maintainability_score]
+            if klass.quality_score || klass.maintainability_score
               markdown << "### Quality Scores"
-              markdown << "- **Quality Score**: #{sprintf("%.2f", klass[:quality_score] || 0)}"
-              markdown << "- **Maintainability Score**: #{sprintf("%.2f", klass[:maintainability_score] || 0)}"
+              markdown << "- **Quality Score**: #{sprintf("%.2f", klass.quality_score || 0)}"
+              markdown << "- **Maintainability Score**: #{sprintf("%.2f", klass.maintainability_score || 0)}"
               markdown << ""
             end
 
-            if klass[:public_api_surface] || klass.dig(:metrics, :public_api_surface)
+            if klass.public_api_surface
               markdown << "### API Metrics"
-              markdown << "- **Public API Surface**: #{klass[:public_api_surface] || klass.dig(:metrics, :public_api_surface)} public methods"
-              markdown << "- **Instance Methods**: #{klass[:instance_methods]&.count || 0}"
-              markdown << "- **Class Methods**: #{klass[:class_methods]&.count || 0}"
+              markdown << "- **Public API Surface**: #{klass.public_api_surface} public methods"
+              markdown << "- **Instance Methods**: #{klass.instance_methods&.count || 0}"
+              markdown << "- **Class Methods**: #{klass.class_methods&.count || 0}"
               markdown << ""
             end
 
-            if klass[:test_coverage] || klass.dig(:metrics, :test_coverage)
+            if klass.test_coverage
               markdown << "### Test Coverage"
-              markdown << "- **Coverage**: #{sprintf("%.1f%%", klass[:test_coverage] || klass.dig(:metrics, :test_coverage) || 0.0)}"
+              markdown << "- **Coverage**: #{sprintf("%.1f%%", klass.test_coverage || 0.0)}"
               markdown << ""
             end
           end
@@ -331,24 +331,24 @@ module Rubymap
             markdown << "# Methods"
             markdown << ""
 
-            if klass[:instance_methods] && !klass[:instance_methods].empty?
+            if klass.instance_methods && !klass.instance_methods.empty?
               markdown << "## Instance Methods"
               markdown << ""
-              markdown << "The following instance methods define the behavior of #{klass[:fqname]} objects:"
+              markdown << "The following instance methods define the behavior of #{klass.fqname} objects:"
               markdown << ""
-              klass[:instance_methods].each do |method|
+              klass.instance_methods.each do |method|
                 markdown << "### `##{method}`"
                 markdown << "Instance method that handles #{method} operations for this class."
                 markdown << ""
               end
             end
 
-            if klass[:class_methods] && !klass[:class_methods].empty?
+            if klass.class_methods && !klass.class_methods.empty?
               markdown << "## Class Methods"
               markdown << ""
               markdown << "The following class methods provide factory methods and class-level operations:"
               markdown << ""
-              klass[:class_methods].each do |method|
+              klass.class_methods.each do |method|
                 markdown << "### `.#{method}`"
                 markdown << "Class method that provides #{method} functionality at the class level."
                 markdown << ""
@@ -362,21 +362,21 @@ module Rubymap
             markdown << "# Relationships"
             markdown << ""
 
-            if klass[:superclass] && !klass[:superclass].empty?
+            if klass.superclass && !klass.superclass.empty?
               markdown << "## Inheritance"
-              markdown << "- Inherits from: #{klass[:superclass]}"
+              markdown << "- Inherits from: #{klass.superclass}"
               markdown << ""
             end
 
-            if klass[:dependencies] && !klass[:dependencies].empty?
+            if klass.dependencies && !klass.dependencies.empty?
               markdown << "## Dependencies"
-              klass[:dependencies].each { |dep| markdown << "- #{dep}" }
+              klass.dependencies.each { |dep| markdown << "- #{dep}" }
               markdown << ""
             end
 
-            if klass[:mixins] && !klass[:mixins].empty?
+            if klass.mixins && !klass.mixins.empty?
               markdown << "## Mixins"
-              klass[:mixins].each do |mixin|
+              klass.mixins.each do |mixin|
                 mod = mixin[:module] || mixin["module"]
                 type = mixin[:type] || mixin["type"]
                 markdown << "- #{type}: #{mod}" if mod
@@ -384,17 +384,17 @@ module Rubymap
               markdown << ""
             end
 
-            if klass[:fan_in] || klass[:fan_out]
+            if klass.fan_in || klass.fan_out
               markdown << "## Coupling Metrics"
-              markdown << "- **Fan-in**: #{klass[:fan_in] || 0} (classes that depend on this class)"
-              markdown << "- **Fan-out**: #{klass[:fan_out] || 0} (classes this class depends on)"
-              markdown << "- **Coupling Strength**: #{klass[:coupling_strength] || 0.0}"
+              markdown << "- **Fan-in**: #{klass.fan_in || 0} (classes that depend on this class)"
+              markdown << "- **Fan-out**: #{klass.fan_out || 0} (classes this class depends on)"
+              markdown << "- **Coupling Strength**: #{klass.coupling_strength || 0.0}"
               markdown << ""
             end
 
-            if (!klass[:superclass] || klass[:superclass].empty?) &&
-                (!klass[:dependencies] || klass[:dependencies].empty?) &&
-                (!klass[:mixins] || klass[:mixins].empty?)
+            if (klass.superclass.nil? || klass.superclass.empty?) &&
+                klass.dependencies.empty? &&
+                klass.mixins.empty?
               markdown << "This class has no external dependencies or relationships."
               markdown << ""
             end

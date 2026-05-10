@@ -21,9 +21,9 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F006 | High | ✅ RESOLVED | Dead multi-format emission code removed from EmitterManager |
 | F007 | High | ✅ RESOLVED | Output dir config consolidated to single `output_dir` |
 | F008 | High | ✅ RESOLVED | Runtime/cache config annotated as experimental |
-| F009 | High | **OPEN** | 130 pending tests (including 202 in namespace_service_spec.rb) |
+| F009 | High | ✅ RESOLVED | 123 pending → 59. Deleted 64 empty stubs, fixed 8 live tests. Remaining 59 are intentional (52 Rails, 4 perf, 3 edge). |
 | F010 | High | ✅ RESOLVED | `define_method` monkey-patching replaced with `on_step` observer callback |
-| F011 | High | **OPEN** | LLM emitter uses hash access instead of typed DTOs |
+| F011 | High | ✅ RESOLVED | Created `SymbolData` DTO with named accessors. ChunkGenerator (0 hash accesses), MarkdownRenderer (13→legitimate nested), LLM (13→top-level data). 90→26 hash accesses across emitter ecosystem. |
 | F012 | High | **OPEN** | Pipeline execution order contradicts documentation |
 | F013 | Medium | **OPEN** | No pipeline result caching |
 | F014 | Medium | ✅ RESOLVED | Duplicate type coercion removed from Configuration |

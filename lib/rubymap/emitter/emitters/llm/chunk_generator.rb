@@ -31,16 +31,18 @@ module Rubymap
 
             if indexed_data[:classes] && !indexed_data[:classes].empty?
               indexed_data[:classes].each do |klass|
+                klass = Rubymap::SymbolData.new(klass)
                 chunks.concat(create_class_chunks(klass))
                 processed += 1
-                report_progress(processed, total_items, "Processing class #{klass[:fqname]}")
+                report_progress(processed, total_items, "Processing class #{klass.fqname}")
               end
             end
 
             indexed_data[:modules]&.each do |mod|
+              mod = Rubymap::SymbolData.new(mod)
               chunks.concat(create_module_chunks(mod))
               processed += 1
-              report_progress(processed, total_items, "Processing module #{mod[:fqname]}")
+              report_progress(processed, total_items, "Processing module #{mod.fqname}")
             end
 
             if indexed_data[:graphs] && indexed_data[:graphs][:inheritance]
@@ -81,7 +83,7 @@ module Rubymap
           end
 
           def create_class_chunks(klass)
-            total_methods = (klass[:instance_methods]&.size || 0) + (klass[:class_methods]&.size || 0)
+            total_methods = (klass.instance_methods&.size || 0) + (klass.class_methods&.size || 0)
 
             if total_methods > 10
               create_split_class_chunks(klass)
@@ -94,17 +96,17 @@ module Rubymap
             content = @markdown_renderer.class_markdown(klass, include_class_keyword: true)
 
             {
-              chunk_id: generate_chunk_id(klass[:fqname]),
-              symbol_id: klass[:fqname],
+              chunk_id: generate_chunk_id(klass.fqname),
+              symbol_id: klass.fqname,
               type: "class",
               content: apply_redaction(content),
               tokens: estimate_tokens(content),
               metadata: {
-                fqname: klass[:fqname],
+                fqname: klass.fqname,
                 type: "class",
                 complexity: klass.dig(:metrics, :complexity_score),
                 chunk_type: "class",
-                primary_symbols: [klass[:fqname]],
+                primary_symbols: [klass.fqname],
                 complexity_level: determine_complexity_level(klass),
                 prerequisites: []
               }
@@ -116,30 +118,30 @@ module Rubymap
 
             overview_content = @markdown_renderer.class_overview(klass)
             chunks << {
-              chunk_id: "#{generate_chunk_id(klass[:fqname])}_overview",
-              symbol_id: klass[:fqname],
+              chunk_id: "#{generate_chunk_id(klass.fqname)}_overview",
+              symbol_id: klass.fqname,
               type: "class_overview",
               content: apply_redaction(overview_content),
               tokens: estimate_tokens(overview_content),
               subtitle: "Overview and Constants",
               metadata: {
-                fqname: klass[:fqname],
+                fqname: klass.fqname,
                 part: "overview",
                 chunk_type: "class",
-                primary_symbols: [klass[:fqname]],
+                primary_symbols: [klass.fqname],
                 complexity_level: determine_complexity_level(klass),
                 prerequisites: []
               }
             }
 
-            if klass[:instance_methods] && !klass[:instance_methods].empty?
-              mid = klass[:instance_methods].size / 2
-              core_methods = klass[:instance_methods][0...mid]
+            if klass.instance_methods && !klass.instance_methods.empty?
+              mid = klass.instance_methods.size / 2
+              core_methods = klass.instance_methods[0...mid]
               core_content = @markdown_renderer.methods_chunk_content(klass, core_methods, "Core Methods", 2, 3)
               chunks << methods_chunk(klass, core_content, "core_methods", "Core Methods", "medium")
 
-              if klass[:instance_methods].size > 1
-                helper_methods = klass[:instance_methods][mid..]
+              if klass.instance_methods.size > 1
+                helper_methods = klass.instance_methods[mid..]
                 helper_content = @markdown_renderer.methods_chunk_content(klass, helper_methods, "Helper Methods", 3, 3)
                 chunks << methods_chunk(klass, helper_content, "helper_methods", "Helper Methods", "low")
               end
@@ -152,16 +154,16 @@ module Rubymap
             content = @markdown_renderer.module_markdown(mod)
 
             [{
-              chunk_id: generate_chunk_id(mod[:fqname]),
-              symbol_id: mod[:fqname],
+              chunk_id: generate_chunk_id(mod.fqname),
+              symbol_id: mod.fqname,
               type: "module",
               content: apply_redaction(content),
               tokens: estimate_tokens(content),
               metadata: {
-                fqname: mod[:fqname],
+                fqname: mod.fqname,
                 type: "module",
                 chunk_type: "module",
-                primary_symbols: [mod[:fqname]],
+                primary_symbols: [mod.fqname],
                 complexity_level: "low",
                 prerequisites: []
               }
@@ -191,17 +193,17 @@ module Rubymap
 
           def methods_chunk(klass, content, part, subtitle, complexity_level)
             {
-              chunk_id: "#{generate_chunk_id(klass[:fqname])}_#{part}",
-              symbol_id: klass[:fqname],
+              chunk_id: "#{generate_chunk_id(klass.fqname)}_#{part}",
+              symbol_id: klass.fqname,
               type: "methods",
               content: apply_redaction(content),
               tokens: estimate_tokens(content),
               subtitle: subtitle,
               metadata: {
-                fqname: klass[:fqname],
+                fqname: klass.fqname,
                 part: part,
                 chunk_type: "methods",
-                primary_symbols: [klass[:fqname]],
+                primary_symbols: [klass.fqname],
                 complexity_level: complexity_level,
                 prerequisites: []
               }
