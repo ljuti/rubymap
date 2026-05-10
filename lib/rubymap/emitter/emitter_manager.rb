@@ -64,7 +64,7 @@ module Rubymap
         results = {}
 
         formats.each do |format|
-          config = configs[format] || {}
+          config = @options.merge(configs[format] || {})
           emitter = create_emitter(format, **config)
           results[format] = emit_format(emitter, indexed_data, output_dir, format)
         end
