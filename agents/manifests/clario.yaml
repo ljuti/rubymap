@@ -1,0 +1,13 @@
+name: clario
+persona: clario
+
+workflows:
+  - id: technical-design
+  - id: clarity-questions
+  - id: design-with-assumptions
+  - id: pattern-suggestion
+  - id: impact-analysis
+  - id: record-adr
+  - id: review-return
+  - id: design-consult
+  - id: feedback-loop

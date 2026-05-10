@@ -1,0 +1,27 @@
+# Tech-debt audit pipeline (user-invoked via `nmux audit`).
+#
+# Runs once per invocation; does not iterate over FWUs.
+#
+# Phase shape:
+#   TDA-O  — Orient: read repo, build mental model, plan dimensions, write scratchpad.
+#   TDA-A  — Audit: walk dimensions; serial for small repos, `nmux_delegate` to Holmes
+#            (one child per module) for large repos. Findings land in
+#            .nmux/tech-debt-audit/findings.jsonl.
+#   TDA-S  — Synthesize: dedupe, rank, write TECH_DEBT_AUDIT.md, clean scratchpad.
+
+phases:
+  - id: TDA-O
+    agent: blade
+    workflow: tda-orient
+    checklists: [blade-tda-orient]
+
+  - id: TDA-A
+    agent: blade
+    workflow: tda-audit
+    checklists: [blade-tda-dimensions]
+    delegate_targets: [holmes]
+
+  - id: TDA-S
+    agent: blade
+    workflow: tda-synthesize
+    checklists: [blade-tda-deliverable]

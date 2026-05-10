@@ -1,0 +1,20 @@
+name: blade
+persona: blade
+
+workflows:
+  - id: review
+  - id: test-quality
+  - id: design-alignment
+  - id: security-quickscan
+  - id: tda-orient
+  - id: tda-audit
+  - id: tda-synthesize
+  - id: consult
+    params:
+      target: "Clario"
+      context: "serious design concerns found during review"
+  - id: return-to-spark
+  - id: handoff
+    params:
+      recipient: "Hon (Refactor)"
+      sign_off: "The cuts are marked. Ready for refinement."
