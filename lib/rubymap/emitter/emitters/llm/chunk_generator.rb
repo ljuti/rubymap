@@ -87,6 +87,8 @@ module Rubymap
 
             if total_methods > 10
               create_split_class_chunks(klass)
+            elsif @max_tokens_per_chunk && estimate_single_chunk_tokens(klass) > @max_tokens_per_chunk
+              create_split_class_chunks(klass)
             else
               [create_single_class_chunk(klass)]
             end
