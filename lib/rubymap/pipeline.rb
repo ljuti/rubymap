@@ -339,17 +339,15 @@ module Rubymap
           "Failed to create output directory: #{e.message}",
           file: configuration.output_dir
         )
-        raise ConfigurationError, "Cannot create output directory: #{configuration.output_dir}"
+        return {format: configuration.format, output_dir: nil, error: e.message}
       end
 
       # Validate format is supported
       supported = Emitter::SUPPORTED_FORMATS
       unless supported.include?(configuration.format.to_sym)
-        @error_collector.add_critical(
-          :config,
-          "Unsupported format: #{configuration.format}. Supported: #{supported.map(&:inspect).join(", ")}"
-        )
-        raise ConfigurationError, "Unsupported format: #{configuration.format}. Supported: #{supported.map(&:inspect).join(", ")}"
+        msg = "Unsupported format: #{configuration.format}"
+        @error_collector.add_critical(:config, msg)
+        return {format: configuration.format, output_dir: nil, error: msg}
       end
 
       emitter = Emitters::LLM.new(
@@ -364,18 +362,9 @@ module Rubymap
           "Failed to emit LLM format: #{e.message}",
           severity: :error
         )
-        raise
+        return {format: configuration.format, output_dir: configuration.output_dir, error: e.message}
       end
       {format: :llm, output_dir: configuration.output_dir}
-    rescue => e
-      unless e.is_a?(ConfigurationError)
-        @error_collector.add_error(
-          :output,
-          "Output generation failed: #{e.message}",
-          severity: :critical
-        )
-      end
-      raise
     end
 
     def should_exclude?(path)

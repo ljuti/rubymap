@@ -29,7 +29,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F014 | Medium | ✅ RESOLVED | Duplicate type coercion removed from Configuration |
 | F015 | Medium | ✅ RESOLVED | `system()` call removed during EmitterManager cleanup (F006) |
 | F016 | Medium | ✅ RESOLVED | Template system wired: `templates_enabled` and `template_dir` config options added, Pipeline passes them through to LLM emitter and MarkdownRenderer. Templates render successfully. |
-| F017 | Medium | **OPEN** | Inconsistent error recovery strategies across pipeline stages |
+| F017 | Medium | ✅ RESOLVED | Emit stage standardized: returns error result hash instead of raising. Matches index/normalize/enrich behavior. Pipeline always completes with best-effort result + error summary. 4 specs. |
 | F018 | Medium | ✅ RESOLVED | `concurrent-ruby` optional require removed during EmitterManager cleanup (F006). |
 | F019 | Medium | ✅ RESOLVED | 5 failing tests fixed: replaced `ps` shell-outs with `/proc/self/status`, updated permission test to match new error-collection behavior. |
 | F020 | Medium | ⚠️ AMENDED | `namespace_service_spec.rb` has 202 actual passing tests, not pending. Audit was incorrect. The 130 pending tests are in `rails_mapper_spec.rb` (48), `emitters_spec.rb` (22), etc. |
