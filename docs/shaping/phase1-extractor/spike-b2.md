@@ -78,7 +78,7 @@ Covered in Q2 — ternary is `IfNode` with nil `if_keyword_loc`.
 
 ### Q8: All node types encountered across 20 test methods
 
-```
+```text
 StatementsNode, CallNode, ArgumentsNode, IfNode, UnlessNode, CaseNode, WhenNode,
 ElseNode, WhileNode, UntilNode, ForNode, AndNode, OrNode, RescueModifierNode,
 BeginNode, RescueNode, BlockNode, BlockParametersNode, ParametersNode,
@@ -89,7 +89,7 @@ KeywordHashNode
 
 ### Q9: CallNode fields
 
-```
+```text
 node.receiver    → Prism::Node or nil (nil = self call)
 node.name        → Symbol (e.g., :save, :has_many)
 node.arguments   → ArgumentsNode (has .arguments array)
@@ -119,7 +119,7 @@ node.block       → BlockNode or nil
 
 ### LOOP_METHODS
 
-```
+```ruby
 %w[each map collect select reject find detect reduce inject
    times upto downto step each_with_index each_with_object
    group_by partition sort_by flat_map]
@@ -128,7 +128,7 @@ node.block       → BlockNode or nil
 ### Receiver chain resolution (R6)
 
 Walk up the receiver chain:
-```
+```ruby
 bar.save           → receiver = nil → ["self"]
 bar.foo.save       → receiver = CallNode(name=:foo, receiver=CallNode(name=:bar)) → ["self", "bar", "foo"]
 Rails.logger.info  → receiver = CallNode(name=:logger, receiver=ConstantReadNode(name=:Rails)) → ["Rails", "logger"]
