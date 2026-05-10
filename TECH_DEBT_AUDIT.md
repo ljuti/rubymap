@@ -24,7 +24,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F009 | High | ✅ RESOLVED | 123 pending → 59. Deleted 64 empty stubs, fixed 8 live tests. Remaining 59 are intentional (52 Rails, 4 perf, 3 edge). |
 | F010 | High | ✅ RESOLVED | `define_method` monkey-patching replaced with `on_step` observer callback |
 | F011 | High | ✅ RESOLVED | Created `SymbolData` DTO with named accessors. ChunkGenerator (0 hash accesses), MarkdownRenderer (13→legitimate nested), LLM (13→top-level data). 90→26 hash accesses across emitter ecosystem. |
-| F012 | High | **OPEN** | Pipeline execution order contradicts documentation |
+| F012 | High | ✅ RESOLVED | Pipeline reordered to Extract→Normalize→Enrich→Index→Emit. Removed @graphs_cache workaround. Fixed bug in EnrichmentResult#to_h (start_line→line). |
 | F013 | Medium | **OPEN** | No pipeline result caching |
 | F014 | Medium | ✅ RESOLVED | Duplicate type coercion removed from Configuration |
 | F015 | Medium | ✅ RESOLVED | `system()` call removed during EmitterManager cleanup (F006) |

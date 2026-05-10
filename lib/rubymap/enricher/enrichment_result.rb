@@ -154,7 +154,7 @@ module Rubymap
           type: kind,
           superclass: superclass,
           file: file,
-          line: location&.start_line,
+          line: location&.line,
           namespace: namespace_path&.join("::"),
           documentation: nil,  # Could be added if we extract docs
           instance_methods: instance_methods,
@@ -205,7 +205,7 @@ module Rubymap
           fqname: fqname,
           type: "module",
           file: nil,  # EnrichedModule doesn't have file attribute
-          line: location&.start_line,
+          line: location&.line,
           namespace: namespace_path&.join("::"),
           documentation: nil,
           instance_methods: instance_methods || [],

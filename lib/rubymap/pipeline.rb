@@ -78,7 +78,7 @@ module Rubymap
     # Executes the complete analysis pipeline.
     #
     # Processes the specified paths through all pipeline stages:
-    # extraction, indexing, normalization, enrichment, and emission.
+    # extraction, normalization, enrichment, indexing, and emission.
     # Provides progress logging and handles errors gracefully.
     #
     # @param paths [Array<String>] File or directory paths to analyze
@@ -100,24 +100,24 @@ module Rubymap
       extracted_data = extract(paths)
       log "  → Extracted #{extracted_data[:classes]&.size || 0} classes, #{extracted_data[:modules]&.size || 0} modules"
 
-      # Step 2: Index the extracted data
-      step(2, 5, "Indexing extracted data...")
-      indexed_data = index(extracted_data)
-      log "  → Created index with #{indexed_data[:index]&.size || 0} symbols"
-
-      # Step 3: Normalize the data
-      step(3, 5, "Normalizing data...")
-      normalized_data = normalize(indexed_data)
+      # Step 2: Normalize the data
+      step(2, 5, "Normalizing data...")
+      normalized_data = normalize(extracted_data)
       log "  → Normalized and deduplicated data"
 
-      # Step 4: Enrich with additional metadata
-      step(4, 5, "Enriching with metadata...")
+      # Step 3: Enrich with additional metadata
+      step(3, 5, "Enriching with metadata...")
       enriched_data = enrich(normalized_data)
       log "  → Added metrics and relationships"
 
+      # Step 4: Index the enriched data
+      step(4, 5, "Indexing enriched data...")
+      indexed_data = index(enriched_data)
+      log "  → Created index with #{indexed_data[:index]&.size || 0} symbols"
+
       # Step 5: Emit output in requested format
       step(5, 5, "Emitting output...")
-      result = emit(enriched_data)
+      result = emit(indexed_data)
       log "  → Generated output in #{configuration.format} format"
 
       # Add error summary to result
@@ -265,11 +265,7 @@ module Rubymap
         return data
       end
 
-      # Keep graphs from indexed data if available
-      graphs = data[:graphs] if data.is_a?(Hash) && data[:graphs]
-
-      # Return the NormalizedResult but store graphs for later
-      @graphs_cache = graphs
+      # Return the NormalizedResult
       normalized_result
     end
 
@@ -294,8 +290,8 @@ module Rubymap
             project_name: "Ruby Project",
             ruby_version: RUBY_VERSION,
             enrichment_failed: true
-          },
-          graphs: @graphs_cache || {}
+          }
+          # graphs will be built by Index step after enrichment
         }
       end
 
@@ -310,8 +306,7 @@ module Rubymap
           ruby_version: RUBY_VERSION,
           total_classes: enrichment_result.classes.size,
           total_methods: enrichment_result.methods.size
-        },
-        graphs: @graphs_cache || {}
+        }
       }
     end
 

@@ -265,9 +265,9 @@ module Rubymap
 
       steps = [
         "Extracting data from Ruby files",
-        "Indexing extracted data",
         "Normalizing data",
         "Enriching with metadata",
+        "Indexing enriched data",
         "Emitting output"
       ]
 
