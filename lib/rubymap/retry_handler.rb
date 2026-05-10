@@ -43,7 +43,7 @@ module Rubymap
       @base_delay = base_delay
       @max_delay = max_delay
       @exponential_base = exponential_base
-      @retry_on = retry_on
+      @retry_on = retry_on.dup
 
       yield self if block_given?
     end
