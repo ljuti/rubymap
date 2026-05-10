@@ -42,7 +42,7 @@ Generated: 2026-05-09 | Updated: 2026-05-09 (12 findings resolved)
 | F027 | Low | ✅ RESOLVED | README mutation coverage claim removed during F005 README update. |
 | F028 | Low | ✅ RESOLVED | Singleton class hack replaced with proper `Prism::ParseError` handling |
 | F029 | Low | ⚠️ AMENDED | `tty-progressbar` IS the canonical gem name. Audit was incorrect. |
-| F030 | Low | **OPEN** | Result→hash conversion in Pipeline has no type checking |
+| F030 | Low | ✅ RESOLVED | `ResultAdapter` class with explicit typed mapping from Extractor::Result → hash format. Replaces 45 lines of `&.` safe-navigation in `merge_result!` with a 4-line delegation. 7 specs. |
 | F031 | Low | ⚠️ AMENDED | `load_rules` loads from `config/quality_rules.yml` (6KB, exists). Falls back to `default_rules` on error. Functional, not dead code. |
 | F032 | Low | ✅ RESOLVED | GraphViz manifest branch removed |
 

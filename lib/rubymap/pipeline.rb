@@ -374,60 +374,11 @@ module Rubymap
     end
 
     def merge_result!(target, result)
-      # Convert Result object data to hash format expected by pipeline
-      result.classes&.each do |class_info|
-        target[:classes] << {
-          name: class_info.name,
-          type: class_info.type,
-          superclass: class_info.superclass,
-          file: result.file_path,
-          line: class_info.location&.start_line,
-          namespace: class_info.namespace,
-          documentation: class_info.doc
-        }
-      end
-
-      result.modules&.each do |mod_info|
-        target[:modules] << {
-          name: mod_info.name,
-          type: "module",
-          file: result.file_path,
-          line: mod_info.location&.start_line,
-          namespace: mod_info.namespace,
-          documentation: mod_info.doc
-        }
-      end
-
-      # Add methods
-      if result.methods&.any?
-        result.methods.each do |method_info|
-          target[:methods] << {
-            name: method_info.name,
-            visibility: method_info.visibility,
-            receiver_type: method_info.receiver_type,
-            params: method_info.params,
-            file: result.file_path,
-            line: method_info.location&.start_line,
-            namespace: method_info.namespace,
-            owner: method_info.owner,
-            documentation: method_info.doc
-          }
-        end
-      end
-
-      # Add constants
-      if result.constants&.any?
-        result.constants.each do |const_info|
-          target[:constants] << {
-            name: const_info.name,
-            value: const_info.value,
-            file: result.file_path,
-            line: const_info.location&.start_line,
-            namespace: const_info.namespace,
-            documentation: const_info.respond_to?(:doc) ? const_info.doc : nil
-          }
-        end
-      end
+      adapted = ResultAdapter.adapt(result)
+      target[:classes].concat(adapted[:classes])
+      target[:modules].concat(adapted[:modules])
+      target[:methods].concat(adapted[:methods])
+      target[:constants].concat(adapted[:constants])
     end
 
     def write_output(filename, content)
