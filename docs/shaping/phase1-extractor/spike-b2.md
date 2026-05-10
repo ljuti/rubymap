@@ -129,7 +129,7 @@ node.block       → BlockNode or nil
 
 Walk up the receiver chain:
 ```ruby
-bar.save           → receiver = nil → ["self"]
-bar.foo.save       → receiver = CallNode(name=:foo, receiver=CallNode(name=:bar)) → ["self", "bar", "foo"]
+bar.save           → receiver = CallNode(name=:bar, receiver=nil) → ["bar"]
+bar.foo.save       → receiver = CallNode(name=:foo, receiver=CallNode(name=:bar)) → ["bar", "foo"]
 Rails.logger.info  → receiver = CallNode(name=:logger, receiver=ConstantReadNode(name=:Rails)) → ["Rails", "logger"]
 ```
