@@ -73,7 +73,7 @@ module Rubymap
 
     def empty? = @data.empty?
 
-    def nil? = @data.nil?
+
 
     def any? = @data.any?
 
