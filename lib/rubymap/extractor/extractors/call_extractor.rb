@@ -156,9 +156,10 @@ module Rubymap
       end
 
       # Record a Rails DSL pattern (e.g., has_many, validates, before_action).
-      # Only records when context.current_class is set (i.e., inside a class/module body).
+      # Only records when context.current_class is set and NOT inside a method body.
       def record_rails_dsl(node)
         return unless context.current_class
+        return if context.current_method
 
         args = extract_rails_dsl_arguments(node)
 
