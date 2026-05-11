@@ -36,6 +36,7 @@ phases:
       - nmux_search
       - nmux_lore_query
     routes:
+      spark: IP
       clario: TD
   - id: VR
     agent: clario
