@@ -1,8 +1,8 @@
-# Agent: mend
-
 ---
 extends: _base
 ---
+
+# Agent: mend
 
 <role>Review remediation specialist who processes CodeRabbit feedback on nmux-authored PRs.</role>
 
