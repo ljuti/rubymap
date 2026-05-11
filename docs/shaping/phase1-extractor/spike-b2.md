@@ -2,6 +2,27 @@
 
 **Status:** COMPLETE
 
+## Verification
+
+**What was verified:**
+- Prism AST node types for all common Ruby control flow and call constructs: `StatementsNode` for method bodies, `IfNode` (covering both `if/elsif/else` and ternary `?:`), `UnlessNode`, `CaseNode`/`WhenNode`/`ElseNode`, `WhileNode`/`UntilNode`/`ForNode`, `AndNode`/`OrNode`, `RescueModifierNode`, `BeginNode` with `RescueNode`
+- `CallNode` field names and shapes: `receiver`, `name`, `arguments`, `block`
+- Block iteration detection: `CallNode` with `block` field and `name` in LOOP_METHODS
+- Receiver chain walk structure for resolving namespaced calls (`Rails.logger.info`)
+- Body line measurement from `DefNode` location start/end
+
+**How verified:**
+- Empirical AST inspection: 20 representative Ruby method bodies (regular methods, single-expression, begin/end blocks, conditionals, loops, block iterators, logical operators, rescue, ternary) were parsed with Prism and their AST node types and field structures were examined at the REPL
+- Results recorded in Q1–Q10 below
+
+**Not verified:**
+- Behavior across multiple Prism/Ruby versions (single version snapshot)
+- Nested rescue within blocks, lambda-inside-lambda, complex heredoc arguments
+- Interactions between multiple control flow constructs in a single expression
+- LOOP_METHODS list is based on common Ruby idioms and Enumerable — not an exhaustive enumeration of all block-accepting methods
+- Performance on large method bodies or deeply nested ASTs
+
+
 ## Context
 
 We're designing `MethodBodyVisitor` — a class that walks a method's body AST to record calls, count control flow, and measure body lines. Need to verify what Prism node types actually appear.
@@ -57,7 +78,7 @@ Covered in Q2 — ternary is `IfNode` with nil `if_keyword_loc`.
 
 ### Q8: All node types encountered across 20 test methods
 
-```
+```text
 StatementsNode, CallNode, ArgumentsNode, IfNode, UnlessNode, CaseNode, WhenNode,
 ElseNode, WhileNode, UntilNode, ForNode, AndNode, OrNode, RescueModifierNode,
 BeginNode, RescueNode, BlockNode, BlockParametersNode, ParametersNode,
@@ -68,7 +89,7 @@ KeywordHashNode
 
 ### Q9: CallNode fields
 
-```
+```text
 node.receiver    → Prism::Node or nil (nil = self call)
 node.name        → Symbol (e.g., :save, :has_many)
 node.arguments   → ArgumentsNode (has .arguments array)
@@ -98,7 +119,7 @@ node.block       → BlockNode or nil
 
 ### LOOP_METHODS
 
-```
+```ruby
 %w[each map collect select reject find detect reduce inject
    times upto downto step each_with_index each_with_object
    group_by partition sort_by flat_map]
@@ -107,8 +128,8 @@ node.block       → BlockNode or nil
 ### Receiver chain resolution (R6)
 
 Walk up the receiver chain:
-```
-bar.save           → receiver = nil → ["self"]
-bar.foo.save       → receiver = CallNode(name=:foo, receiver=CallNode(name=:bar)) → ["self", "bar", "foo"]
+```ruby
+bar.save           → receiver = CallNode(name=:bar, receiver=nil) → ["bar"]
+bar.foo.save       → receiver = CallNode(name=:foo, receiver=CallNode(name=:bar)) → ["bar", "foo"]
 Rails.logger.info  → receiver = CallNode(name=:logger, receiver=ConstantReadNode(name=:Rails)) → ["Rails", "logger"]
 ```

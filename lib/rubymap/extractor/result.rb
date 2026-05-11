@@ -132,7 +132,8 @@ module Rubymap
           error.message,
           severity: severity,
           file: @file_path,
-          context: {original_context: context, error_class: error.class.name}
+          original_context: context,
+          error_class: error.class.name
         )
       end
 

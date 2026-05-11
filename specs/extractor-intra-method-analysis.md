@@ -76,7 +76,7 @@ The new data survives `MethodInfo#to_h` serialization and flows through the pipe
 - [ ] AC#3: Given a Rails model class body containing `has_many :posts, dependent: :destroy`, `validates :name, presence: true`, and `scope :active, -> { where(active: true) }`, when extracted, then `Result.patterns` contains three `PatternInfo` entries with `type: "rails_dsl"`, correct `method` names, and the target class name.
 - [ ] AC#4: Given a Rails controller class body containing `before_action :set_user, only: [:show, :edit]` and `rescue_from ActiveRecord::RecordNotFound, with: :not_found`, when extracted, then `Result.patterns` contains two `PatternInfo` entries with correct method names and arguments.
 - [ ] AC#5: Given `bundle exec rspec spec/extractor_spec.rb spec/extractor/**/*_spec.rb`, when run after all four slices, then all existing extractor tests continue to pass with no changed behavior.
-- [ ] AC#6: Given `bundle exec rspec`, when run after all four slices, then the full test suite passes (existing environmental failures from `ps`-based memory tests may remain, but no new failures are introduced).
+- [ ] AC#6: Given `bundle exec rspec`, when run after all four slices, then the full test suite passes. Every failure is investigated as introduced by the changes unless concrete evidence (CI log/link, green commit SHA, or reproducible pre-change failure) proves the failure pre-dated the changes. No unverified "pre-existing" or "environmental" labels are permitted.
 - [ ] AC#7: Given a method with keyword arguments (`has_many :posts, dependent: :destroy`) and a lambda argument (`scope :active, -> { where(active: true) }`), when extracted, then arguments are encoded as `{type: :hash, pairs: [...]}` and `{type: :block, source: "-> { where(active: true) }"}` respectively.
 - [ ] AC#8: Given nested structures (loop inside conditional, conditional inside loop), when extracted, then branch, loop, and conditional counts are correct for the entire method, not just the top level.
 - [ ] AC#9: Given `MethodInfo#to_h` is called on a fully extracted method, then the output hash includes `calls_made`, `branches`, `loops`, `conditionals`, and `body_lines` keys with correct values.
@@ -95,9 +95,9 @@ Add `calls_made`, `branches`, `loops`, `conditionals`, and `body_lines` accessor
 
 Add `current_method` and `with_method(name, &block)` to `ExtractionContext`. Add `current_class` and `with_class(name, &block)` to `ExtractionContext`. [AC#3]
 
-Extend `CallExtractor#extract`'s existing `case node.name` with Rails DSL patterns. When `context.current_class` is set and the call matches a Rails DSL pattern name, record a `PatternInfo` on `result.patterns`. Use a private `record_rails_dsl(node)` helper. [AC#3][AC#4]
+Extend `CallExtractor#extract`'s existing `case node.name` with Rails DSL patterns. When `context.current_class` is set and the call matches a Rails DSL pattern name, record a `PatternInfo` on `result.patterns`. Use a private `record_rails_dsl(node)` helper. \[AC#3\]\[AC#4\]
 
-The Rails DSL pattern set covers: `has_many`, `has_one`, `belongs_to`, `has_and_belongs_to_many`, `validates` and all `validates_*` variants, `before_action`/`after_action`/`around_action`/`skip_before_action`/`skip_after_action`/`skip_around_action` and their `_filter` aliases, `scope`, `default_scope`, `rescue_from`, `delegate`. [AC#3][AC#4]
+The Rails DSL pattern set covers: `has_many`, `has_one`, `belongs_to`, `has_and_belongs_to_many`, `validates` and all `validates_*` variants, `before_action`/`after_action`/`around_action`/`skip_before_action`/`skip_after_action`/`skip_around_action` and their `_filter` aliases, `scope`, `default_scope`, `rescue_from`, `delegate`. \[AC#3\]\[AC#4\]
 
 Implement `resolve_constant_path(node)` as a private method on both `MethodBodyVisitor` and `CallExtractor` (or extract into a shared module). Walk the receiver chain: `nil` → `nil`, `ConstantReadNode` → `[name]`, `ConstantPathNode` → `resolve(parent) + [name]`, `CallNode` → `resolve(receiver) + [name]`. [AC#1]
 
@@ -218,7 +218,7 @@ Extend `CallExtractor` to recognize Rails DSL patterns at class body level. Add 
 - `CallExtractor` detects `scope`, `default_scope`, `rescue_from`, `delegate`
 - Each Rails DSL pattern records the target class name from `context.current_class`
 - `ExtractionContext` tracks `current_class` with `with_class(name, &block)` that saves/restores state
-- `NodeVisitor#handle_class` wraps children in `context.with_class(clas_name)`
+- `NodeVisitor#handle_class` wraps children in `context.with_class(class_name)`
 - `NodeVisitor#handle_module` wraps children in `context.with_class(module_name)`
 - Existing `CallExtractor` patterns (`attr_*`, `include`, `require`, etc.) continue to work unchanged when Rails DSL calls are also present
 - Non-Rails classes produce no Rails DSL patterns
@@ -230,7 +230,7 @@ Extend `CallExtractor` to recognize Rails DSL patterns at class body level. Add 
 Run the full test suite and verify that V1-V3 work together correctly with no regressions. Write integration tests that exercise the complete pipeline with realistic Ruby fixtures. Create a gold file test for a reference project. Fix any issues discovered.
 
 **Acceptance Criteria:**
-- `bundle exec rspec` — full test suite passes with 0 new failures (existing `ps`-based memory test failures may remain as pre-existing)
+- `bundle exec rspec` — full test suite passes with 0 new failures. Any failure is treated as introduced unless proven pre-existing with concrete evidence (CI log/link or commit SHA demonstrating the failure pre-dated the changes).
 - New test files from V1-V3 all pass: `spec/extractor/method_body_visitor_spec.rb`, `spec/extractor/extractors/call_extractor_spec.rb` (Rails DSL section), `spec/extractor/models/method_info_spec.rb` (new fields), `spec/extractor/extraction_context_spec.rb` (current_class, current_method)
 - Integration test: extract a realistic Rails model (`User < ApplicationRecord` with `has_many`, `validates`, `scope`, multiple methods with control flow), verify all new fields populated, `to_h` serialization complete
 - Integration test: extract a realistic Rails controller (`UsersController < ApplicationController` with `before_action`, `rescue_from`), verify Rails DSL patterns detected

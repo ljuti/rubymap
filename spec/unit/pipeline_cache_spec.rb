@@ -9,6 +9,7 @@ RSpec.describe "PipelineCache" do
   let(:test_file) { "tmp/pipeline_cache_test_source.rb" }
 
   before do
+    FileUtils.mkdir_p("tmp")
     FileUtils.rm_rf(cache_dir)
     FileUtils.rm_rf(test_file)
   end

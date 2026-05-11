@@ -4,6 +4,7 @@ require_relative "../../support/emitter_test_data"
 
 RSpec.shared_examples "a deterministic emitter" do
   include EmitterTestData
+
   describe "deterministic output generation" do
     context "when given identical input data" do
       let(:sample_data) { EmitterTestData.basic_codebase }

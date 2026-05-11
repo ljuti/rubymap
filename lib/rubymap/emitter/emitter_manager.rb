@@ -37,7 +37,6 @@ module Rubymap
           results[format] = emit_format(emitter, indexed_data, output_dir, format)
         rescue => e
           errors << "#{format.capitalize} emission failed: #{e.message}"
-          raise
         end
 
         manifest_path = generate_unified_manifest(output_dir, results, errors, indexed_data, start_time)
@@ -64,7 +63,7 @@ module Rubymap
         results = {}
 
         formats.each do |format|
-          config = configs[format] || {}
+          config = @options.merge(configs[format] || {})
           emitter = create_emitter(format, **config)
           results[format] = emit_format(emitter, indexed_data, output_dir, format)
         end
@@ -80,7 +79,7 @@ module Rubymap
 
       def emit_format(emitter, indexed_data, output_dir, format)
         case format
-        when :llm
+        when :llm, :json, :yaml, :dot
           emitter.emit_to_directory(indexed_data, output_dir)
         else
           raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
@@ -91,6 +90,12 @@ module Rubymap
         case format
         when :llm
           Emitters::LLM.new(**config)
+        when :json
+          Emitters::JSON.new(**config)
+        when :yaml
+          Emitters::YAML.new(**config)
+        when :dot
+          Emitters::GraphViz.new(**config)
         else
           raise ArgumentError, "Unknown format: #{format}. Supported: #{SUPPORTED_FORMATS.map(&:inspect).join(", ")}"
         end

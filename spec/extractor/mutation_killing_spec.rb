@@ -254,6 +254,7 @@ RSpec.describe "Extractor Mutation Killing" do
     let(:test_class) do
       Class.new do
         include Rubymap::Extractor::Concerns::ResultMergeable
+
         attr_accessor :classes, :modules, :methods
         def initialize
           @classes = []

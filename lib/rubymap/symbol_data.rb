@@ -73,8 +73,6 @@ module Rubymap
 
     def empty? = @data.empty?
 
-    def nil? = @data.nil?
-
     def any? = @data.any?
 
     # Array-like interface for iteration over multiple symbols

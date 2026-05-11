@@ -2,6 +2,7 @@
 
 require "digest"
 require "fileutils"
+require "time"
 
 module Rubymap
   # Caches extracted file data keyed by file checksum.
@@ -70,7 +71,8 @@ module Rubymap
       return nil unless File.exist?(path)
 
       Marshal.load(File.binread(path))
-    rescue
+    rescue TypeError, ArgumentError
+      warn("Warning: Corrupted or incompatible cache entry at #{path}, ignoring")
       nil
     end
 

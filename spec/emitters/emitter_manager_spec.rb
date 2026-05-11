@@ -41,7 +41,7 @@ RSpec.describe Rubymap::Emitter::EmitterManager do
 
     it "raises on unsupported format" do
       expect {
-        manager.emit(test_data, output_dir, formats: [:json])
+        manager.emit(test_data, output_dir, formats: [:xml])
       }.to raise_error(ArgumentError, /Unknown format/)
     end
 

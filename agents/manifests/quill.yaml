@@ -1,0 +1,13 @@
+name: quill
+persona: quill
+
+workflows:
+  - id: document
+  - id: consult
+    params:
+      target: "(requesting agent)"
+      context: "documentation clarification questions"
+  - id: handoff
+    params:
+      recipient: "merge/deploy pipeline"
+      sign_off: "The knowledge is clear."

@@ -1,0 +1,64 @@
+phases:
+  - id: TD
+    agent: clario
+    workflow: technical-design
+    checklists: [clario-design]
+  - id: IP
+    agent: spark
+    workflow: plan
+    routes:
+      clario: TD
+  - id: IM
+    agent: spark
+    workflow: implement
+    checklists: [spark-implementation]
+  - id: RV
+    agent: blade
+    workflow: review
+    checklists: [blade-quality, blade-security, blade-state-lifecycle]
+    routes:
+      spark: IM
+      hon: RF
+      clario: TD
+  - id: SH
+    agent: tower
+    workflow: slice-handoff
+    allowed_tools:
+      - read_file
+      - rg
+      - fd
+      - fuzzy_filter
+      - git
+      - github_read
+      - nmux_signal
+      - nmux_tasks
+      - nmux_doc_get
+      - nmux_search
+      - nmux_lore_query
+    routes:
+      spark: IP
+      clario: TD
+  - id: VR
+    agent: clario
+    workflow: verify
+    routes:
+      spark: IM
+  - id: RF
+    agent: hon
+    workflow: refactor
+    checklists: [hon-delivery]
+    routes:
+      spark: IM
+      blade: RV
+  - id: FL
+    agent: clario
+    workflow: feedback-loop
+    requires_tool: nmux_lore_record
+    bypass_reason_substrings:
+      - "no learnings"
+      - "0 learnings"
+      - "matched design"
+  - id: DC
+    agent: quill
+    workflow: document
+    checklists: [quill-documentation]

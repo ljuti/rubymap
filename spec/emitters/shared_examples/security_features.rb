@@ -4,6 +4,7 @@ require_relative "../../support/emitter_test_data"
 
 RSpec.shared_examples "a security-conscious emitter" do
   include EmitterTestData
+
   describe "security and redaction features" do
     let(:sensitive_data) { EmitterTestData.with_sensitive_information }
 

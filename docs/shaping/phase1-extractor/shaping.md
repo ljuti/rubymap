@@ -4,6 +4,25 @@
 
 **Status:** Shaping complete. Ready for slicing.
 
+**Verified:**
+- Shape B (MethodBodyVisitor + CallExtractor extension) satisfies all core requirements R0–R6 and R8 per the fit-check table
+- Spike B2 confirmed Prism AST node types, field names, and the LOOP_METHODS mapping against real code
+- Parts breakdown (B1–B10) covers every mechanism needed: value object, visitor, context changes, model changes, argument encoding, receiver resolution, and tests
+- Breadboards map current state → proposed state with all affordances wired end-to-end
+- Existing test suite identified as the regression gate for R3
+
+**How verified:**
+- Design walkthrough: each requirement (R0–R8) was checked against Shape B's mechanisms (fit-check table, lines 52–64)
+- Spike B2: empirical Prism AST inspection of representative method bodies (see spike-b2.md)
+- Affordance tables and wiring diagram trace every data flow from visitor entry to serialized output
+
+**Not verified / caveats:**
+- No implementation code exists yet — all verification is at the design level
+- Spike B2 is the only completed spike; additional exploration may surface edge cases in argument encoding or receiver resolution
+- R7 (define_method) is explicitly deferred to Phase 6
+- The Rails DSL pattern list (B6) covers standard Rails but may need expansion for non-standard gems or custom DSLs
+- Real-world performance on large codebases has not been profiled
+
 ---
 
 ## Frame
@@ -82,7 +101,7 @@ A new dedicated visitor (`MethodBodyVisitor`) traverses method bodies and record
 
 ### Rails DSL patterns added to CallExtractor (B6)
 
-```
+```ruby
 when :has_many, :has_one, :belongs_to, :has_and_belongs_to_many
   → PatternInfo(type: "rails_dsl", method: node.name, target: context.current_class, arguments: extract_call_arguments(node))
 
@@ -164,7 +183,7 @@ Walk up the receiver chain and return array of constant names:
 
 ### CURRENT System (for reference)
 
-```
+```text
 PLACE: Extractor/NodeVisitor
   ┌─────────────────────────────────────────┐
   │ NodeVisitor                             │
@@ -204,7 +223,7 @@ PLACE: Extractor/Context
 
 ### Proposed System (Shape B)
 
-```
+```text
 PLACE: Extractor/NodeVisitor
   ┌──────────────────────────────────────────┐
   │ NodeVisitor (modified)                   │

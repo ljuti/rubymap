@@ -185,7 +185,7 @@ end
 ## Task List
 
 1. **Run full test suite** — `bundle exec rspec` — capture all failures
-2. **Fix any regressions** — triage failures: are they caused by V1-V3 changes, or pre-existing?
+2. **Fix any regressions** — assume every failure is a bug in the V4 changes until proven otherwise. A failure may only be classified as pre-existing with concrete evidence (reproduction on main, git bisect, or a failing commit prior to V4 changes).
 3. **Write integration tests** — gold file, MethodInfo completeness, pipeline end-to-end
 4. **Test edge cases:**
    - Empty methods (`def foo; end`)
@@ -201,7 +201,7 @@ end
 
 ## Completion Criteria
 
-- [ ] `bundle exec rspec` — 0 failures (existing 5 environmental failures may remain)
+- [ ] `bundle exec rspec` — 0 failures. Any failure that is not a V4 regression must be proven pre-existing with evidence (reproduction on main, git bisect, or failing commit prior to V4).
 - [ ] All V1-V3 new tests pass
 - [ ] Integration tests pass: gold file, completeness, pipeline
 - [ ] No regression in existing extractor, normalizer, enricher, indexer, or emitter behavior

@@ -78,6 +78,7 @@ module Rubymap
     def method_hash(method_info)
       {
         name: method_info.name,
+        scope: method_info.scope,
         visibility: method_info.visibility,
         receiver_type: method_info.receiver_type,
         params: method_info.params,
