@@ -5,12 +5,12 @@ module Rubymap
     module Processors
       class Redactor
         DEFAULT_PATTERNS = [
-          /password[\s]*[:=]\s*["']([^"']+)["']/i,
-          /secret[\s]*[:=]\s*["']([^"']+)["']/i,
-          /api[_-]?key[\s]*[:=]\s*["']([^"']+)["']/i,
-          /token[\s]*[:=]\s*["']([^"']+)["']/i,
-          /private[_-]?key[\s]*[:=]\s*["']([^"']+)["']/i,
-          /access[_-]?key[\s]*[:=]\s*["']([^"']+)["']/i
+          /password\s*[:=]\s*["']([^"']+)["']/i,
+          /secret\s*[:=]\s*["']([^"']+)["']/i,
+          /api[_-]?key\s*[:=]\s*["']([^"']+)["']/i,
+          /token\s*[:=]\s*["']([^"']+)["']/i,
+          /private[_-]?key\s*[:=]\s*["']([^"']+)["']/i,
+          /access[_-]?key\s*[:=]\s*["']([^"']+)["']/i
         ].freeze
 
         SECURITY_LEVELS = {
@@ -26,8 +26,8 @@ module Rubymap
           },
           aggressive: {
             patterns: DEFAULT_PATTERNS + [
-              /email[\s]*[:=]\s*["']([^"']+)["']/i,
-              /username[\s]*[:=]\s*["']([^"']+)["']/i,
+              /email\s*[:=]\s*["']([^"']+)["']/i,
+              /username\s*[:=]\s*["']([^"']+)["']/i,
               /\/home\/\w+/,
               /\/Users\/\w+/,
               /\b\d{3}-\d{2}-\d{4}\b/,  # SSN pattern

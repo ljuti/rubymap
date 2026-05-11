@@ -4,6 +4,7 @@ require_relative "../../support/emitter_test_data"
 
 RSpec.shared_examples "a format-validating emitter" do |format_type|
   include EmitterTestData
+
   describe "output format validation" do
     let(:sample_data) { EmitterTestData.basic_codebase }
 

@@ -382,7 +382,7 @@ module Rubymap
             lines << ""
             lines << "**Distribution**:"
             metrics[:complexity][:distribution].each do |category, count|
-              lines << "- #{category.to_s.capitalize}: #{count} method#{(count == 1) ? "" : "s"}"
+              lines << "- #{category.to_s.capitalize}: #{count} method#{"s" unless count == 1}"
             end
           end
 

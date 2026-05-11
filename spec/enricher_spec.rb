@@ -493,7 +493,6 @@ RSpec.describe "Rubymap::Enricher" do
           # Skip memory check on platforms without /proc
           expect(result.classes.size).to eq(100)
         end
-
       end
     end
 
@@ -1638,4 +1637,3 @@ def get_memory_usage
   match = File.read("/proc/self/status")[/VmRSS:\s+(\d+)/, 1]
   match&.to_i
 end
-
