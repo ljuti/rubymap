@@ -5,7 +5,7 @@ description: "Implementation quality gate and handoff artifact for code review"
 phase: IM
 agent: spark
 placeholders:
-  - key: test_runner
+  - key: test_command
   - key: system_test_command
   - key: lint_command
   - key: lint_tool
