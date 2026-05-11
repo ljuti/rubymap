@@ -44,7 +44,7 @@ The `proposed_spec` field is markdown that is parsed by an exact-match validator
 
 The spec opens with YAML frontmatter delimited by `---` lines. Keys are flush-left, no leading whitespace:
 
-```
+```yaml
 ---
 name: <spec-name>
 type: feature
@@ -72,15 +72,15 @@ These nine headings are mandatory. Each must appear exactly once, spelled exactl
 Anti-examples — these are common mistakes that cause validation failure:
 
 - ❌ `## Edge Cases` (missing "& Failure Modes")
-- ❌ `## In Scope` and `## Out of Scope` as top-level headings (must be `### ` subsections inside `## Boundaries`)
+- ❌ `## In Scope` and `## Out of Scope` as top-level headings (must be `###` subsections inside `## Boundaries`)
 - ❌ Omitting `## Context` or `## Examples` entirely
 - ❌ `## Out of Scope (deferred)` (no parenthetical qualifiers in heading text)
-- ❌ Frontmatter keys with leading whitespace (`  type: feature` instead of `type: feature`)
+- ❌ Frontmatter keys with leading whitespace (`type: feature` must be flush-left)
 - ❌ Adding `## Provenance` or `## Follow-on Slices` as top-level headings — put that content in `rationale.md`, not in the spec body
 
 ### Per-slice sections
 
-After `## Acceptance Criteria`, append one `### Slice: <slice-name>` heading per slice, in delivery order. Each slice section contains its scoped description plus a bold `**Acceptance Criteria:**` block listing slice-specific ACs. The slice headings are `### ` (level 3), not `## ` — they nest inside the document but are not top-level headings.
+After `## Acceptance Criteria`, append one `### Slice: <slice-name>` heading per slice, in delivery order. Each slice section contains its scoped description plus a bold `**Acceptance Criteria:**` block listing slice-specific ACs. The slice headings are `###` (level 3), not `##` — they nest inside the document but are not top-level headings.
 
 ### `proposal_id` format — STRICT
 
