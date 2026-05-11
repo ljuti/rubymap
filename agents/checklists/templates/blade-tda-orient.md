@@ -4,8 +4,9 @@ name: blade-tda-orient
 description: "Orientation checklist for the tech-debt audit — verifies the auditor built a real mental model before judging"
 phase: TDA-O
 agent: blade
-    - name: Reorient
-      meaning: "Step skipped or scratchpad incomplete"
+verdicts:
+  - name: Reorient
+    meaning: "Step skipped or scratchpad incomplete"
 
 placeholders: []
 
