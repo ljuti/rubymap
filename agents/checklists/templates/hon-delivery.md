@@ -20,7 +20,7 @@ agent: hon
 - [ ] **Full test suite passes** — `{{test_command}}` exits 0 `[state: ]`
 - [ ] **System tests pass** (if applicable) — `{{system_test_command}}` exits 0 `[state: ]`
 - [ ] **Existing behavioral tests unchanged** — diff to prior phase's test files shows only `[state: ]`
-- [ ] **Added tests serve refinement, not new scope** — each new test covers a refactoring-safety gap or `[state: ]`
+- [ ] **Added tests serve refinement, not new scope** — each new test covers a refactoring-safety gap or confirms behavior preservation `[state: ]`
 
 ### A2. Behavioral Boundary
 
@@ -37,7 +37,7 @@ agent: hon
 
 ### B1. Review Cuts Executed
 
-- [ ] **All marked cuts addressed** — each annotation has a corresponding change or justified `[state: ]`
+- [ ] **All marked cuts addressed** — each annotation has a corresponding change or justified deferral `[state: ]`
 - [ ] **Each cut verified independently** — tests pass after each discrete change `[state: ]`
 - [ ] **Cut execution recorded** — results captured in spec file `[state: ]`
 
@@ -49,7 +49,7 @@ agent: hon
 
 - [ ] **Code scanned for duplication** — DRY violations addressed `[state: ]`
 - [ ] **Long methods/functions broken into focused pieces** `[state: ]`
-- [ ] **Complex conditionals simplified** — guard clauses `[state: ]`
+- [ ] **Complex conditionals simplified** — guard clauses applied where appropriate `[state: ]`
 - [ ] **Naming reviewed for clarity** — intention-revealing `[state: ]`
 - [ ] **Code smells addressed** `[state: ]`
 - [ ] **Project style conventions followed** `[state: ]`
@@ -66,7 +66,7 @@ agent: hon
 ## C. Mandatory: Stopping Signals — TRIANGULATED
 
 > All three signals must be satisfied simultaneously.
-> with tooling, document the manual assessment method and result.
+> For stacks with tooling, document the manual assessment method and result.
 
 ### C1. Mutation Assessment
 
@@ -121,7 +121,7 @@ agent: hon
   - Mutation assessment: tool score OR manual protocol summary
   - Coverage: no regression on changed files
   - Complexity: within `{{max_method_length}}` / `{{max_complexity}}` bounds
-- [ ] **Any unmet signal justified** — if a signal can't be measured in this `[state: ]`
+- [ ] **Any unmet signal justified** — if a signal can't be measured in this stack, document justification `[state: ]`
 
 ---
 
@@ -147,7 +147,7 @@ agent: hon
 
 > Pick the project's convention (spec file, story file, or notes).
 
-- [ ] **Refinement narrative recorded** — cuts applied `[state: ]`
+- [ ] **Refinement narrative recorded** — all cuts applied and results documented `[state: ]`
 - [ ] **Review cut execution results logged** — each cut marked done `[state: ]`
 - [ ] **Stopping signal measurements captured** — mutation, coverage, complexity `[state: ]`
 - [ ] **Proactive opportunities listed** — or confirmed "none identified" `[state: ]`
