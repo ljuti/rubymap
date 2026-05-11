@@ -188,7 +188,7 @@ agent: hon
 >
 > **Do not sign if any concern remains undocumented.**
 
-```
+```text
 Sign-off: ____________________________
 Date:     ____________________________
 Verdict:  [ ] Honed to its essence.
