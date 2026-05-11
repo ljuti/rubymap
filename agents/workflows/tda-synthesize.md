@@ -27,7 +27,7 @@ Read every artifact produced in Phases 1 and 2, deduplicate and rank findings, a
 
 6. **Write `TECH_DEBT_AUDIT.md`** in repo root with these sections in order:
 
-   ```
+   ```md
    # Tech Debt Audit — <repo>
    Generated: <YYYY-MM-DD>
    ## Executive summary
