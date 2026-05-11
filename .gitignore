@@ -14,3 +14,4 @@
 rubymap_output
 .nmux/
 docs/nmux/
+.rubymap_cache/
