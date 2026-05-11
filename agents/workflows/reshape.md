@@ -105,7 +105,7 @@ You MUST respond with a single JSON object matching the `reshapeSubprocessOutput
 
 ```json
 {
-  "proposed_spec": "---\\nname: <spec-name>\\ntype: feature\\npriority: 2\\nslices: [<slice-1>, <slice-2>]\\n---\\n\\n## Problem\\n\\n...\\n\\n## Desired Outcome\\n\\n- ...\\n\\n## Context\\n\\n...\\n\\n## Technical Direction\\n\\n- ...\\n\\n## Domain Rules\\n\\n- ...\\n\\n## Edge Cases & Failure Modes\\n\\n- ...\\n\\n## Examples\\n\\n- ...\\n\\n## Boundaries\\n\\n- ...\\n\\n## Acceptance Criteria\\n\\n- AC#1: ...\\n- AC#2: ...\\n- AC#3: ...\\n\\n### Slice: <slice-1>\\n\\n...\\n\\n**Acceptance Criteria:**\\n- Slice AC: ...\\n\\n### Slice: <slice-2>\\n\\n...\\n\\n**Acceptance Criteria:**\\n- Slice AC: ...\\n",
+  "proposed_spec": "---\\nname: <spec-name>\\ntype: feature\\npriority: 2\\nstatus: reshaped\\n---\\n\\n## Problem\\n\\n...\\n\\n## Desired Outcome\\n\\n- ...\\n\\n## Context\\n\\n...\\n\\n## Technical Direction\\n\\n- ...\\n\\n## Domain Rules\\n\\n- ...\\n\\n## Edge Cases & Failure Modes\\n\\n- ...\\n\\n## Examples\\n\\n- ...\\n\\n## Boundaries\\n\\n- ...\\n\\n## Acceptance Criteria\\n\\n- AC#1: ...\\n- AC#2: ...\\n- AC#3: ...\\n\\n### Slice: <slice-1>\\n\\n...\\n\\n**Acceptance Criteria:**\\n- Slice AC: ...\\n\\n### Slice: <slice-2>\\n\\n...\\n\\n**Acceptance Criteria:**\\n- Slice AC: ...\\n",
   "proposal_diff": "diff --git a/specs/<name>.md b/specs/<name>.md\\n...",
   "rationale": {
     "cut_axis": "By subsystem because ...",
@@ -120,9 +120,12 @@ You MUST respond with a single JSON object matching the `reshapeSubprocessOutput
   "created_at": "<ISO-8601>",
   "validation": {
     "passed": true,
-    "errors": []
+    "errors": [],
+    "slice_count": 2,
+    "slice_names": ["<slice-1>", "<slice-2>"],
+    "summary": "All structural checks passed."
   }
 }
 ```
 
-All fields are required except `validation.errors` (omit when empty). The `proposed_spec` must be a complete, valid spec with YAML frontmatter (`---` delimited) and all required markdown sections. Each slice must have its own `### Slice: <name>` section with acceptance criteria.
+All fields are required. `validation.errors` may be an empty array when there are no errors. The `proposed_spec` must be a complete, valid spec with YAML frontmatter (`---` delimited) and all required markdown sections. Each slice must have its own `### Slice: <name>` section with acceptance criteria.
