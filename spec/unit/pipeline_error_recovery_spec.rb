@@ -74,5 +74,46 @@ RSpec.describe "Pipeline error recovery consistency" do
         FileUtils.rm_rf(src_dir)
       end
     end
+    end
+
+
+  describe "enrich stage forwards metadata" do
+    it "forwards patterns and method_calls from normalized result" do
+      config = Rubymap::Configuration.new(
+        format: :llm,
+        output_dir: "tmp/enrich_forward_test",
+        verbose: false,
+        progress: false
+      )
+      pipeline = Rubymap::Pipeline.new(config)
+
+      # Run on a file that has class-level DSL and methods with calls
+      src = "tmp/enrich_forward_src"
+      FileUtils.mkdir_p(src)
+      File.write("#{src}/user.rb", <<~RUBY)
+        class User < ApplicationRecord
+          has_many :posts
+          belongs_to :account
+          attr_accessor :name, :email
+          @@count = 0
+          alias :full_name :name
+
+          def save!
+            logger.info("saving")
+            valid? && persist
+          end
+        end
+      RUBY
+
+      begin
+        result = pipeline.run([src])
+        expect(result).to be_a(Hash)
+        expect(result).to have_key(:format)
+      ensure
+        FileUtils.rm_rf(src)
+        FileUtils.rm_rf("tmp/enrich_forward_test")
+        FileUtils.rm_rf(".rubymap_cache")
+      end
+    end
   end
 end

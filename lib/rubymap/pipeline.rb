@@ -327,10 +327,10 @@ module Rubymap
           modules: normalized_result.respond_to?(:modules) ? normalized_result.modules.map(&:to_h) : [],
           methods: normalized_result.respond_to?(:methods) ? normalized_result.methods.map(&:to_h) : [],
           method_calls: method_calls,
-          patterns: [],
-          attributes: [],
-          class_variables: [],
-          aliases: [],
+          patterns: extract_attached_from_normalized(normalized_result, :patterns),
+          attributes: extract_attached_from_normalized(normalized_result, :attributes),
+          class_variables: extract_attached_from_normalized(normalized_result, :class_variables),
+          aliases: extract_attached_from_normalized(normalized_result, :aliases),
           metadata: {
             enriched_at: Time.now.iso8601,
             project_name: "Ruby Project",
@@ -354,10 +354,10 @@ module Rubymap
         modules: enrichment_result.modules.map(&:to_h),
         methods: enrichment_result.methods.map(&:to_h),
         method_calls: method_calls,
-        patterns: enrichment_result.respond_to?(:patterns) ? enrichment_result.patterns : [],
-        attributes: enrichment_result.respond_to?(:attributes) ? enrichment_result.attributes : [],
-        class_variables: enrichment_result.respond_to?(:class_variables) ? enrichment_result.class_variables : [],
-        aliases: enrichment_result.respond_to?(:aliases) ? enrichment_result.aliases : [],
+        patterns: enrichment_result.respond_to?(:patterns) ? enrichment_result.patterns : extract_attached_from_normalized(normalized_result, :patterns),
+        attributes: enrichment_result.respond_to?(:attributes) ? enrichment_result.attributes : extract_attached_from_normalized(normalized_result, :attributes),
+        class_variables: enrichment_result.respond_to?(:class_variables) ? enrichment_result.class_variables : extract_attached_from_normalized(normalized_result, :class_variables),
+        aliases: enrichment_result.respond_to?(:aliases) ? enrichment_result.aliases : extract_attached_from_normalized(normalized_result, :aliases),
         metadata: {
           enriched_at: enrichment_result.enriched_at,
           project_name: "Ruby Project",
@@ -457,5 +457,23 @@ module Rubymap
       @on_step&.call(number, name, total)
       log "Step #{number}/#{total}: #{name}"
     end
+
+    # Extracts metadata attached to normalized classes/modules by AttachMetadataStep.
+    # Used as fallback when EnrichmentResult does not carry these fields.
+    def extract_attached_from_normalized(normalized_result, key)
+      return [] unless normalized_result.respond_to?(:classes) && normalized_result.respond_to?(:modules)
+
+      all = []
+      (normalized_result.classes || []).each do |c|
+        vals = c.respond_to?(key) ? c.send(key) : nil
+        all.concat(vals) if vals.is_a?(Array)
+      end
+      (normalized_result.modules || []).each do |m|
+        vals = m.respond_to?(key) ? m.send(key) : nil
+        all.concat(vals) if vals.is_a?(Array)
+      end
+      all
+    end
   end
 end
+

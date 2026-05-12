@@ -114,5 +114,63 @@ RSpec.describe "ResultAdapter" do
       hash = Rubymap::ResultAdapter.adapt(result)
       expect(hash[:classes].first[:superclass]).to be_nil
     end
+
+    it "returns all data types including mixins, attributes, dependencies, patterns, class_variables, aliases, method_calls" do
+      result = extract(<<~RUBY)
+        module Searchable
+          included do
+            has_many :searches
+          end
+        end
+
+        class User < ApplicationRecord
+          include Searchable
+          attr_accessor :name, :email
+          @@count = 0
+          MAX_SIZE = 100
+          alias :full_name :name
+
+          def authenticate(password)
+            logger.info("auth")
+            valid_password?(password)
+          end
+        end
+      RUBY
+
+      hash = Rubymap::ResultAdapter.adapt(result)
+
+      expect(hash).to have_key(:mixins)
+      expect(hash).to have_key(:attributes)
+      expect(hash).to have_key(:dependencies)
+      expect(hash).to have_key(:patterns)
+      expect(hash).to have_key(:class_variables)
+      expect(hash).to have_key(:aliases)
+      expect(hash).to have_key(:method_calls)
+    end
+
+    it "method hash includes Phase 1 intra-method fields" do
+      result = extract(<<~RUBY)
+        class User
+          def process(items)
+            items.each do |item|
+              if item.valid?
+                save(item)
+              else
+                log_error(item)
+              end
+            end
+          end
+        end
+      RUBY
+
+      hash = Rubymap::ResultAdapter.adapt(result)
+      method = hash[:methods].find { |m| m[:name] == "process" }
+
+      expect(method).to have_key(:calls_made)
+      expect(method).to have_key(:branches)
+      expect(method).to have_key(:loops)
+      expect(method).to have_key(:conditionals)
+      expect(method).to have_key(:body_lines)
+    end
   end
 end

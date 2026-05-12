@@ -466,9 +466,138 @@ RSpec.describe Rubymap::Normalizer::ProcessingPipeline do
         expect(context.result.errors).to eq(["test error"])
       end
     end
+
+    describe Rubymap::Normalizer::AttachMetadataStep do
+      let(:step) { described_class.new }
+      let(:ctx) {
+        Rubymap::Normalizer::PipelineContext.new(
+          input: nil,
+          result: Rubymap::Normalizer::NormalizedResult.new,
+          container: container
+        )
+      }
+
+      before do
+        # Create normalized classes and modules that the step will find
+        ctx.result.classes << Rubymap::Normalizer::CoreNormalizedClass.new(
+          name: "User", fqname: "User"
+        )
+        ctx.result.modules << Rubymap::Normalizer::NormalizedModule.new(
+          name: "Searchable", fqname: "Searchable"
+        )
+      end
+
+      it "attaches patterns to target classes by name" do
+        ctx.extracted_data = {
+          patterns: [
+            {type: "has_many", target: "User", method: "posts"},
+            {type: "belongs_to", target: "User", method: "account"}
+          ]
+        }
+
+        step.call(ctx)
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.patterns).to contain_exactly(
+          {type: "has_many", target: "User", method: "posts"},
+          {type: "belongs_to", target: "User", method: "account"}
+        )
+      end
+
+      it "attaches attributes to namespace-matching classes" do
+        ctx.extracted_data = {
+          attributes: [
+            {name: "email", type: "attr_accessor", namespace: "User"}
+          ]
+        }
+
+        step.call(ctx)
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.attributes).to contain_exactly(
+          {name: "email", type: "attr_accessor", namespace: "User"}
+        )
+      end
+
+      it "attaches class_variables to namespace-matching classes" do
+        ctx.extracted_data = {
+          class_variables: [
+            {name: "@@count", namespace: "User", initial_value: "0"}
+          ]
+        }
+
+        step.call(ctx)
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.class_variables).to contain_exactly(
+          {name: "@@count", namespace: "User", initial_value: "0"}
+        )
+      end
+
+      it "attaches aliases to namespace-matching classes" do
+        ctx.extracted_data = {
+          aliases: [
+            {new_name: "full_name", original_name: "name", namespace: "User"}
+          ]
+        }
+
+        step.call(ctx)
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.aliases).to contain_exactly(
+          {new_name: "full_name", original_name: "name", namespace: "User"}
+        )
+      end
+
+      it "attaches metadata to modules as well as classes" do
+        ctx.extracted_data = {
+          patterns: [
+            {type: "included", target: "Searchable"}
+          ]
+        }
+
+        step.call(ctx)
+
+        mod = ctx.result.modules.find { |m| m.name == "Searchable" }
+        expect(mod.patterns).to contain_exactly(
+          {type: "included", target: "Searchable"}
+        )
+      end
+
+      it "skips entries with no matching target" do
+        ctx.extracted_data = {
+          patterns: [
+            {type: "has_many", target: "NonExistent", method: "items"}
+          ]
+        }
+
+        expect { step.call(ctx) }.not_to raise_error
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.patterns).to be_nil.or eq([])
+      end
+
+      it "handles empty data without errors" do
+        ctx.extracted_data = nil
+        expect { step.call(ctx) }.not_to raise_error
+      end
+
+      it "does nothing when extracted_data is missing all metadata keys" do
+        ctx.extracted_data = {classes: [], modules: []}
+        expect { step.call(ctx) }.not_to raise_error
+
+        user = ctx.result.classes.find { |c| c.name == "User" }
+        expect(user.patterns).to eq([])
+        expect(user.attributes).to eq([])
+        expect(user.class_variables).to eq([])
+        expect(user.aliases).to eq([])
+      end
+    end
+
   end
 
   describe "improved design benefits" do
+
     it "allows testing individual steps in isolation" do
       # Each step can be tested independently
       step = Rubymap::Normalizer::ExtractSymbolsStep.new
