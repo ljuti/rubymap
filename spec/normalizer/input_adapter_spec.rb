@@ -132,7 +132,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -144,7 +149,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -156,7 +166,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -168,7 +183,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -180,7 +200,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -192,7 +217,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
     end

@@ -23,6 +23,8 @@ module Rubymap
       :instance_methods, :class_methods,
       :available_instance_methods, :available_class_methods,
       :mixins, :dependencies, :provenance, :doc, :rubymap,
+      # Metadata attachment fields (populated by AttachMetadataStep)
+      :patterns, :attributes, :class_variables, :aliases,
       keyword_init: true
     ) do
       def initialize(**args)
@@ -36,6 +38,10 @@ module Rubymap
         args[:available_class_methods] ||= []
         args[:mixins] ||= []
         args[:dependencies] ||= []
+        args[:patterns] ||= []
+        args[:attributes] ||= []
+        args[:class_variables] ||= []
+        args[:aliases] ||= []
         super
         # Note: Not freezing to allow resolvers to modify
       end
@@ -52,11 +58,17 @@ module Rubymap
     CoreNormalizedModule = Struct.new(
       :symbol_id, :name, :fqname, :kind, :location,
       :namespace_path, :children, :provenance, :doc,
+      # Metadata attachment fields (populated by AttachMetadataStep)
+      :patterns, :attributes, :class_variables, :aliases,
       keyword_init: true
     ) do
       def initialize(**args)
         args[:kind] ||= "module"
         args[:children] ||= []
+        args[:patterns] ||= []
+        args[:attributes] ||= []
+        args[:class_variables] ||= []
+        args[:aliases] ||= []
         super
         # Note: Not freezing to allow resolvers to modify
       end

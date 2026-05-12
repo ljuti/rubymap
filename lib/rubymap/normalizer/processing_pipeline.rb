@@ -52,6 +52,7 @@ module Rubymap
         [
           ExtractSymbolsStep.new,
           ProcessSymbolsStep.new,
+          AttachMetadataStep.new,
           ResolveRelationshipsStep.new,
           DeduplicateSymbolsStep.new,
           FormatOutputStep.new
@@ -129,7 +130,90 @@ module Rubymap
       end
     end
 
-    # Step 3: Resolve relationships
+    # Step 3: Attach metadata (patterns, attributes, class_variables, aliases)
+    # to already-normalized classes and modules by name lookup.
+    class AttachMetadataStep < PipelineStep
+      def call(context)
+        return unless context.extracted_data
+
+        attach_patterns(context)
+        attach_attributes(context)
+        attach_class_variables(context)
+        attach_aliases(context)
+      end
+
+      private
+
+      def attach_patterns(context)
+        patterns = context.extracted_data[:patterns] || []
+        return if patterns.empty?
+
+        patterns.each do |pattern|
+          target = pattern[:target]
+          next unless target
+
+          normalized = find_symbol(context.result, target)
+          next unless normalized
+
+          normalized.patterns ||= []
+          normalized.patterns << pattern
+        end
+      end
+
+      def attach_attributes(context)
+        attrs = context.extracted_data[:attributes] || []
+        return if attrs.empty?
+
+        attrs.each do |attr_data|
+          namespace = attr_data[:namespace]
+          next unless namespace
+
+          normalized = find_symbol(context.result, namespace)
+          next unless normalized
+
+          normalized.attributes ||= []
+          normalized.attributes << attr_data
+        end
+      end
+
+      def attach_class_variables(context)
+        class_vars = context.extracted_data[:class_variables] || []
+        return if class_vars.empty?
+
+        class_vars.each do |cv|
+          namespace = cv[:namespace]
+          next unless namespace
+
+          normalized = find_symbol(context.result, namespace)
+          next unless normalized
+
+          normalized.class_variables ||= []
+          normalized.class_variables << cv
+        end
+      end
+
+      def attach_aliases(context)
+        aliases = context.extracted_data[:aliases] || []
+        return if aliases.empty?
+
+        aliases.each do |aliaz|
+          namespace = aliaz[:namespace]
+          next unless namespace
+
+          normalized = find_symbol(context.result, namespace)
+          next unless normalized
+
+          normalized.aliases ||= []
+          normalized.aliases << aliaz
+        end
+      end
+
+      def find_symbol(result, name)
+        result.classes.find { |c| c.name == name } || result.modules.find { |m| m.name == name }
+      end
+    end
+
+    # Step 4: Resolve relationships
     class ResolveRelationshipsStep < PipelineStep
       # Make resolvers configurable for better testability
       RESOLVER_TYPES = [
@@ -149,7 +233,7 @@ module Rubymap
       end
     end
 
-    # Step 4: Deduplicate symbols
+    # Step 5: Deduplicate symbols
     class DeduplicateSymbolsStep < PipelineStep
       def call(context)
         deduplicator = context.container.get(:deduplicator)
@@ -157,7 +241,7 @@ module Rubymap
       end
     end
 
-    # Step 5: Format output
+    # Step 6: Format output
     class FormatOutputStep < PipelineStep
       def call(context)
         formatter = context.container.get(:output_formatter)

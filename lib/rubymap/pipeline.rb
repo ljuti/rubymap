@@ -143,6 +143,13 @@ module Rubymap
         modules: [],
         methods: [],
         constants: [],
+        mixins: [],
+        attributes: [],
+        dependencies: [],
+        patterns: [],
+        class_variables: [],
+        aliases: [],
+        method_calls: [],
         metadata: {
           extracted_at: Time.now.iso8601,
           ruby_version: RUBY_VERSION,
@@ -215,7 +222,7 @@ module Rubymap
     end
 
     def extract_result_to_cache(result)
-      temp = {classes: [], modules: [], methods: [], constants: []}
+      temp = {classes: [], modules: [], methods: [], constants: [], mixins: [], attributes: [], dependencies: [], patterns: [], class_variables: [], aliases: [], method_calls: []}
       merge_result!(temp, result)
       temp
     end
@@ -225,6 +232,13 @@ module Rubymap
       target[:modules].concat(cached[:modules] || [])
       target[:methods].concat(cached[:methods] || [])
       target[:constants].concat(cached[:constants] || [])
+      target[:mixins].concat(cached[:mixins] || [])
+      target[:attributes].concat(cached[:attributes] || [])
+      target[:dependencies].concat(cached[:dependencies] || [])
+      target[:patterns].concat(cached[:patterns] || [])
+      target[:class_variables].concat(cached[:class_variables] || [])
+      target[:aliases].concat(cached[:aliases] || [])
+      target[:method_calls].concat(cached[:method_calls] || [])
     end
 
     def index(data)
@@ -300,25 +314,50 @@ module Rubymap
         )
         log "  Warning during enrichment: #{e.message}"
         # Return a basic result on enrichment failure
-        return {
+        method_calls = if normalized_result.respond_to?(:method_calls)
+          normalized_result.method_calls.map do |mc|
+            mc.respond_to?(:to_h) ? mc.to_h : mc
+          end
+        else
+          []
+        end
+
+        {
           classes: normalized_result.respond_to?(:classes) ? normalized_result.classes.map(&:to_h) : [],
           modules: normalized_result.respond_to?(:modules) ? normalized_result.modules.map(&:to_h) : [],
           methods: normalized_result.respond_to?(:methods) ? normalized_result.methods.map(&:to_h) : [],
+          method_calls: method_calls,
+          patterns: [],
+          attributes: [],
+          class_variables: [],
+          aliases: [],
           metadata: {
             enriched_at: Time.now.iso8601,
             project_name: "Ruby Project",
             ruby_version: RUBY_VERSION,
             enrichment_failed: true
           }
-          # graphs will be built by Index step after enrichment
         }
       end
 
       # Convert EnrichmentResult to hash format expected by emitters
+      method_calls = if enrichment_result.respond_to?(:method_calls)
+        enrichment_result.method_calls.map do |mc|
+          mc.respond_to?(:to_h) ? mc.to_h : mc
+        end
+      else
+        []
+      end
+
       {
         classes: enrichment_result.classes.map(&:to_h),
         modules: enrichment_result.modules.map(&:to_h),
         methods: enrichment_result.methods.map(&:to_h),
+        method_calls: method_calls,
+        patterns: enrichment_result.respond_to?(:patterns) ? enrichment_result.patterns : [],
+        attributes: enrichment_result.respond_to?(:attributes) ? enrichment_result.attributes : [],
+        class_variables: enrichment_result.respond_to?(:class_variables) ? enrichment_result.class_variables : [],
+        aliases: enrichment_result.respond_to?(:aliases) ? enrichment_result.aliases : [],
         metadata: {
           enriched_at: enrichment_result.enriched_at,
           project_name: "Ruby Project",
@@ -379,6 +418,13 @@ module Rubymap
       target[:modules].concat(adapted[:modules])
       target[:methods].concat(adapted[:methods])
       target[:constants].concat(adapted[:constants])
+      target[:mixins].concat(adapted[:mixins])
+      target[:attributes].concat(adapted[:attributes])
+      target[:dependencies].concat(adapted[:dependencies])
+      target[:patterns].concat(adapted[:patterns])
+      target[:class_variables].concat(adapted[:class_variables])
+      target[:aliases].concat(adapted[:aliases])
+      target[:method_calls].concat(adapted[:method_calls])
     end
 
     def write_output(filename, content)

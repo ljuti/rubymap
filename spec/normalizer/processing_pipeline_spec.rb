@@ -21,12 +21,13 @@ RSpec.describe Rubymap::Normalizer::ProcessingPipeline do
       pipeline = described_class.new(container)
       steps = pipeline.steps
 
-      expect(steps.size).to eq(5)
+      expect(steps.size).to eq(6)
       expect(steps[0]).to be_a(Rubymap::Normalizer::ExtractSymbolsStep)
       expect(steps[1]).to be_a(Rubymap::Normalizer::ProcessSymbolsStep)
-      expect(steps[2]).to be_a(Rubymap::Normalizer::ResolveRelationshipsStep)
-      expect(steps[3]).to be_a(Rubymap::Normalizer::DeduplicateSymbolsStep)
-      expect(steps[4]).to be_a(Rubymap::Normalizer::FormatOutputStep)
+      expect(steps[2]).to be_a(Rubymap::Normalizer::AttachMetadataStep)
+      expect(steps[3]).to be_a(Rubymap::Normalizer::ResolveRelationshipsStep)
+      expect(steps[4]).to be_a(Rubymap::Normalizer::DeduplicateSymbolsStep)
+      expect(steps[5]).to be_a(Rubymap::Normalizer::FormatOutputStep)
     end
   end
 

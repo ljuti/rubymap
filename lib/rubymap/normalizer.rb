@@ -227,6 +227,8 @@ module Rubymap
       :actions, :filters, :rescue_handlers,
       # Test data fields
       :method_names,
+      # Metadata attachment fields (populated by AttachMetadataStep)
+      :patterns, :attributes, :class_variables, :aliases,
       keyword_init: true
     )
 
@@ -235,6 +237,8 @@ module Rubymap
       :namespace_path, :children, :provenance,
       # Additional fields for testing
       :instance_methods, :visibility,
+      # Metadata attachment fields (populated by AttachMetadataStep)
+      :patterns, :attributes, :class_variables, :aliases,
       keyword_init: true
     )
 
