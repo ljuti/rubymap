@@ -16,3 +16,4 @@ rubymap_output
 docs/nmux/
 .rubymap_cache/
 spec/fixtures/test_project/.rubymap_cache/
+.env
