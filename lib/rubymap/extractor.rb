@@ -6,6 +6,7 @@ require "prism"
 require_relative "extractor/result"
 require_relative "extractor/extraction_context"
 require_relative "extractor/node_visitor"
+require_relative "extractor/method_body_result"
 require_relative "extractor/concerns/result_mergeable"
 
 # Load all model classes

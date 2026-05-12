@@ -167,7 +167,8 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
 
     describe "#handle_class" do
       it "delegates to class extractor and visits children" do
-        node = double("class_node")
+        constant_path_double = double("constant_path", to_s: "MyClass")
+        node = double("class_node", constant_path: constant_path_double)
         block_called = false
 
         # Mock the extractor to capture the block
@@ -187,7 +188,8 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
 
     describe "#handle_module" do
       it "delegates to module extractor and visits children" do
-        node = double("module_node")
+        constant_path_double = double("constant_path", to_s: "MyModule")
+        node = double("module_node", constant_path: constant_path_double)
         block_called = false
 
         module_extractor = visitor.instance_variable_get(:@extractors)[:module]
@@ -205,8 +207,12 @@ RSpec.describe Rubymap::Extractor::NodeVisitor do
     end
 
     describe "#handle_method" do
-      it "delegates to method extractor and visits children" do
+      it "delegates to method extractor, runs body visitor, and visits children" do
         node = double("method_node")
+        body_node = double("body_node")
+        allow(node).to receive(:name).and_return(double(to_s: "test_method"))
+        allow(node).to receive(:body).and_return(body_node)
+        allow(node).to receive(:location).and_return(nil)
 
         method_extractor = visitor.instance_variable_get(:@extractors)[:method]
         expect(method_extractor).to receive(:extract).with(node)

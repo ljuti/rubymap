@@ -68,8 +68,9 @@ A secondary blocker: `Pipeline#merge_result!` drops most extracted data (mixins,
 
 ## Phase 1: Extractor — Capture What's Needed
 
-**Status:** CRITICAL PATH — blocks Phases 2, 3, and 5
-**Effort:** 4-6 days
+**Status:** COMPLETE — Phase 1 implementation delivered  
+**Effort:** 4-6 days  
+**Completed:** All four slices (V1-V4) landed:
 
 ### Problem
 
@@ -198,11 +199,11 @@ Tests to write/unskip:
 
 ### Acceptance Criteria
 
-- [ ] `MethodInfo` has `calls_made`, `branches`, `loops`, `conditionals`, `body_lines`
-- [ ] Methods containing calls to other methods have those calls recorded
-- [ ] Rails DSL calls at class body level are captured as patterns
-- [ ] All new code has tests
-- [ ] Existing tests continue to pass
+- [x] `MethodInfo` has `calls_made`, `branches`, `loops`, `conditionals`, `body_lines`
+- [x] Methods containing calls to other methods have those calls recorded
+- [x] Rails DSL calls at class body level are captured as patterns
+- [x] All new code has tests (method_body_visitor_spec.rb, call_extractor_spec.rb, method_info_spec.rb, integration specs)
+- [x] Existing tests continue to pass
 
 ---
 

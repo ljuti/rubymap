@@ -1,0 +1,3058 @@
+
+Randomized with seed 46787
+
+Rubymap::Extractor::BaseExtractor
+  method visibility
+    makes extract_constant_name protected
+    makes documentation methods protected
+  #extract_constant_name
+    with non-Prism constant node types
+      calls to_s on object with custom to_s
+      calls to_s on numeric node
+      calls to_s on string node
+      calls to_s on symbol node
+      returns exact result of to_s method
+    with Prism::ConstantReadNode
+      extracts name as string from different constant
+      extracts name as string from simple constant
+      converts name to string exactly
+    with Prism::ConstantPathNode
+      joins parts with exactly :: separator
+      handles complex constant path with root namespace
+      extracts deeply nested constant path
+      handles constant path where parent is nil
+      handles constant path with root namespace
+      compacts nil values from parts array
+      extracts simple constant path
+      extracts nested constant path
+      with recursive constant path extraction
+        handles mixed ConstantReadNode and ConstantPathNode parents
+        recursively extracts parent constant names
+    with falsy node
+      returns nil for false
+    with nil node
+      returns nil exactly
+    edge cases for mutation killing
+      returns nil when node evaluates to nil
+      handles empty constant path correctly
+      preserves exact string format from Prism nodes
+  #extract_inline_comment
+    delegates to documentation service with correct parameters
+  #initialize
+    creates new documentation service instance
+    initializes with context and result
+    creates new namespace service instance
+    creates distinct service instances for each extractor
+    stores context and result as readable attributes
+    creates services that can be used immediately
+  #extract_documentation
+    returns exactly what documentation service returns
+    delegates to documentation service with correct parameters
+  #extract_yard_tags
+    delegates to documentation service with correct parameter
+    passes exact documentation string to service
+    returns result from documentation service unchanged when empty
+
+Rubymap::Enricher::Analyzers::BaseAnalyzer
+  protected methods
+    #matches_naming_pattern?
+      with other pattern types
+        returns false for hash pattern
+        returns false for numeric pattern
+        returns false for array pattern
+        returns false for nil pattern
+      with Regexp pattern
+        returns true for matching regex
+        returns nil for non-match
+        returns match position for successful match
+        matches case-sensitive regex
+        returns false for non-matching regex
+      with String pattern
+        returns true for case-insensitive string match
+        returns false for non-matching string
+        handles case differences correctly
+        requires case-insensitive comparison
+        checks inclusion not equality
+        returns true for partial string match
+    #calculate_confidence
+      returns 0 when no evidence matches required
+      calculates correct weighted score
+      works with 2 arguments using default empty array
+      uses empty array as default for optional_evidence
+      handles empty required evidence
+      calculates confidence with required evidence only
+      weights required at 0.7 and optional at 0.3
+      requires default parameter to handle 2-arg calls
+      calculates confidence with both required and optional evidence
+      rounds to 2 decimal places
+      returns 0.7 when all required met but no optional
+      treats nil optional_evidence differently than empty array
+      handles empty optional evidence array
+      handles when all optional evidence matches but no required
+    #extract_evidence
+      handles nil class_methods gracefully
+      extracts class methods from symbol
+      extracts instance methods from symbol
+      handles nil instance_methods gracefully
+      returns empty array for symbol without methods
+      extracts both instance and class methods
+      with naming patterns
+        adds singleton_name evidence for Singleton suffix
+        handles all patterns for complex names
+        rejects Singleton pattern with newline after
+        adds strategy_name evidence for Strategy suffix
+        adds observer_name evidence for Observer suffix
+        rejects Strategy pattern with newline after
+        rejects Factory pattern with newline after
+        adds factory_name evidence for Factory suffix
+        does not add pattern evidence for non-matching names
+        rejects Observer pattern with newline after
+    #pattern_matches?
+      requires default parameter to handle 2-arg calls
+      returns false when confidence is below threshold
+      rejects NaN threshold
+      requires threshold parameter when called with 3 arguments
+      uses 0.7 as default threshold
+      differentiates 1.0 threshold from default 0.7
+      returns true when exactly at threshold
+      handles edge case thresholds
+      tests exact boundary at 0.7 threshold
+      works with 2 arguments using default threshold
+      returns false for empty evidence
+      uses custom threshold when provided
+      returns true when confidence meets threshold
+      returns false when required is empty
+      returns false for empty required evidence
+      differentiates 0.0 threshold from default 0.7
+      rejects negative infinity threshold
+  #analyze
+    raises NotImplementedError
+    raises with the correct message
+
+Rubymap::Extractor::Services::NamespaceService
+  #nested_in?
+    with nil values
+      returns false when child namespace is nil
+      returns false when both namespaces are nil
+      returns false when parent namespace is nil
+    with empty strings
+      returns false for empty child
+      returns false for empty parent
+      returns false for both empty
+    when child is nested in parent
+      returns true for nested namespace at two levels
+      returns true for deeply nested namespace
+      returns true for directly nested namespace
+      returns true for very deeply nested namespace
+    with symbols and type conversion
+      handles symbol parent
+      handles symbol child
+      handles both symbols
+      handles numeric inputs
+    when child is not nested in parent
+      returns false for prefix without double colon
+      returns false for exact same nested namespace
+      returns false for same namespace
+      returns false for completely different namespaces
+      returns false for similar but different namespaces
+      returns false for parent longer than child
+    with edge cases
+      handles single character namespaces
+      handles namespaces with numbers
+      verifies start_with? pattern matching
+      returns false for case sensitivity
+      handles leading double colons in child
+      returns false for partial matches
+      handles leading double colons in parent
+  #normalize_name
+    with names without leading ::
+      preserves namespaced name without leading ::
+      preserves deeply nested name without leading ::
+      preserves simple name without leading ::
+    with symbols and type conversion
+      handles numeric inputs with leading ::
+      handles numeric inputs
+      handles symbols with leading ::
+      handles symbols with namespaces
+      handles symbols without leading ::
+    with nil and empty inputs
+      returns nil for nil input
+      returns empty string for empty string
+    with edge cases
+      correctly handles multiple consecutive :: at the beginning
+      verifies gsub pattern matches only leading ::
+      handles whitespace with leading ::
+      handles string with only colons differently than empty
+      only removes :: from the beginning of the entire string, not from beginning of lines
+      returns exact string object for non-matching input
+      preserves :: at end of name
+      preserves :: in middle of name
+    with names having leading ::
+      removes leading :: from deeply nested name
+      handles just double colons
+      removes only first occurrence of leading ::
+      removes leading :: from namespaced name
+      removes leading :: from simple name
+  #fully_qualified?
+    with nil and empty inputs
+      returns false for nil
+      returns false for empty string
+    with fully qualified names
+      returns true for just double colons
+      returns true for nested names starting with ::
+      returns true for names starting with ::
+      returns true for deeply nested names starting with ::
+    with symbols and type conversion
+      handles symbols without leading ::
+      handles symbols with leading ::
+      handles numeric inputs
+      handles string representations of numbers starting with ::
+    with regular names
+      returns false for single character names
+      returns false for deeply nested names without leading ::
+      returns false for simple names
+      returns false for namespaced names without leading ::
+    with edge cases
+      returns false for names with :: in middle
+      returns false for names ending with ::
+      verifies start_with? method behavior
+      returns false for names with multiple :: but not at start
+  #common_namespace
+    when names share common namespace
+      finds partial common namespace
+      finds common namespace at same level
+      handles exact same names
+      handles single name as common namespace
+      finds common namespace with different nesting levels
+      finds root level common namespace
+    with nil inputs
+      returns nil if second name is nil
+      returns nil if first name is nil
+      returns nil if both names are nil
+    with symbols and type conversion
+      handles mixed symbol and string
+      handles same numeric input
+      handles numeric inputs
+      handles symbol inputs
+    with edge cases
+      handles whitespace in namespaces
+      verifies zip behavior and early break
+      handles single character namespaces
+      handles trailing double colons
+      handles mixed leading double colons
+      returns nil when one name is prefix of other but not namespace
+      handles consecutive double colons
+      verifies empty result handling
+      handles leading double colons
+    with empty strings
+      returns nil for empty first name
+      returns nil for empty second name
+      returns nil for both empty strings
+    when names have no common namespace
+      returns nil for case-sensitive differences
+      returns nil for similar but different root namespaces
+      returns nil for completely different namespaces
+      returns nil for single names that are different
+  #extract_parent_namespace
+    with edge cases
+      verifies size condition with multiple elements
+      verifies size condition with exactly one element
+      handles trailing double colon
+      handles just double colons
+      handles multiple consecutive double colons
+      handles leading double colon
+    with single names
+      returns nil for single character
+      returns nil for single name
+    with nil and empty inputs
+      returns nil for empty string
+      returns nil for nil input
+    with symbols and type conversion
+      handles symbols with two namespaces
+      handles symbols with no namespace
+      handles symbols with multiple namespaces
+      handles numeric inputs
+    with fully qualified names
+      extracts parent namespace from three-level name
+      extracts parent namespace from two-level name
+      extracts parent namespace from deeply nested name
+  #extract_simple_name
+    with single names
+      returns the name itself if no namespace
+      returns single character name
+    with edge cases
+      verifies last element extraction
+      handles trailing double colon
+      handles multiple consecutive double colons
+      handles leading double colon
+      handles just double colons
+    with fully qualified names
+      extracts simple name from deeply nested name
+      extracts simple name from three-level name
+      extracts simple name from two-level name
+    with symbols and type conversion
+      handles numeric inputs
+      handles symbols with single namespace
+      handles symbols with no namespace
+      handles symbols with multiple namespaces
+    with nil and empty inputs
+      returns nil for nil input
+      returns nil for empty string input
+  #resolve_in_namespace
+    with symbols and type conversion
+      handles fully qualified symbol names
+      handles numeric inputs
+      handles both symbol name and namespace
+      handles symbol names
+      handles symbol namespaces
+    when namespace is nil or empty
+      returns name unchanged when namespace is nil
+      returns namespaced name unchanged when namespace is nil
+      returns namespaced name unchanged when namespace is empty
+      returns name unchanged when namespace is empty string
+    when name is not fully qualified
+      resolves namespaced name within namespace
+      resolves name within deeply nested namespace
+      resolves name within nested namespace
+      resolves simple name within namespace
+    when name is fully qualified
+      returns fully qualified name unchanged
+      returns deeply nested fully qualified name unchanged
+      returns nested fully qualified name unchanged
+    with edge cases
+      verifies nil and empty namespace conditions
+      handles empty name
+      preserves exact formatting
+      handles namespace ending with ::
+      handles whitespace in namespace
+      verifies fully_qualified? check integration
+  #extract_namespace_path
+    with valid fully qualified names
+      extracts namespace path from three-level name
+      extracts namespace path from deeply nested name
+      extracts namespace path from two-level name
+    with symbols and type conversion
+      handles symbols with multiple namespaces
+      handles symbols with no namespace
+      handles symbols with single namespace
+      handles numeric inputs
+    with nil and empty inputs
+      returns empty array for nil
+      returns empty array for empty string
+    with single names
+      returns empty array for single character
+      returns empty array for single name
+    with edge cases
+      handles trailing double colon
+      handles just double colons
+      handles leading double colon
+      handles multiple consecutive double colons
+  #build_fqname
+    with edge cases
+      handles no arguments
+      handles symbols
+      handles mixed types
+    with nil and empty values
+      filters empty strings from arrays
+      filters out empty string parts
+      filters out nil parts
+      filters nils from arrays
+      returns empty string for no valid parts
+    with valid string parts
+      builds name from single part
+      builds fully qualified name from multiple parts
+      builds name from two parts
+    with array inputs
+      handles flat array of parts
+      handles nested arrays
+      handles mixed arrays and strings
+      handles deeply nested arrays
+  #nesting_level
+    with edge cases
+      verifies split behavior
+      handles empty parts in namespace
+      verifies nil/empty early returns
+      handles leading double colons
+      handles just double colons
+      handles trailing double colons
+      handles multiple consecutive double colons
+      handles whitespace in parts
+    with symbols and type conversion
+      handles symbols with deeply nested names
+      handles symbols with nested names
+      handles symbols with single name
+    with nil and empty inputs
+      returns 0 for nil namespace
+      returns 0 for empty string
+    with nested namespaces
+      returns 3 for two levels of nesting
+      returns 2 for one level of nesting
+      returns 5 for four levels of nesting
+      returns 4 for three levels of nesting
+    with single names
+      returns 1 for single character
+      returns 1 for single number
+      returns 1 for single name
+
+Rubymap::Normalizer::Deduplication::Deduplicator
+  edge case behavior
+    when processing symbols with nil symbol IDs
+      groups symbols with nil IDs together
+    when processing large numbers of duplicates
+      handles large groups of duplicates efficiently
+    when processing empty symbol collections
+      handles empty methods collection gracefully
+    when processing symbols with empty string symbol IDs
+      treats empty string symbol IDs as duplicates
+  behavior when deduplicating symbols
+    when deduplicating methods with unique symbol IDs
+      maintains original method order for unique methods
+      preserves methods with unique symbol IDs without merging
+    when processing multiple groups of duplicates
+      merges each group of duplicates separately
+    when processing mixed symbol types with complex duplication
+      preserves symbols that don't have duplicates
+      processes all symbol types independently
+    when deduplicating classes with duplicate symbol IDs
+      groups classes by symbol ID and merges duplicates
+    when deduplicating modules with duplicate symbol IDs
+      groups modules by symbol ID and merges duplicates
+    when deduplicating methods with duplicate symbol IDs
+      groups methods by symbol ID and merges duplicates
+      delegates merging logic to merge strategy
+    when deduplicating classes with unique symbol IDs
+      preserves classes with unique symbol IDs without merging
+
+Rubymap::Extractor::AliasInfo
+  #to_h
+    excludes nil namespace
+    includes all fields when all are present
+    excludes both nil location and namespace
+    excludes nil location
+    preserves false values
+
+Normalizer Internal Components
+  NormalizedResult
+    accepts metadata parameters
+    initializes with empty collections
+    allows adding symbols
+  Schema and version constants
+    defines schema version
+    defines normalizer version
+  SymbolIdGenerator
+    #generate_method_id
+      generates consistent IDs for same parameters
+      considers all parameters for uniqueness
+    #generate_class_id
+      generates consistent IDs for same input
+      generates different IDs for different names
+      returns 16 character hex string
+      generates different IDs for different kinds
+    #generate_module_id
+      generates consistent IDs
+      differs from class ID with same name
+  NormalizedMethod
+    accepts all expected fields
+  Struct behaviors
+    NormalizedLocation works as a struct
+    NormalizedMethodCall works as a struct
+    NormalizedError works as a struct
+    Provenance works as a struct
+  NormalizedClass
+    allows nil values for optional fields
+    accepts all expected fields
+  ProvenanceTracker
+    #create_provenance
+      uses default confidence if not provided
+      creates provenance with single source
+      creates provenance with multiple sources
+    #merge_provenance
+      takes highest confidence
+      merges sources from both provenances
+      removes duplicate sources
+      updates timestamp to current time
+  Data source constants
+    defines source precedence order
+    defines all expected data sources
+    has correct precedence values
+
+Rubymap::Extractor::MethodBodyVisitor
+  #visit
+    with RescueModifierNode
+      counts inline rescue as branch
+    with OrNode (||)
+      counts as branch
+    with BeginNode
+      does not add extra branch counts for begin/ensure
+    with instance variable as argument
+      encodes instance variable reads
+    with a simple call (no receiver)
+      records a call with nil receiver
+    with IfNode (regular if)
+      counts as both branch and conditional
+      counts if/elsif/else as multiple branches but single conditional
+    with local variable read as argument
+      encodes local variable reads
+    with a constant receiver chain
+      resolves Rails.logger.info to ["Rails", "logger"]
+    with no calls (empty method)
+      returns empty calls and zero counters
+      returns body_lines from the def node
+    with WhileNode
+      counts as loop and branch
+    with a block argument
+      records has_block: true for calls with blocks
+    with UntilNode
+      counts as loop and branch
+    with a self-call (explicit self receiver)
+      records self.foo as nil receiver
+    with UnlessNode
+      modifier unless is also branch + conditional
+      counts as both branch and conditional
+    with constant reference as argument
+      encodes constant references
+    with block iteration loops
+      counts .select with a block as a loop
+      counts .each with a block as a loop
+      does not count a non-loop method with a block
+      counts .map with a block as a loop
+    with CaseNode
+      counts each branch (case, when, else)
+      case without else counts correctly
+    with nested calls as arguments
+      encodes nested calls
+    with nil body
+      returns empty result
+    with IfNode ternary (?:)
+      ternary inside regular if is counted correctly
+      counts as branch only, not conditional
+    with multiple calls
+      records all top-level calls in order
+    with AndNode (&&)
+      counts as branch
+    with keyword arguments
+      encodes keyword args as hash pairs
+    with splat argument
+      encodes splat arguments
+    with lambda argument
+      encodes lambda as block type
+    with array arguments
+      encodes array literal arguments
+    with a call with arguments
+      records typed arguments
+    with interpolated string arguments
+      reconstructs interpolated strings
+    with nested structures
+      handles deep nesting (if inside each inside if)
+      conditional inside loop produces correct additive counts
+      loop inside conditional produces correct additive counts
+      handles combined structural loops and block-iteration loops
+      matches Example 2 from spec: if/while/elsif/rescue
+    with ForNode
+      counts as loop and branch
+
+Rubymap::Configuration
+  error handling
+    .load_from_string
+      handles YAML with only comments
+      handles empty YAML
+    #validate!
+      collects multiple validation errors
+    .load_from_file
+      provides clear error for missing file
+  .from_hash
+    with nil hash
+      returns default configuration
+    with non-string values
+      preserves non-string values
+    triggering all type coercion branches
+      coerces all string types
+    with empty hash
+      returns default configuration
+  #merge
+    when merging with empty config
+      preserves current configuration
+    when merging nested configs
+      properly copies and merges nested sections
+    copying all attributes
+      copies all top-level attributes
+  edge cases for type coercion
+    #max_depth=
+      converts string to integer
+      converts non-numeric strings to 0
+      handles integer values directly
+    #format=
+      converts string to symbol
+      handles symbol values directly
+    #progress=
+      handles string conversion
+    #parallel=
+      handles string conversion
+    #follow_symlinks=
+      handles string conversion
+    #verbose=
+      handles nil values
+      converts any non-'true' string to false
+      converts 'false' string to false
+      handles false boolean
+      handles true boolean
+  #resolve_path
+    expands relative paths
+    returns absolute paths unchanged
+  #resolve_environment_variables
+    expands environment variables in static paths
+    expands environment variables in cache directory
+  #diff
+    returns empty hash when configs are identical
+    detects differences in all top-level attributes
+    detects differences in nested configs
+  #deep_merge!
+    with top-level string format
+      ensures format is converted to symbol
+    with non-coercible values
+      preserves non-string values in nested configs
+    with nested integer coercion
+      coerces cache ttl
+      coerces static max_file_size
+      coerces runtime timeout
+    with nested boolean coercion
+      coerces enabled fields
+      coerces safe_mode
+      coerces follow_requires
+      coerces parse_yard and parse_rbs
+      coerces filter flags
+    with unknown keys
+      ignores unknown top-level keys
+  #stringify_keys
+    preserves other types
+    handles arrays
+    converts symbol keys to strings
+    handles nested hashes
+    converts symbols to strings
+  #to_bool
+    converts 'true' string to true
+    returns non-string values as-is
+    is case-insensitive
+    converts 'false' string to false
+  #expand_env_vars
+    preserves missing variables
+    returns non-string values unchanged
+    expands ${VAR} format
+    expands $VAR format
+
+Rubymap::Enricher
+  Rails-specific enrichment
+    when analyzing controllers
+      calculates controller complexity
+    when analyzing ActiveRecord models
+      analyzes model complexity
+      enriches with ActiveRecord-specific metrics
+  metrics calculation
+    code quality heuristics
+      when analyzing test coverage
+        identifies testing gaps
+        categorizes methods by test coverage
+      when calculating stability scores
+        identifies stable vs unstable components
+        calculates composite stability scores
+      when analyzing git churn data
+        identifies hotspot classes
+        calculates churn metrics
+    #enrich
+      when analyzing public API surface
+        identifies classes with large public APIs
+        calculates public API surface area
+      when calculating code complexity metrics
+        assigns complexity categories
+        calculates method length metrics
+        calculates cyclomatic complexity for methods
+      when calculating dependency metrics
+        calculates coupling strength
+        identifies tightly coupled components
+        calculates fan-in and fan-out metrics
+      when calculating inheritance depth metrics
+        calculates inheritance depth for each class
+        identifies deep inheritance hierarchies
+    pattern detection
+      when detecting Ruby idioms
+        identifies Ruby protocol implementations
+      when detecting design patterns
+        detects factory patterns
+        detects singleton patterns
+        detects observer patterns
+  configuration and edge cases
+    when checking Rails project detection
+      detects Rails project from ApplicationRecord inheritance
+      detects Rails project from ApplicationController inheritance
+      does not detect Rails in non-Rails projects
+    when processing invalid input
+      raises error for unsupported input types
+    when testing helper methods
+      correctly categorizes coverage severity
+    when calculating stability scores
+      correctly calculates stability with extreme values
+      correctly identifies stability categories
+    when handling edge case values
+      handles zero coverage correctly
+      handles nil values gracefully
+      handles coverage at exact boundary values
+      handles empty collections
+    when disabling features via config
+      skips Rails enrichment when enable_rails is false
+      skips metrics calculation when enable_metrics is false
+      skips pattern detection when enable_patterns is false
+    when using custom thresholds
+      uses custom inheritance depth threshold
+      uses custom API size threshold for design issues
+      uses custom churn threshold
+      uses custom complexity threshold
+      uses custom coverage threshold
+    when handling high fan-out coupling
+      identifies classes with high dependency count
+      respects custom fan_out_threshold configuration
+      does not flag classes below the default threshold
+      flags classes at the default threshold (3 dependencies)
+  mutation killing tests
+    when testing edge cases in calculations
+      handles extremely high complexity values
+      correctly processes classes with no methods for complexity
+      handles division by zero in averages
+    when testing internal methods directly
+      #setup_pipeline
+        correctly initializes pipeline
+        creates pipeline with correct stages based on config
+      #default_config
+        all threshold values are used in enrichment
+        returns expected default values
+      #convert_hash_to_normalized_result
+        handles nil modules value
+        handles modules with wrong hash key
+        handles missing method_calls key
+        handles missing modules key
+        correctly assigns modules property
+        handles nil method_calls value
+        preserves non-nil method_calls
+      #convert_entities
+        returns empty array for nil input
+        returns empty array for falsy input
+        properly guards against nil without removing the guard
+        does not return nil when entities is nil
+        converts non-nil entities
+    when testing specific thresholds and boundaries
+      correctly applies all default thresholds
+      ensures numeric calculations handle negative inputs safely
+    when testing method complexity calculations
+      distinguishes between different types of conditionals
+      correctly categorizes all complexity levels
+    when testing pattern and idiom detection edge cases
+      does not detect patterns with insufficient evidence
+      handles patterns with no matching evidence gracefully
+    when testing #enrich method
+      executes pipeline with enrichment result
+      uses pipeline reader method correctly
+      returns the enriched result
+      handles Hash input correctly
+      handles NormalizedResult input correctly
+      raises error for invalid input type
+    when testing composite score calculations
+      handles all nil values in stability calculation
+      correctly weights stability score components
+    when testing normalization functions
+      correctly normalizes age values
+      correctly calculates maintainability scores
+      correctly normalizes churn values
+    when testing setup_pipeline with fetch
+      correctly handles missing config keys with fetch defaults
+    when testing initialization
+      creates component factory with correct parameters
+      initializes with nil config treated as empty
+      initializes with empty config
+  performance and scalability
+    when calculating complex metrics
+      handles deeply recursive analysis without stack overflow
+    when enriching large codebases
+      uses memory efficiently during enrichment
+      processes thousands of classes efficiently
+
+Rubymap::Extractor::CallExtractor
+  existing CallExtractor patterns (non-Rails)
+    continues to detect require
+    continues to detect attr_writer alongside Rails DSL calls
+    continues to detect attr_accessor alongside Rails DSL calls
+    continues to detect private/protected/public visibility changes
+    continues to detect include
+    continues to detect extend
+    continues to detect require_relative
+    continues to detect attr_reader alongside Rails DSL calls
+  controller action macros
+    detects after_filter
+    detects around_action
+    detects skip_before_action
+    detects skip_around_filter
+    detects before_filter
+    detects skip_after_filter
+    detects skip_after_action
+    detects skip_before_filter
+    detects around_filter
+    detects after_action
+    detects skip_around_action
+    detects before_action
+  edge cases
+    handles Rails DSL calls with no arguments
+    handles validates with keyword arguments
+    records location information
+    handles string arguments in Rails DSL calls
+  when current_class is nil
+    does not record before_action outside a class/module
+    does not record Rails DSL patterns outside a class/module
+    does not record validates patterns outside a class/module
+  Rails association macros
+    detects has_one
+    detects belongs_to
+    records the correct target class name
+    records arguments as indicators
+    detects has_and_belongs_to_many
+    detects has_many
+  validates macros
+    detects validates_length_of
+    detects validates_acceptance_of
+    detects validates_format_of
+    detects validates_inclusion_of
+    detects validates_presence_of
+    detects validates_confirmation_of
+    detects validates_associated
+    detects validates
+    detects validates_numericality_of
+    detects validates_each
+  non-Rails classes
+    produces no Rails DSL patterns for non-Rails DSL calls
+    produces no Rails DSL patterns for a plain Ruby class
+  with multiple Rails DSL calls in one class
+    records all patterns
+  other Rails DSL macros
+    detects default_scope
+    detects rescue_from
+    detects scope
+    detects delegate
+
+Rubymap::Normalizer
+  normalization rules
+    visibility inference
+      when visibility is not explicitly specified
+        applies Ruby visibility defaults
+        infers private visibility from naming conventions
+    naming conventions
+      when standardizing symbol names
+        preserves intentional naming patterns
+        handles snake_case method names consistently
+  data standardization
+    cross-reference resolution
+      when building method ownership relationships
+        correctly associates methods with their owner classes
+        builds complete method inheritance chains
+      when resolving module inclusion relationships
+        tracks mixin sources for methods
+        resolves mixed-in methods correctly
+    #normalize
+      when processing namespace hierarchies
+        builds correct namespace hierarchies
+        creates parent-child relationships
+      when handling duplicate symbols
+        preserves genuinely different symbols with same names
+        deduplicates identical symbols
+      when processing extracted symbols
+        standardizes method representations
+        standardizes class representations
+        generates fully qualified names consistently
+      when resolving symbol references
+        resolves inheritance chains
+        resolves method call references
+    data validation
+      when input data has missing required fields
+        adds validation errors for incomplete data
+        excludes invalid entries from normalized output
+      when input data has inconsistent types
+        converts non-string types to strings
+        standardizes compatible type variations
+
+Rubymap::Extractor::ClassInfo
+  #to_h
+    includes all fields when all are present
+    excludes nil optional fields
+    preserves false values
+    uses LocationConverter for location field
+
+Rubymap::Emitter::EmitterManager
+  #emit_all
+    handles empty source gracefully
+    emits LLM format and generates manifest
+  #emit
+    emits LLM format to the specified directory
+    creates output directory if it does not exist
+    raises on unsupported format
+
+SymbolData
+  named accessors (desired interface)
+    exposes documentation
+    returns empty array for nil class_methods
+    exposes type
+    exposes class_methods
+    exposes mixins
+    returns empty array for nil instance_methods
+    exposes fqname
+    exposes line
+    provides metrics via dig
+    exposes superclass
+    exposes dependencies
+    exposes instance_methods
+    exposes file
+  nil safety
+    handles nil fqname gracefully
+    handles missing metrics
+
+Rubymap::Enricher::Analyzers::QualityIssue
+  #to_h
+    returns hash representation
+  #initialize
+    creates with required parameters
+    accepts optional parameters
+
+Rubymap::Indexer
+  query performance
+    performs symbol lookup in constant time (PENDING: Performance benchmarks are environment-dependent)
+    performs ancestry queries efficiently (PENDING: Performance benchmarks are environment-dependent)
+    handles complex dependency queries efficiently (PENDING: Performance benchmarks are environment-dependent)
+    performs fuzzy search within acceptable time (PENDING: Performance benchmarks are environment-dependent)
+  integration behavior
+    when a developer wants to understand a Ruby codebase
+      reveals dependencies between components
+      enables navigation through inheritance hierarchy
+      enables quick symbol lookup by name
+      tracks how methods are called throughout the codebase
+    when supporting IDE features
+      supports 'find implementations' for mixins
+      supports 'find all references' functionality
+      enables fuzzy search for symbol names
+      supports 'go to definition' functionality
+  graph operations
+    inheritance graph
+      identifies classes with deep inheritance
+      builds a directed acyclic graph for inheritance
+      calculates inheritance depth for each class
+    dependency graph
+      calculates fan-in and fan-out metrics
+      builds a directed graph of dependencies
+      identifies dependency hotspots
+    method call graph
+      identifies frequently called methods
+      traces complete call paths
+      builds a weighted graph of method calls
+  search capabilities
+    pattern matching
+      supports case-insensitive search
+      finds symbols matching a pattern
+    filtered searches
+      filters by namespace
+      filters by file location
+      filters by symbol type
+    fuzzy matching
+      ranks results by similarity
+      finds symbols with similar names
+    exact matching
+      finds symbols by exact name
+      returns nil for non-existent symbols
+      finds symbols by fully qualified name
+  index persistence
+    incremental updates
+      can add new symbols to existing index
+      can remove symbols from index
+      can update existing symbols
+      updates graph relationships on symbol changes
+    serialization
+      maintains performance after deserialization
+      can deserialize indexes from a file
+      can serialize indexes to a file
+  #build
+    when processing enriched data
+      validates input data structure
+      creates a queryable index from enriched data
+      handles empty enriched data gracefully
+    when handling errors and edge cases
+      handles missing references gracefully
+      detects and reports circular dependencies
+      manages memory efficiently for large codebases
+    when processing different data source formats
+      maintains consistent behavior across all data formats
+      accepts extractor result objects with to_h method
+      falls back to symbol converter for legacy data objects
+      handles plain hash data format for backward compatibility
+      accepts enriched result objects with to_h method
+
+Rubymap::Normalizer::Deduplication::MergeStrategy
+  behavior when merging classes
+    when merging classes with different superclass information
+      creates a copy of primary class rather than modifying original
+      selects most reliable superclass from highest precedence source
+      merges provenance from all classes
+      selects primary class based on highest source precedence
+    when merging classes where all have nil superclass
+      results in nil superclass when no superclass information is available
+    when merging classes with multiple different superclasses
+      selects superclass from highest precedence source
+  source precedence calculation behavior
+    when provenance is nil
+      returns 0 for nil provenance
+    when provenance sources are nil
+      returns 0 when sources are nil
+    when provenance has only unknown sources
+      returns 0 when all sources are unknown
+    when provenance has valid sources
+      returns highest precedence among sources
+    when provenance has unknown sources
+      ignores unknown sources and returns known source precedence
+    when provenance sources are empty
+      returns 0 for empty sources array
+  behavior when merging modules
+    when merging modules with different source precedence
+      merges provenance from all modules
+      selects primary module based on highest source precedence
+      updates merged module with combined provenance
+      creates a copy of primary module rather than modifying original
+  superclass selection behavior
+    when classes have different superclasses
+      selects superclass from class with highest precedence
+    when no classes have superclass
+      returns nil when no superclass information is available
+    when classes array is empty
+      returns nil for empty classes array
+    when some classes have nil superclass
+      selects first non-nil superclass from highest precedence class
+  behavior when merging methods
+    when merging methods with same source precedence
+      still applies most restrictive visibility
+      selects first method as primary when precedence is equal
+    when merging single method
+      returns the single method as primary with merged provenance
+    when merging methods with different source precedence
+      applies most restrictive visibility from all methods
+      updates merged method with combined provenance
+      merges provenance from all methods
+      selects primary method based on highest source precedence
+      creates a copy of primary method rather than modifying original
+    when merging methods with nil visibilities
+      filters out nil visibilities before determining most restrictive
+
+Rubymap::Enricher::Analyzers::QualityMetrics
+  #to_h
+    returns hash representation
+  #initialize
+    initializes with default values
+
+Rubymap::Normalizer::Calculators::ArityCalculator
+  parameter type recognition behavior
+    when recognizing rest parameter types
+      does not recognize 'REST' (case sensitive)
+      does not recognize 'splat' (exact match required)
+      recognizes 'rest' as rest type
+    when recognizing required parameter types
+      recognizes 'req' as required type
+      does not recognize 'REQUIRED' (case sensitive)
+      recognizes 'required' as required type
+      does not recognize 'require' (exact match required)
+    when recognizing optional parameter types
+      does not recognize 'OPTIONAL' (case sensitive)
+      recognizes 'opt' as optional type
+      recognizes 'optional' as optional type
+      does not recognize 'option' (exact match required)
+  behavior when calculating method arity
+    when parameters contain optional arguments
+      handles alternative 'opt' type designation
+      calculates arity for single optional parameter
+      calculates arity for methods with only optional parameters
+    when parameters contain required arguments
+      calculates arity for single required parameter
+      calculates arity for methods with only required parameters
+      handles alternative 'req' type designation
+    when handling edge case inputs
+      handles parameters with empty hashes
+      returns 0 for empty parameters array
+      handles mixed symbol and string keys
+      handles parameters with string keys instead of symbol keys
+      returns 0 for nil parameters
+    when parameters contain rest arguments (splat)
+      calculates negative arity for methods with rest parameters
+      handles multiple rest parameters (though unusual)
+      calculates arity with multiple required parameters and rest
+      calculates arity with only rest parameter
+      ignores optional parameters when rest parameter is present
+    when parameters contain mixed required and optional arguments
+      sums required and optional parameters
+      handles mixed req and opt type designations
+      handles large numbers of mixed parameters
+    when processing complex parameter scenarios
+      handles zero-arity methods (no parameters)
+      handles method with only optional parameters (common in Ruby)
+      correctly distinguishes between methods with same number but different types
+      handles realistic method signature with all parameter types
+    when parameters contain unknown or invalid types
+      handles mixed valid and invalid parameters with rest
+      handles parameters with missing type field
+      ignores parameters with unknown types
+      handles parameters with nil types
+    when validating Ruby arity semantics
+      matches Ruby's arity for required + splat
+      matches Ruby's arity for simple required parameters
+      matches Ruby's arity for splat parameters
+      matches Ruby's arity for complex signatures
+      matches Ruby's arity for optional parameters
+
+Rubymap::Extractor::ExtractionContext
+  #reset!
+    resets all state to initial values
+    resets visibility to public
+    clears current class
+    clears namespace stack
+    clears comments
+  comments management
+    allows modifying comments array
+    allows setting comments
+  method tracking
+    #with_class
+      restores previous current_class after block
+      sets current_class during block
+    #with_method
+      sets current_method during block
+      restores previous current_method after block
+      restores current_method after exception
+    #current_method
+      returns nil by default
+  namespace management
+    #with_namespace
+      restores current_class after exception
+      restores namespace after exception
+      nests within existing namespace
+      sets current_class during block
+      temporarily adds namespace
+    #push_namespace
+      builds nested namespaces
+      adds namespace to stack
+    #namespace_depth
+      returns 0 for empty stack
+      returns correct depth
+    #pop_namespace
+      returns nil when stack is empty
+      removes namespace from stack
+      returns the popped namespace
+    #namespace_stack
+      returns independent copy
+      returns frozen copy of stack
+  visibility management
+    #pop_visibility
+      removes visibility from stack
+      returns the popped visibility
+      maintains public as default
+    #visibility_depth
+      returns 1 for initial state
+      returns correct depth
+    #with_visibility
+      temporarily changes visibility
+      restores visibility after exception
+      nests visibility changes
+    #visibility_stack
+      returns frozen copy of stack
+      returns independent copy
+    #push_visibility
+      maintains visibility stack
+      adds visibility to stack
+  #initialize
+    initializes with nil current class
+    initializes with empty comments array
+    initializes with public visibility
+    initializes with empty namespace stack
+
+Rubymap::RailsMapper
+  Rails configuration analysis
+    #extract_rails_configuration
+      when analyzing application configuration
+        captures gem-specific configuration (PENDING: Rails support not yet implemented)
+        identifies custom initializers and their purposes (PENDING: Rails support not yet implemented)
+        extracts application-level settings (PENDING: Rails support not yet implemented)
+  Rails-specific relationship mapping
+    when building Rails-aware dependency graphs
+      connects controllers to their corresponding models through associations (PENDING: Rails support not yet implemented)
+      tracks service object dependencies (PENDING: Rails support not yet implemented)
+      identifies model-job relationships through background processing (PENDING: Rails support not yet implemented)
+      maps routes to controller actions (PENDING: Rails support not yet implemented)
+  performance and safety
+    when performing runtime analysis
+      safely loads Rails environment without side effects (PENDING: Rails support not yet implemented)
+      respects timeout limits for environment boot (PENDING: Rails support not yet implemented)
+      can skip problematic initializers (PENDING: Rails support not yet implemented)
+      handles missing dependencies gracefully (PENDING: Rails support not yet implemented)
+  routes analysis
+    #extract_routes_information
+      when analyzing Rails routes
+        extracts RESTful resource routes (PENDING: Rails support not yet implemented)
+        identifies mounted engines (PENDING: Rails support not yet implemented)
+        identifies nested resources (PENDING: Rails support not yet implemented)
+        extracts custom routes (PENDING: Rails support not yet implemented)
+        captures namespaced routes (PENDING: Rails support not yet implemented)
+        captures member and collection routes (PENDING: Rails support not yet implemented)
+      when analyzing constraint-based routes
+        extracts route constraints (PENDING: Rails support not yet implemented)
+    runtime routes introspection
+      when analyzing routes in a running Rails application
+        identifies route helpers and their generated methods (PENDING: Rails support not yet implemented)
+        captures route precedence and matching order (PENDING: Rails support not yet implemented)
+        extracts actual route objects with all options (PENDING: Rails support not yet implemented)
+  controller analysis
+    #extract_controller_information
+      when analyzing a REST controller
+        extracts action methods (PENDING: Rails support not yet implemented)
+        captures before/after action filters (PENDING: Rails support not yet implemented)
+        identifies respond_to format handling (PENDING: Rails support not yet implemented)
+        extracts strong parameter definitions (PENDING: Rails support not yet implemented)
+        identifies rescue handlers (PENDING: Rails support not yet implemented)
+      when analyzing API controllers
+        identifies API-specific patterns (PENDING: Rails support not yet implemented)
+        identifies service object usage (PENDING: Rails support not yet implemented)
+        captures included modules (PENDING: Rails support not yet implemented)
+  background jobs analysis
+    #extract_job_information
+      when analyzing ActiveJob classes
+        captures retry and error handling configuration (PENDING: Rails support not yet implemented)
+        extracts job configuration (PENDING: Rails support not yet implemented)
+        analyzes perform method signature (PENDING: Rails support not yet implemented)
+      when analyzing Sidekiq jobs
+        extracts Sidekiq-specific configuration (PENDING: Rails support not yet implemented)
+  ActiveRecord model analysis
+    #extract_model_information
+      when analyzing a basic ActiveRecord model
+        extracts association definitions with options (PENDING: Rails support not yet implemented)
+        captures named scopes (PENDING: Rails support not yet implemented)
+        identifies callback methods (PENDING: Rails support not yet implemented)
+        extracts validation rules with their options (PENDING: Rails support not yet implemented)
+      when analyzing Single Table Inheritance models
+        identifies STI hierarchies (PENDING: Rails support not yet implemented)
+        tracks inherited validations and associations (PENDING: Rails support not yet implemented)
+      when analyzing models with complex associations
+        identifies HABTM associations (PENDING: Rails support not yet implemented)
+        handles polymorphic associations (PENDING: Rails support not yet implemented)
+        captures nested attributes configuration (PENDING: Rails support not yet implemented)
+        captures through associations (PENDING: Rails support not yet implemented)
+        tracks delegate methods (PENDING: Rails support not yet implemented)
+    runtime model introspection
+      when analyzing models in a running Rails application
+        captures dynamically defined methods (PENDING: Rails support not yet implemented)
+        extracts database indexes and constraints (PENDING: Rails support not yet implemented)
+        extracts actual database schema information (PENDING: Rails support not yet implemented)
+        identifies actual association objects and their configurations (PENDING: Rails support not yet implemented)
+
+Rubymap::Normalizer::SymbolIndex
+  memory efficiency
+    stores references not copies
+  internal state
+    modifies the hash through the reader in add
+    accesses the hash through the reader in find
+    uses the private reader method for encapsulation
+    clears the hash through the reader
+  #clear
+    removes all entries from the index
+    allows adding new symbols after clearing
+    returns the cleared hash
+  #find_parent_class
+    when symbol exists and has superclass
+      returns the superclass
+    when symbol exists but does not respond to superclass
+      returns nil
+    when symbol is nil
+      returns nil
+    when symbol does not exist
+      returns nil
+    with various symbol types
+      returns nil for modules
+      returns nil for methods
+      returns superclass for classes
+    when find returns nil
+      early returns when symbol is nil before checking respond_to
+      requires both symbol existence and superclass method
+      checks both nil and respond_to conditions
+      handles nil from find gracefully
+      returns nil when symbol is not found
+    when symbol has superclass but it's nil
+      returns nil
+  #add
+    when adding a symbol with different name and fqname
+      indexes by both name and fqname
+      overwrites existing entries with same keys
+    edge cases
+      handles symbols with nil name gracefully
+      handles symbols with nil fqname gracefully
+      correctly compares fqname and name values
+      handles when condition evaluates to false
+      handles symbols where name equals fqname using == operator
+      handles when condition evaluates to true
+    when adding a symbol with same name and fqname
+      does not add duplicate when fqname == name
+      indexes only by fqname (avoiding duplicate entries)
+    with multiple symbols
+      maintains all symbols in the index
+  thread safety concerns
+    is not thread-safe by design
+  #find
+    is case-sensitive
+    finds symbol by fqname
+    returns nil for non-existent keys
+    returns nil when searching with nil key
+    finds symbol by name
+  #initialize
+    creates an empty index
+
+Rubymap::Normalizer::ProcessingPipeline - Mutation Tests
+  FormatOutputStep mutations
+    gets output_formatter from container
+    calls format on output_formatter
+  #execute mutations
+    executes all pipeline steps even with nil input
+    sets errors on result even when empty
+    returns result even when processing fails
+  DeduplicateSymbolsStep mutations
+    calls deduplicate_symbols on deduplicator
+    gets deduplicator from container
+  ProcessSymbolsStep mutations
+    #index_symbols
+      gets symbol_index from container
+      adds both classes and modules to index
+  ExtractSymbolsStep mutations
+    delegates to InputAdapter from container
+    stores adapted data in context.extracted_data
+  ResolveRelationshipsStep mutations
+    gets resolver_factory from container
+    calls all four resolvers in sequence
+
+Rubymap::Normalizer
+  performance and scalability behavior
+    when processing deeply nested namespaces
+      handles deep namespace hierarchies correctly
+    when processing large datasets
+      maintains memory efficiency during processing
+      processes large datasets efficiently
+  complete normalization workflow behavior
+    when processing complex duplication and merging scenarios
+      applies source precedence rules correctly during deduplication
+      applies visibility precedence rules during method merging
+      maintains deterministic ordering in output
+    when processing real-world Rails application patterns
+      maintains method call relationships for Rails patterns
+      processes Rails method patterns with correct scoping
+      processes Rails mixin patterns correctly
+      processes Rails inheritance patterns correctly
+    when processing a realistic Ruby application codebase
+      processes modules with correct namespace resolution
+      deduplicates methods from multiple sources correctly
+      processes all method types with correct visibility inference
+      applies confidence calculations based on source and completeness
+      processes all symbol types and returns complete normalized result
+      processes method calls and maintains referential integrity
+      generates deterministic symbol IDs for identical symbols
+      maintains data integrity across all processing stages
+      deduplicates classes from multiple sources correctly
+    when processing edge cases and error conditions
+      applies default values for missing optional fields
+      maintains state isolation between normalization runs
+      handles validation errors gracefully and continues processing
+      handles completely empty input gracefully
+
+Rubymap Error Handling
+  output generation errors
+    when output directory is not writable
+      gracefully handles write permission errors (PENDING: Environment-dependent: filesystem permission behavior varies by OS)
+  Rails-specific error scenarios
+    when analyzing Rails-specific constructs
+      handles database connection errors during runtime introspection (PENDING: Rails support not implemented)
+      handles missing Rails constants gracefully (PENDING: Rails support not implemented)
+    when Rails environment fails to boot
+      handles Rails boot failures gracefully (PENDING: Rails support not implemented)
+      provides meaningful error messages for Rails issues (PENDING: Rails support not implemented)
+  parsing error scenarios
+    when file system errors occur
+      handles permission denied errors gracefully
+      handles missing files appropriately
+    when encountering encoding issues
+      reports encoding errors appropriately
+      handles files with invalid encoding declarations gracefully
+    when encountering malformed Ruby code
+      captures parse errors without crashing
+      includes error details in the output when verbose
+      continues processing other files after parse errors
+  configuration error scenarios
+    when configuration file is malformed
+      handles YAML parsing errors in configuration
+  recovery and resilience
+    when partial failures occur
+      preserves successfully processed data when errors occur
+  dependency resolution errors
+    when circular dependencies are detected
+      continues processing despite circular dependencies
+      processes files with circular dependencies
+    when required dependencies are missing
+      extracts dependencies regardless of resolution
+      handles missing gem dependencies gracefully
+  edge cases in symbol extraction
+    when processing metaprogramming-heavy code
+      captures method generation patterns
+      tracks dynamic attribute definitions
+    when encountering unusual Ruby constructs
+      handles dynamically defined methods appropriately
+      handles singleton class definitions
+      handles conditional includes/extends
+  memory and performance constraints
+    when encountering infinite loops in code analysis
+      prevents infinite recursion during analysis
+
+Rubymap::Normalizer::InputAdapter
+  #adapt
+    with invalid input
+      returns empty data for arrays
+      returns empty data for numbers
+      returns empty data for nil
+      returns empty data for false
+      returns empty data for true
+      returns empty data for strings
+    duck typing for ExtractorResult
+      does not recognize Hash even with classes and modules keys
+      recognizes objects with classes and modules methods
+      does not recognize objects with only classes method
+    with Hash input
+      normalizes hash data with all symbol types
+      provides empty arrays for missing keys
+      wraps non-array values in arrays
+      converts nil values to empty arrays
+    with Extractor::Result input
+      uses ExtractorResult's to_h method for conversion
+      uses to_h method for data conversion
+      handles nil collections in extractor result
+
+Rubymap::Indexer::SymbolConverter
+  error handling and edge cases
+    handles malformed to_h responses
+    maintains performance with large symbol arrays
+    handles objects that raise exceptions during field access
+  backward compatibility conversion
+    when normalizing symbols that don't have conversion methods
+      handles objects with partial symbol information
+      converts well-formed hash symbols unchanged
+      rejects invalid hash structures that lack symbol identity
+      extracts symbol data from objects using to_h method
+      handles nil input gracefully
+      rejects objects that have no symbol identity
+      preserves complex symbol data structures
+      falls back to manual field extraction when to_h fails
+    when normalizing arrays of symbols
+      handles non-array input by converting to array first
+      handles empty and nil arrays
+      preserves order of symbols in arrays
+      converts each item in the array
+
+Refactored Normalizer Components
+  Domain Model Structs
+    Rubymap::Normalizer::CoreNormalizedMethod
+      has helper methods
+      sets default values
+    Rubymap::Normalizer::Location
+      formats to string
+      validates location
+    Rubymap::Normalizer::CoreNormalizedClass
+      sets default values
+      has helper methods
+  Rubymap::Normalizer::ProcessingPipeline
+    #execute
+      processes modules
+      sets metadata correctly
+      processes methods
+      processes nil input without errors
+      returns a NormalizedResult
+      processes classes
+      handles nil input gracefully
+      collects errors during processing
+  Rubymap::Normalizer::ProcessorFactory
+    #create_method_call_processor
+      returns a MethodCallProcessor instance
+    #create_method_processor
+      returns a MethodProcessor instance
+    #create_class_processor
+      returns a new instance on each call
+      returns a ClassProcessor instance
+  Rubymap::Normalizer::ServiceContainer
+    #register
+      allows registering custom services
+      overwrites existing service definitions
+    #get
+      returns the same instance for the same service
+      returns different instances for different services
+      creates services lazily
+      raises error for unknown service
+  Rubymap::Normalizer::SymbolFinder
+    #find_symbol
+      returns nil for non-existent symbol
+      finds symbol by fqname
+      searches in provided result when index miss
+      prefers index match over collection
+  Method Arity Calculation
+    calculates arity for required parameters
+    handles keyword parameters
+    calculates negative arity for optional parameters
+    handles rest parameters
+  Processor Template Method Pattern
+    skips invalid items and records errors
+    handles exceptions during processing
+    processes valid items
+  Rubymap::Normalizer::ResolverFactory
+    #create_namespace_resolver
+      returns a NamespaceResolver instance
+    #create_cross_reference_resolver
+      returns a CrossReferenceResolver instance
+    #create_inheritance_resolver
+      returns an InheritanceResolver instance
+
+Model other methods
+  Rubymap::Extractor::ConstantInfo
+    #type (inferred)
+      infers 'array' for array literals
+      infers 'expression' for empty string value
+      infers 'expression' for complex expressions
+      infers 'array' for empty arrays
+      infers 'constant_ref' for capitalized names
+      infers 'integer' for integer values
+      infers 'constant_ref' for constant references
+      infers 'integer' even with leading zeros
+      infers 'float' for zero float
+      infers 'string' for double-quoted strings
+      infers 'integer' for zero
+      infers 'boolean' for false
+      infers 'nil' for nil value
+      infers 'float' for decimal values
+      infers 'string' for single-quoted strings
+      infers 'unknown' when value is nil
+      infers 'expression' for partial patterns
+      infers 'boolean' for true
+      infers 'symbol' for symbols
+      infers 'hash' for hash literals
+      infers 'hash' for empty hashes
+  Rubymap::Extractor::DependencyInfo
+    #internal?
+      returns false for absolute paths with require
+      returns true for relative paths
+      returns false for external gems
+    #external?
+      returns false for relative paths with require
+      returns false for relative paths by default
+      returns true for simple module names
+      returns true for gems with nested paths
+
+Rubymap::Extractor
+  edge cases and error handling
+    when parsing malformed Ruby code
+      handles syntax errors gracefully
+      includes error information in result
+  static Ruby file parsing
+    documentation extraction
+      when code contains YARD documentation
+        extracts class documentation
+        extracts method documentation with parameters
+    #extract_from_directory
+      when processing a directory with Ruby files
+        ignores non-Ruby files
+        handles subdirectories correctly
+        recursively processes all Ruby files
+      when encountering parse errors
+        logs parse errors but continues processing
+        includes error information in the result
+    dependency tracking
+      when analyzing require statements
+        tracks external gem dependencies
+        tracks relative file dependencies
+        tracks autoload declarations
+    #extract_from_file
+      when parsing constants and class variables
+        extracts constant definitions
+        identifies class variables
+      when parsing deeply nested modules and classes
+        does not duplicate namespaces in nested structures
+        correctly builds fully qualified names without duplication
+        maintains correct namespace for methods in nested classes
+        regression test: prevents namespace duplication bug
+      when parsing module definitions
+        identifies concern patterns
+        extracts nested modules
+        extracts module definition
+      when parsing complex method definitions
+        distinguishes class methods from instance methods
+        captures method signatures
+        tracks method aliases
+      when parsing a class with inheritance
+        captures mixin relationships
+        captures inheritance relationships
+      when parsing a simple class definition
+        extracts the class definition
+        extracts instance methods
+        extracts attribute declarations
+
+Rubymap::Extractor
+  #extract_from_code
+    with empty code
+      returns empty result for whitespace only
+      returns empty result for empty string
+    with comments
+      handles comments in the code
+    with valid Ruby code
+      parses and extracts symbols
+    with invalid Ruby code
+      returns empty collections for invalid code
+      returns result with parse errors
+  private methods
+    #create_error_result
+      creates result with error and file_path
+      creates result with error and no file_path
+    #merge_results
+      merges all collections from source to target
+      appends to existing collections
+  #extract_from_directory
+    when directory does not exist
+      raises ArgumentError with the directory path
+    when directory exists
+      continues processing if one file has errors
+      processes all Ruby files in the directory
+      uses the provided pattern
+      merges results from multiple files
+      skips non-file entries
+    with empty directory
+      returns empty result for directory with no Ruby files
+    when using default pattern
+      default pattern finds Ruby files in nested directories
+      uses **/*.rb as the default pattern
+      behaves identically with explicit **/*.rb pattern
+  #extract_from_file
+    when file exists
+      reads the file and extracts symbols
+      sets the file_path on the result
+    when file read raises an error
+      returns an error result with the file path and error
+    when parsing fails
+      returns result with parse errors
+    when file does not exist
+      returns an error result for non-existent file
+  #initialize
+    does not inherit from any parent class other than Object
+    does not require any arguments
+    creates a new instance
+
+Rubymap::Normalizer::Normalizers::NameNormalizer
+  behavior when extracting namespace paths
+    when name has complex namespace structures
+      preserves case in namespace components
+      handles namespace with numbers
+      handles namespace with special characters in component names
+    when name has no namespace separators
+      returns empty array for empty string
+      handles single colon (not double colon)
+      returns empty array for simple names
+    when handling edge case inputs
+      handles symbol names with namespaces
+      handles names that are only double colons
+      handles names ending with double colon
+      handles nil name gracefully
+    when name contains namespace separators
+      handles leading double colon in global namespace
+      extracts namespace path from fully qualified name
+      handles multiple consecutive double colons
+      extracts single namespace component
+      extracts deeply nested namespace path
+  behavior when converting names to snake_case
+    when handling special cases
+      handles names with underscores and CamelCase mixed
+      handles names that are all uppercase
+      handles names with leading numbers
+      handles lowercase single character names
+      handles empty strings
+      handles single character names
+    when converting CamelCase names
+      handles consecutive uppercase letters
+      handles mixed case with numbers
+      converts simple CamelCase to snake_case
+      handles acronyms followed by lowercase
+      converts PascalCase to snake_case
+    when handling already snake_case names
+      handles single word names
+      handles names with numbers in snake_case
+      leaves snake_case names unchanged
+    when handling edge case inputs
+      handles numeric input
+      handles nil input gracefully
+      handles symbol input
+    when handling complex naming patterns
+      handles names with multiple consecutive uppercase letters
+      handles names with special characters
+      handles names starting with lowercase
+      handles names with mixed separators
+  integration behavior across methods
+    when processing names with mixed conventions
+      handles CamelCase names with namespaces
+    when processing complex namespace scenarios
+      roundtrip processing maintains consistency
+      works correctly with generated fqname and namespace extraction
+  behavior when generating fully qualified names
+    when namespace is empty string
+      returns the name unchanged
+    when handling edge case inputs
+      handles empty name with namespace
+      handles numeric names
+      handles symbol names
+      handles nil name gracefully
+      handles both nil name and namespace
+    when namespace is nil
+      returns the name unchanged
+    when namespace is empty after trimming
+      treats whitespace-only namespace as empty
+    when namespace is provided
+      combines namespace and name with double colon separator
+      handles namespace with leading double colon
+      handles nested namespaces correctly
+      handles deeply nested namespaces
+      handles namespace with trailing double colon
+
+Rubymap::Enricher::QualityRulesEngine
+  #initialize
+    loads default rules
+    with custom rules file
+      loads custom rules from file
+    with invalid rules file
+      falls back to default rules
+  #calculate_method_score
+    returns perfect score for no issues
+    reduces score based on issue severity
+    clamps score between 0 and 1
+    applies complexity penalty
+  severity calculation
+    calculates severity based on ranges
+  #apply_method_rules
+    returns empty array for compliant methods
+    returns issues for methods violating rules
+    with name-based rules
+      excludes operator methods from short name check
+      detects Java-style getter methods
+      detects too-short method names
+  #apply_class_rules
+    detects god classes
+    returns empty array for simple classes
+    with mixed abstraction levels
+      detects mixed abstraction levels
+    with data class detection
+      detects data classes
+  message interpolation
+    interpolates values into message templates
+  #quality_level
+    returns 'needs_improvement' for very low scores
+    handles boundary values correctly
+    returns 'excellent' for high scores
+    returns 'good' for good scores
+    returns 'fair' for fair scores
+    returns 'poor' for poor scores
+  #calculate_class_score
+    returns perfect score for no issues
+    reduces score based on issue severity
+    with stability score
+      factors in stability score
+
+Rubymap
+  module structure
+    has a version number
+    defines an Error class inheriting from StandardError
+  API interface
+    .map
+      when given invalid paths
+        raises Rubymap::NotFoundError for non-existent paths
+      when given a valid path
+        returns a mapping result
+    .configure
+      accepts a configuration block
+      returns the configuration object
+
+Rubymap::Normalizer::ProcessingPipeline - Resolvers
+  Pipeline metadata creation
+    uses current UTC time for normalized_at
+    creates result with all required metadata fields
+  ProcessSymbolsStep - processor configuration
+    defines processors in correct order
+  ProcessSymbolsStep - processor execution
+    processes all symbol types in correct order
+    indexes symbols before processing mixins
+    passes errors array to all processors
+  ProcessSymbolsStep - comprehensive processing
+    processes all symbol types including mixins
+  ResolveRelationshipsStep
+    handles results with no relationships
+    modifies the result with inheritance chains
+    executes all resolvers in correct order
+    resolves complex namespace hierarchies
+    passes the same result object to all resolvers
+
+Rubymap::Extractor::NodeVisitor
+  #initialize
+    creates a registry
+    initializes all extractors
+    initializes with context and result
+  handler methods
+    uses the correct extractor for each node type
+    #handle_call
+      delegates to call extractor and visits children
+    #handle_program
+      visits the statements
+    #handle_class
+      delegates to class extractor and visits children
+    #handle_module
+      delegates to module extractor and visits children
+    #handle_statements
+      visits each statement in the body
+      handles nil body
+    #handle_method
+      delegates to method extractor, runs body visitor, and visits children
+    #handle_class_variable
+      delegates to class variable extractor and visits children
+    #handle_constant
+      delegates to constant extractor and visits children
+    #handle_alias
+      delegates to alias extractor and visits children
+  #visit
+    when an error occurs
+      adds error to result and continues
+    with a node that has no handler
+      visits children by default
+    with a node that has a handler
+      calls the appropriate handler method
+    with nil node
+      returns early without processing
+  #visit_children
+    with a node that responds to child_nodes
+      visits each child node
+    with a node that has neither child_nodes nor body
+      does nothing
+    with a node that responds to body
+      visits the body
+
+Rubymap::Enricher::Analyzers::QualityAnalyzer
+  #analyze_classes_quality
+    always sets quality_score on class
+    does not create issue when issues array is empty
+    creates QualityIssue object for problematic classes
+    creates issue with all required fields including issues array
+    only creates issue when issues.any? is true not just truthy
+    processes multiple classes independently
+  #analyze_methods_quality
+    sets has_quality_issues to false when no issues
+    calculates quality_score twice with same parameters
+    sets has_quality_issues to true when issues exist
+    does not add QualityIssue when no issues found
+    adds issues to result.quality_issues array
+    creates QualityIssue object with correct structure
+    only adds issue when issues.any? returns true
+    creates QualityIssue with exact parameters
+  #collect_quality_scores
+    collects scores from classes
+    skips nil scores
+    iterates through each method and class with safe navigation
+    returns empty array when no scores available
+    collects from both methods and classes
+    only adds score if quality_score is truthy
+    uses safe navigation for methods and classes
+    collects scores from methods
+  #calculate_overall_quality
+    calculates average score and sets quality level
+    sets issues_by_severity
+    handles empty scores array
+  QualityIssue
+    initializes with provided values
+    has default values
+    converts to hash
+  #initialize
+    differentiates between nil and no argument
+    creates a rules engine with default path when no argument
+    creates a rules engine with default path when nil is passed
+    passes custom rules path to rules engine
+  QualityMetrics
+    converts to hash
+    initializes with default values
+  #format_method_name
+    handles falsy but non-nil owner
+    converts name to string when owner is nil
+    handles symbols as method names
+    formats method name with owner
+    returns just name when owner is nil
+  Integration with custom rules
+    applies custom rules from file
+  #analyze
+    with no methods or classes
+      preserves existing quality issues if already set
+      initializes quality metrics
+      initializes empty quality issues
+      when quality_issues is nil
+        initializes to empty array
+      when quality_issues already exists
+        preserves existing quality_issues array
+    with empty arrays for methods and classes
+      sets empty issues_by_severity
+      processes empty collections without error
+    with classes
+      analyzes each class
+      creates quality issues for problematic classes
+      does not create issues for simple classes
+    with various severity issues
+      counts issues by severity
+    with methods
+      sets has_quality_issues to false for clean methods
+      analyzes each method
+      always sets quality_score even for clean methods
+      calculates quality scores
+      creates quality issues for problematic methods
+      sets has_quality_issues to true for methods with issues
+      handles methods without owner
+    with both methods and classes
+      calculates overall quality from both
+  #count_issues_by_severity
+    handles empty issues array
+    counts issues correctly
+    skips issues with nil severity
+    converts string severities to symbols
+    accesses severity with hash syntax
+    iterates through all quality issues and their nested issues
+    handles unknown severity levels
+
+Model #full_name methods
+  Rubymap::Extractor::MethodInfo
+    #full_name
+      edge cases
+        uses namespace when owner is empty string (falsy)
+        handles false as owner (falsy)
+        handles numeric namespace
+      with instance methods
+        returns just name when neither namespace nor owner is present
+        uses namespace when owner is not set
+        uses namespace with # separator for instance methods
+        handles empty namespace as falsy
+      with class methods
+        uses . separator for class methods
+        uses owner with . separator for class methods
+        returns just name when no prefix for class method
+      with singleton methods
+        uses . separator for singleton methods
+  Rubymap::Extractor::ModuleInfo
+    #full_name
+      returns namespace::name when namespace is present
+      returns just name when namespace is nil
+      handles empty namespace as falsy
+      preserves exact namespace format
+  Rubymap::Extractor::ClassInfo
+    #full_name
+      returns just name when namespace is nil
+      handles false namespace as falsy
+      handles deeply nested namespaces
+      handles empty namespace as falsy
+      handles numeric namespace
+      returns namespace::name when namespace is present
+  Rubymap::Extractor::ConstantInfo
+    #full_name
+      returns just name when namespace is nil
+      returns namespace::name when namespace is present
+      handles single character names
+      handles empty namespace as falsy
+
+Rubymap::Configuration
+  #diff
+    shows differences between configurations
+  #to_h / #to_hash
+    converts to hash representation
+    includes nested configuration values
+  #describe
+    provides human-readable description
+  default configuration
+    sets default runtime settings
+    sets default static analysis settings
+    sets default values
+    sets default filter settings
+    sets default output settings
+    sets default cache settings
+  type coercion
+    coerces integer strings to integers
+    converts format string to symbol
+    coerces boolean strings to booleans
+  environment variable loading
+    supports nested configuration via environment variables
+    loads from RUBYMAP_ prefixed environment variables
+  environment variable expansion
+    handles missing environment variables
+    expands environment variables in paths
+    expands simple environment variable format
+  validation
+    #validate
+      returns true for valid configuration
+      returns false for invalid configuration
+    #validate_and_explain
+      returns detailed error for invalid configuration
+      returns success message for valid configuration
+    #validate!
+      with invalid format
+        raises ConfigurationError
+      with invalid environment
+        raises ConfigurationError
+      with valid configuration
+        returns true
+      with non-writable output directory
+        raises ConfigurationError
+      with invalid timeout
+        raises ConfigurationError
+      with non-existent path
+        raises ConfigurationError
+  #deep_merge!
+    merges configuration in place
+  #merge
+    merges with another Configuration instance
+    merges configurations
+    does not modify original configuration
+  profiles
+    .ci
+      applies CI profile settings
+    #apply_profile
+      applies named profile
+      raises error for unknown profile
+    .development
+      applies development profile settings
+    .production
+      applies production profile settings
+  #to_yaml
+    serializes to YAML
+  configuration loading
+    .from_hash
+      creates configuration from hash
+    .load_from_string
+      with invalid YAML
+        raises ConfigurationError
+      with valid YAML
+        loads static configuration
+        loads runtime configuration
+        loads output configuration
+        loads filter configuration
+    .load_from_file
+      when file exists
+        loads configuration from file
+      when file does not exist
+        raises ConfigurationError
+
+Rubymap::Emitters
+  LLM-friendly emitter
+    #emit
+      when generating LLM-optimized output
+        creates relationship summaries
+        generates overview documentation
+        chunks content to stay within LLM token limits
+        includes context-rich descriptions for each class
+        creates chunked markdown documentation
+      when handling complex class hierarchies
+        creates visual hierarchy representations
+    #emit_to_directory
+      creates organized markdown file structure
+      creates index files for navigation
+
+Rubymap::Normalizer::Processors::MethodProcessor
+  validation behavior
+    when processing methods with required fields
+      rejects methods with nil name field
+      rejects methods without owner or class field
+      rejects methods without name field
+      processes valid methods while skipping invalid ones
+      processes valid method data successfully
+  fully qualified name generation
+    when processing instance methods
+      uses # separator for instance methods
+    when processing class methods
+      uses . separator for class methods
+    when owner information is incomplete
+      handles methods with empty string owner
+  scope handling behavior
+    when scope is explicitly provided
+      uses the explicit class scope
+      uses the explicit instance scope
+    when scope is nil
+      defaults to instance scope
+    when scope is not provided
+      defaults to instance scope
+  processing method data
+    when processing methods with different parameter types
+      correctly calculates arity for methods with optional parameters
+      correctly calculates arity for required parameters
+      correctly calculates arity for methods with rest parameters
+    when processing method with owner vs class field
+      prefers class field over owner field when both are present
+      uses owner field when class field is missing
+    when processing class method data
+      correctly identifies scope as class
+      generates fully qualified name with class method separator
+      calculates zero arity for empty parameters
+    when processing valid instance method data
+      generates fully qualified name with instance method separator
+      calculates arity correctly for required parameters
+      processes successfully without errors
+      creates a normalized method with correct attributes
+    when processing method data with minimal information
+      generates correct fqname with owner
+      uses default values for missing optional fields
+      defaults to instance scope when scope is not specified
+  edge case behavior
+    when processing unusual method data
+      handles method data with empty string name
+      processes methods without explicit visibility
+      handles methods with private visibility based on naming
+      handles method data with symbol name
+    when processing empty method data
+      handles empty array gracefully
+
+Rubymap::Extractor::MethodBodyResult
+  #to_h
+    includes populated calls
+    returns a hash with all fields
+  #initialize
+    initializes with default empty values
+    accepts custom values
+
+PipelineCache
+  #clear
+    removes all cached entries
+  directory management
+    creates cache directory if it does not exist
+  #fetch
+    survives Marshal round-trip for complex data
+    returns stored data after store
+    returns nil for uncached file
+    returns nil when file has changed since caching
+    returns data when file is unchanged
+
+Normalizer Full Integration
+  Rubymap::Normalizer
+    #normalize
+      with mixins
+        processes mixin data correctly
+      with duplicate symbols
+        deduplicates symbols with the same name
+      deterministic output ordering
+        returns symbols in deterministic order
+      with nil input
+        returns a valid NormalizedResult
+      with module data
+        processes module data
+      with class and instance methods
+        correctly associates methods with their owners
+      performance and efficiency
+        handles large datasets efficiently
+      with method calls
+        processes method call data
+      with valid class data
+        processes and normalizes class data
+      with method data
+        processes method data
+      with complex nested namespaces
+        builds correct namespace paths and relationships
+      with empty hash input
+        returns a valid NormalizedResult
+      with inheritance chains
+        resolves inheritance chains
+      with invalid data
+        skips invalid entries and records errors
+      edge cases
+        handles array input gracefully
+        handles string input gracefully
+        handles numeric input gracefully
+
+Extractor Mutation Killing
+  Rubymap::Extractor::Concerns::ResultMergeable
+    handles missing collections gracefully
+    merges all collections correctly
+    returns the target after merging
+  Rubymap::Extractor::Services::DocumentationService
+    extracts documentation only from immediately preceding comments
+    correctly handles inline comment column positions
+    correctly distinguishes documentation comments from regular comments
+    handles YARD tag extraction with proper array conversion
+  Rubymap::Extractor::ExtractionContext
+    properly resets all state
+    handles empty visibility stack edge case
+    properly manages current_class in with_namespace
+    maintains independent stack copies
+  Rubymap::Extractor::Services::NamespaceService
+    correctly calculates nesting levels
+    correctly identifies fully qualified names
+    correctly finds common namespaces
+    correctly normalizes names
+    correctly builds FQNames with various inputs
+    correctly determines namespace nesting
+    correctly resolves names in namespaces
+
+Testing Anti-patterns: .not_to matchers
+  Legitimate uses of negation (rare)
+    can use change matcher negation for immutability tests
+    can use include matcher negation for exclusion tests
+  Why .not_to is problematic
+    GOOD: Using positive assertions
+      returns nil for empty input
+      returns nil for nil input
+      returns user hash with id and name for valid input
+    BAD: Using .not_to matchers
+      does not raise error
+      does not return nil for valid input
+  Summary
+    demonstrates the key principle
+  Why positive assertions are better
+    provides better failure messages
+    catches more bugs
+    prevents false positives
+    makes test intent clearer
+  Common .not_to anti-patterns and their fixes
+    Anti-pattern: expect { ... }.not_to raise_error
+      should be replaced with assertion on the result
+    Anti-pattern: expect(...).not_to be_nil
+      should be replaced with positive assertion
+    Anti-pattern: expect(object).not_to be(other)
+      should verify specific properties instead
+    Anti-pattern: expect(array).not_to be_empty
+      should be replaced with size or content assertion
+
+Rubymap::Extractor::Services::DocumentationService
+  #extract_yard_tags
+    with YARD tags
+      handles tags with multiple spaces
+      extracts multiple different YARD tags
+      ignores non-YARD content
+      handles multiple tags of the same type
+      handles empty tag value after spaces
+      handles tags with trailing whitespace
+      handles tags with no content
+      extracts single YARD tag
+      handles tags without space separator
+    with nil or empty documentation
+      returns empty hash for empty documentation
+      returns empty hash for nil documentation
+  mutation killing tests
+    #extract_inline_comment exact position testing
+      extracts comment when start_column is exactly end_column + 1
+      handles multiple comments on same line, returns first matching
+      returns nil when comment start_column equals node end_column
+    #documentation_comment? exact matching
+      returns false for single # at start
+      returns false when ## is not at the start
+      returns false for empty string
+      returns true for ## with trailing content
+      returns true for exactly ##
+    #extract_documentation with exact return values
+      handles empty comment content
+      returns exactly nil when no preceding comments
+      joins multiple comments with exact newline character
+      returns exact string for single comment
+    #find_documentation_comments edge cases
+      handles comments with exact gap of 1 line before node
+      handles comments with gap exactly 2 lines before node
+      stops collecting when there is a gap larger than 1 line
+      handles comments on same line as each other but different from node
+      handles multiple consecutive comment blocks
+      preserves exact order of consecutive comments
+    boundary conditions and comparisons
+      handles very large line numbers
+      handles node at line 1 with no possible preceding comments
+    #clean_comment_text edge cases
+      handles comment with ### (more than ##)
+      handles comment with only space after #
+      handles comment with single # and space
+      handles comment with ## and no space
+      handles empty comment
+      preserves internal # characters
+      handles comment with single # and no space
+      handles comment with ## and space
+      handles comment without # prefix
+    #extract_yard_tags regex and parsing edge cases
+      handles multiple spaces between tag and value
+      handles tag at start of line with no leading whitespace
+      handles @ symbol in tag value
+      handles three or more tags of same type
+      converts first occurrence to string, subsequent to array
+      extracts tag with only tag name and space
+      handles tag with tab character
+      ignores malformed tags without space
+      handles tag name with numbers and underscores
+      strips trailing whitespace in tag values
+      handles mixed valid and invalid tags
+  #extract_documentation
+    with comments not preceding the node
+      returns nil when all comments are after the node
+      returns nil when comments have gaps before the node
+    with valid documentation comments
+      extracts multi-line documentation
+      handles documentation comments with ##
+      extracts single line documentation
+    with nil inputs
+      returns nil when node is nil
+      returns nil when comments are nil
+      returns nil when comments are empty
+      returns nil when node doesn't respond to location
+  #extract_inline_comment
+    with inline comments
+      returns nil when comment is on different line
+      returns nil when comment is before the node on same line
+      extracts inline comment on the same line
+    with nil inputs
+      returns nil when comments are nil
+      returns nil when node is nil
+      returns nil when comments are empty
+      returns nil when node doesn't respond to location
+  #documentation_comment?
+    returns false for regular comments
+    returns false for non-comment text
+    returns true for comments starting with ##
+
+Rubymap::Normalizer::Processors::ClassProcessor
+  edge case behavior
+    when processing empty class data
+      returns empty array when processing empty data
+      handles empty array gracefully
+    when processing unusual class data
+      handles class data with symbol names
+      processes classes with various mixin formats
+      handles classes without explicit type
+  processing class data
+    when processing class data with mixins
+      processes mixins correctly
+      handles nil mixins gracefully
+      handles empty mixins array gracefully
+    when processing module data
+      handles module type specified via kind field
+      recognizes module type and processes as module
+    when processing valid class data
+      creates a normalized class with correct attributes
+      processes successfully without errors
+      handles location information correctly
+    when processing minimal class data
+      uses default values for missing optional fields
+      generates correct fqname for simple class names
+  validation behavior
+    when processing classes with required fields
+      rejects classes with empty string name
+      rejects classes without name field
+      processes valid class data successfully
+      processes valid classes while skipping invalid ones
+      rejects classes with nil name field
+
+LLM Emitter
+  configuration and customization
+    when customizing chunk size
+      maintains minimum content coherence despite size constraints
+      respects maximum token limits
+    when filtering content for specific audiences
+      supports different detail levels (PENDING: Feature: detail level filtering not yet implemented)
+  output quality and formatting
+    includes metadata headers for AI processing
+    provides clear section boundaries and transitions
+    generates valid Markdown with proper structure
+  file organization behavior
+    generates a comprehensive index with navigation
+    creates logical directory structure for output
+    includes manifest file with chunk metadata
+  behaves like a deterministic emitter
+    deterministic output generation
+      when input contains timestamp metadata
+        normalizes or excludes volatile metadata to ensure determinism
+      when given identical input data
+        produces identical output across multiple runs
+        generates consistent file paths and names (PENDING: emit_to_files not yet implemented for this emitter)
+        produces identical output regardless of input data ordering
+  error handling and resilience
+    when processing malformed input data
+      handles missing class information gracefully
+      generates chunks despite missing metadata
+    when encountering extremely large datasets
+      provides progress feedback for long operations
+  chunk generation behavior
+    when handling large classes with many methods
+      provides navigation context between split chunks
+      splits large classes across multiple coherent chunks
+    when processing a typical Rails application
+      generates appropriately sized chunks for LLM consumption
+      creates contextually coherent chunks
+      maintains cross-references between related chunks
+    when processing inheritance hierarchies
+      creates hierarchy overview chunks
+      links hierarchy members to their detail chunks
+
+Rubymap::Normalizer::ProcessingPipeline
+  improved design benefits
+    allows custom pipeline steps for testing
+    makes dependencies explicit through context
+    allows skipping specific steps for focused testing
+    allows testing individual steps in isolation
+  #execute
+    processes empty hash input
+    sets metadata correctly
+    processes string input as invalid
+    processes hash with all symbol types
+    step order matters - correct order succeeds
+    processes array input as invalid
+    processes nil input
+    executes all default steps in order
+    processes Extractor::Result objects
+    step order matters - wrong order breaks relationships
+  #initialize
+    initializes with the provided container
+    requires a container parameter
+    initializes with default steps in correct order
+  #with_steps
+    missing deduplicate step means duplicates remain
+    allows customization of pipeline steps
+    returns self for chaining
+    missing extract step means no data extraction
+    missing process step means no symbols in result
+  individual steps
+    Rubymap::Normalizer::DeduplicateSymbolsStep
+      deduplicates symbols
+    Rubymap::Normalizer::ProcessSymbolsStep
+      handles missing data keys with empty arrays
+      processes mixins after indexing symbols
+      processes all processor types in order
+      processes extracted data through processors
+      indexes symbols after processing
+    Rubymap::Normalizer::ResolveRelationshipsStep
+      resolves relationships in correct order
+      uses configurable resolver types
+    Rubymap::Normalizer::FormatOutputStep
+      formats output and sets errors
+    Rubymap::Normalizer::ExtractSymbolsStep
+      extracts symbols from hash input
+      returns empty data for invalid input
+      extracts symbols from Extractor::Result
+
+Rubymap::Templates
+  Rubymap::Templates::Registry
+    #list_templates
+      lists all registered templates with their types
+    #get_template
+      raises error for non-existent template
+      prefers user templates over defaults
+    #register
+      organizes templates by format
+      registers a template
+    #register_user_template
+      registers user template overrides
+    #clear!
+      removes all registered templates
+  Rubymap::Templates::Presenters::ClassPresenter
+    metrics
+      provides metrics information
+    location
+      provides formatted location
+    Rails detection
+      detects Rails patterns
+    name methods
+      provides various name formats
+    boolean queries
+      answers boolean queries about the class
+    mixins
+      categorizes mixins by type
+    methods
+      wraps methods in presenters
+  Rubymap::Templates::Renderer
+    #render_collection
+      returns empty string for empty collection
+      renders a collection of items
+    #render_partial
+      renders a partial template
+    #render
+      raises RenderError on template errors
+      handles ERB trim mode correctly
+      renders a template with data
+  module interface
+    provides a convenience render method
+    provides a default directory
+    provides a global registry
+  Rubymap::Templates::Context
+    data access
+      provides binding for ERB evaluation
+      makes data available as instance variables
+    helper methods
+      #truncate
+        truncates long text
+      #present? and #blank?
+        checks for presence and blankness
+      #to_sentence
+        joins arrays with proper grammar
+      #complexity_label
+        returns appropriate labels for complexity scores
+      #format_parameters
+        formats various parameter types
+      #format_method_signature
+        formats class methods
+        formats instance methods
+
+ResultAdapter
+  .adapt
+    maps method fields correctly
+    converts a Result to a hash with classes, modules, methods, constants
+    returns empty arrays for empty Result
+    maps class fields correctly
+    maps module fields correctly
+    maps constant fields correctly
+    handles class with no superclass
+
+Method body recording integration
+  extracting methods with calls
+    populates calls_made on MethodInfo
+    records arguments with mixed types
+    tracks multiple methods independently
+    returns empty calls_made for methods with no calls
+    sets body_lines, loops, branches, conditionals from MethodBodyResult
+    serializes calls_made in to_h
+
+Pipeline error recovery consistency
+  emit stage
+    does not raise when output fails, returns result with error info
+  when a stage fails
+    includes error summary in result when errors occur
+    survives all stages even when data is sparse
+    returns a result hash (does not raise) from the pipeline
+
+Rubymap::Normalizer::Processors::BaseProcessor
+  dependency injection behavior
+    when using injected dependencies
+      does not expose dependencies as public methods
+      provides access to dependencies within concrete processor implementations
+  template method pattern behavior
+    when subclasses override specific hooks
+      allows subclasses to customize validation behavior
+      allows subclasses to add post-processing behavior
+      allows subclasses to customize normalization behavior
+      allows subclasses to customize result storage
+  processing behavior
+    when processing valid data
+      returns array of processed items
+      processes items and adds them to result
+    when data fails validation
+      records validation errors for invalid items
+      skips invalid items and continues processing valid ones
+    when using abstract base processor directly
+      raises NotImplementedError when normalize_item is not implemented
+    when processing empty data
+      handles empty array gracefully
+  validation behavior
+    when processing items with missing required fields
+      rejects items with nil name field
+      rejects items without name field
+    when processing mixed valid and invalid data
+      processes valid items while skipping invalid ones
+    when subclass adds custom validation
+      respects custom validation rules
+
+Rubymap::Extractor::MethodInfo
+  #to_h
+    includes branches key
+    includes loops key
+    includes all required keys
+    includes conditionals key
+    serializes calls_made with populated data
+    includes body_lines key
+    excludes nil values via compact
+    includes calls_made key even when empty
+  #initialize
+    defaults conditionals to 0
+    defaults receiver_type to instance
+    accepts custom branches, loops, conditionals, and body_lines
+    defaults body_lines to 0
+    accepts custom calls_made
+    defaults namespace to nil
+    sets name as the only required parameter
+    defaults loops to 0
+    defaults params to empty array
+    defaults rubymap to nil
+    defaults doc to nil
+    defaults owner to nil
+    defaults visibility to public
+    defaults branches to 0
+    defaults calls_made to empty array
+  #full_name
+    with instance methods
+      uses # separator for instance methods with owner
+      uses # separator for instance methods with namespace
+    with class methods
+      uses . separator
+  #scope
+    returns instance for instance methods
+    returns class for class methods
+
+Rubymap::Normalizer::Normalizers::VisibilityNormalizer
+  behavior when determining most restrictive visibility
+    when dealing with invalid visibility values
+      handles empty strings in visibility array
+      defaults to public when all values are invalid
+      ignores invalid visibility values
+    when comparing different visibility levels
+      selects private as most restrictive when private is present
+      selects public when only public visibilities are present
+      selects public when only public is present
+      selects protected as most restrictive when no private is present
+    when processing complex visibility scenarios
+      handles single protected visibility
+      handles reversed order input
+      prioritizes protected over public even when public comes last
+      handles all visibility levels present
+      prioritizes private over protected even when protected comes last
+      handles single private visibility
+    when handling edge cases in visibility comparison
+      handles empty visibility array
+      filters out duplicate visibilities
+      handles array with nil values
+      handles mixed case (though this shouldn't happen after normalization)
+      handles array with only nil values
+  behavior when normalizing visibility values
+    when processing valid visibility strings
+      normalizes private string to private string
+      normalizes protected string to protected string
+      normalizes public string to public string
+    when processing nil visibility
+      defaults nil visibility to public
+      handles nil visibility without errors array
+    when processing edge case visibility values
+      handles case-sensitive variations
+      handles boolean false
+      handles boolean true
+      handles empty string visibility
+      handles whitespace-only visibility
+    when errors array is not provided
+      handles nil errors array gracefully
+      handles invalid visibility without errors array gracefully
+    when processing valid visibility symbols
+      normalizes :public symbol to public string
+      normalizes :protected symbol to protected string
+      normalizes :private symbol to private string
+    when processing invalid visibility values
+      handles non-string non-symbol types and adds error when errors array provided
+      handles array input and adds error when errors array provided
+      normalizes unknown symbol to public and adds error
+      handles hash input and adds error when errors array provided
+      normalizes unknown string to public and adds error
+  behavior when inferring visibility from method names
+    when processing edge case method names
+      handles method names with underscore at end
+      handles numeric method names
+      handles single underscore as method name
+      handles symbol method names not starting with underscore
+      handles method names with underscore in middle
+      handles empty string method name
+      handles nil method name gracefully
+      handles method name that is just underscores
+      handles symbol method names starting with underscore
+    when processing method names with visibility indicators
+      infers public visibility for method names with special characters (not underscore prefix)
+      infers private visibility for names starting with underscore
+      infers public visibility for method names with numbers
+      infers private visibility for names starting with multiple underscores
+      infers public visibility for camelCase method names
+      infers public visibility for method names with question mark
+      infers public visibility for normal method names
+  integration behavior across methods
+    when processing method visibility workflow
+      handles complete visibility processing workflow
+    when using normalization with visibility inference
+      handles conflict between explicit and inferred visibility in most restrictive selection
+      normalizes explicit visibility and infers from method name consistently
+
+Rubymap::Normalizer::Calculators::ConfidenceCalculator
+  behavior when applying multiple confidence modifiers
+    when modifiers result in very high confidence
+      calculates correct high confidence without capping below 1.0
+    when modifiers result in very low confidence
+      allows confidence to go below typical minimum thresholds
+    when location boost pushes confidence over 1.0
+      caps confidence at 1.0 maximum
+    when both location boost and name penalty apply
+      applies both location boost and name penalty
+    when all negative modifiers apply
+      calculates minimum confidence with worst case scenario
+    when all positive modifiers apply
+      achieves maximum confidence with best case scenario
+  source precedence consistency
+    when comparing all source types
+      ensures inferred has lowest base confidence
+      maintains expected confidence hierarchy
+      ensures RBS has highest confidence
+  behavior when applying name-based confidence penalties
+    when name is present
+      does not apply name penalty when name is present
+    when name is zero
+      does not apply name penalty for zero (not nil or empty string)
+    when name is false
+      does not apply name penalty for false (not nil or empty string)
+    when name is empty string
+      reduces confidence by 0.10 when name is empty
+    when name is nil
+      reduces confidence by 0.10 when name is nil
+    when name is whitespace only
+      does not apply name penalty for whitespace-only names
+  behavior when calculating confidence scores
+    when data has static source
+      assigns moderate confidence for static source
+    when data has no source specified
+      defaults to inferred source confidence
+    when data has RBS source
+      assigns highest base confidence for RBS source
+    when data has unknown source
+      defaults to inferred source confidence for unknown sources
+    when data has nil source
+      defaults to inferred source confidence for nil source
+    when data has Sorbet source
+      assigns high confidence for Sorbet source
+    when data has YARD source
+      assigns good confidence for YARD source
+    when data has runtime source
+      assigns high confidence for runtime source
+    when data has inferred source
+      assigns lowest confidence for inferred source
+  behavior when applying confidence modifiers
+    when location information is present
+      boosts confidence by 0.05 when location is present
+    when location is false
+      does not apply location boost when location is false
+    when location is empty hash
+      applies location boost even for empty hash location
+    when location information is missing
+      does not apply location boost when location is missing
+    when location is nil
+      does not apply location boost when location is nil
+  edge case behavior
+    when data has unexpected structure
+      handles non-hash data
+    when data has symbol keys instead of string keys
+      works correctly with symbol keys
+    when data is nil
+      handles nil data gracefully
+    when data is empty hash
+      handles empty data hash using defaults
+    when data has extra unexpected keys
+      ignores unexpected keys and processes known ones
+
+Rubymap::Normalizer
+  behavior as a symbol normalizer
+    when orchestrating normalization workflow
+      returns a structured normalization result
+      formats output deterministically for reproducible results
+      clears symbol index state between normalizations
+      processes all symbol types in deterministic order
+      applies deduplication strategy to eliminate duplicate symbols
+    when handling error conditions
+      handles completely empty input data gracefully
+      continues processing valid symbols when encountering invalid ones
+      handles nil input gracefully
+      accumulates validation errors during processing
+  provenance tracking behavior
+    when merging provenance
+      takes the highest confidence score
+      merges sources from both provenances
+      deduplicates sources when merging identical sources
+      updates timestamp to current time
+    when creating provenance
+      defaults confidence to 0.5 when not specified
+      creates provenance with multiple sources
+      creates provenance with single source
+  result object behavior
+    when initializing with parameters
+      sets metadata fields correctly
+    when manipulating collections
+      allows adding classes to the result
+      allows modifying errors collection
+    when initializing with defaults
+      allows nil metadata fields
+      initializes all collections as empty arrays
+  symbol ID generation behavior
+    when generating class IDs
+      generates different IDs for different classes
+      generates different IDs based on kind parameter
+      generates deterministic IDs for classes
+    when generating method IDs
+      generates different IDs for different receivers
+      generates deterministic IDs based on fqname, receiver, and arity
+      generates different IDs for different arities
+    when generating module IDs
+      generates different IDs from classes with same name
+      generates deterministic IDs for modules
+
+Rubymap::Extractor::AttributeInfo
+  #writable?
+    returns false for other types
+    returns true for writer
+    returns true for accessor
+    returns false for reader
+  #readable?
+    returns false for other types
+    returns true for reader
+    returns false for writer
+    returns true for accessor
+  #to_h
+    preserves false values
+    excludes nil optional fields
+    includes all fields when all are present
+
+Pending: (Failures listed here are expected and do not affect your suite's status)
+
+  1) Rubymap::Indexer query performance performs symbol lookup in constant time
+     # Performance benchmarks are environment-dependent
+     # ./spec/indexer_spec.rb:524
+
+  2) Rubymap::Indexer query performance performs ancestry queries efficiently
+     # Performance benchmarks are environment-dependent
+     # ./spec/indexer_spec.rb:535
+
+  3) Rubymap::Indexer query performance handles complex dependency queries efficiently
+     # Performance benchmarks are environment-dependent
+     # ./spec/indexer_spec.rb:541
+
+  4) Rubymap::Indexer query performance performs fuzzy search within acceptable time
+     # Performance benchmarks are environment-dependent
+     # ./spec/indexer_spec.rb:547
+
+  5) Rubymap::RailsMapper Rails configuration analysis #extract_rails_configuration when analyzing application configuration captures gem-specific configuration
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:668
+
+  6) Rubymap::RailsMapper Rails configuration analysis #extract_rails_configuration when analyzing application configuration identifies custom initializers and their purposes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:664
+
+  7) Rubymap::RailsMapper Rails configuration analysis #extract_rails_configuration when analyzing application configuration extracts application-level settings
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:660
+
+  8) Rubymap::RailsMapper Rails-specific relationship mapping when building Rails-aware dependency graphs connects controllers to their corresponding models through associations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:677
+
+  9) Rubymap::RailsMapper Rails-specific relationship mapping when building Rails-aware dependency graphs tracks service object dependencies
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:689
+
+  10) Rubymap::RailsMapper Rails-specific relationship mapping when building Rails-aware dependency graphs identifies model-job relationships through background processing
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:685
+
+  11) Rubymap::RailsMapper Rails-specific relationship mapping when building Rails-aware dependency graphs maps routes to controller actions
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:681
+
+  12) Rubymap::RailsMapper performance and safety when performing runtime analysis safely loads Rails environment without side effects
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:697
+
+  13) Rubymap::RailsMapper performance and safety when performing runtime analysis respects timeout limits for environment boot
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:705
+
+  14) Rubymap::RailsMapper performance and safety when performing runtime analysis can skip problematic initializers
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:709
+
+  15) Rubymap::RailsMapper performance and safety when performing runtime analysis handles missing dependencies gracefully
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:701
+
+  16) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes extracts RESTful resource routes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:446
+
+  17) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes identifies mounted engines
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:509
+
+  18) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes identifies nested resources
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:469
+
+  19) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes extracts custom routes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:489
+
+  20) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes captures namespaced routes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:478
+
+  21) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing Rails routes captures member and collection routes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:454
+
+  22) Rubymap::RailsMapper routes analysis #extract_routes_information when analyzing constraint-based routes extracts route constraints
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:539
+
+  23) Rubymap::RailsMapper routes analysis runtime routes introspection when analyzing routes in a running Rails application identifies route helpers and their generated methods
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:555
+
+  24) Rubymap::RailsMapper routes analysis runtime routes introspection when analyzing routes in a running Rails application captures route precedence and matching order
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:559
+
+  25) Rubymap::RailsMapper routes analysis runtime routes introspection when analyzing routes in a running Rails application extracts actual route objects with all options
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:551
+
+  26) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing a REST controller extracts action methods
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:288
+
+  27) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing a REST controller captures before/after action filters
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:296
+
+  28) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing a REST controller identifies respond_to format handling
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:339
+
+  29) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing a REST controller extracts strong parameter definitions
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:326
+
+  30) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing a REST controller identifies rescue handlers
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:314
+
+  31) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing API controllers identifies API-specific patterns
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:379
+
+  32) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing API controllers identifies service object usage
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:394
+
+  33) Rubymap::RailsMapper controller analysis #extract_controller_information when analyzing API controllers captures included modules
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:387
+
+  34) Rubymap::RailsMapper background jobs analysis #extract_job_information when analyzing ActiveJob classes captures retry and error handling configuration
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:598
+
+  35) Rubymap::RailsMapper background jobs analysis #extract_job_information when analyzing ActiveJob classes extracts job configuration
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:587
+
+  36) Rubymap::RailsMapper background jobs analysis #extract_job_information when analyzing ActiveJob classes analyzes perform method signature
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:613
+
+  37) Rubymap::RailsMapper background jobs analysis #extract_job_information when analyzing Sidekiq jobs extracts Sidekiq-specific configuration
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:642
+
+  38) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing a basic ActiveRecord model extracts association definitions with options
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:64
+
+  39) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing a basic ActiveRecord model captures named scopes
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:84
+
+  40) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing a basic ActiveRecord model identifies callback methods
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:94
+
+  41) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing a basic ActiveRecord model extracts validation rules with their options
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:38
+
+  42) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing Single Table Inheritance models identifies STI hierarchies
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:198
+
+  43) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing Single Table Inheritance models tracks inherited validations and associations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:207
+
+  44) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing models with complex associations identifies HABTM associations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:145
+
+  45) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing models with complex associations handles polymorphic associations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:122
+
+  46) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing models with complex associations captures nested attributes configuration
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:153
+
+  47) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing models with complex associations captures through associations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:134
+
+  48) Rubymap::RailsMapper ActiveRecord model analysis #extract_model_information when analyzing models with complex associations tracks delegate methods
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:165
+
+  49) Rubymap::RailsMapper ActiveRecord model analysis runtime model introspection when analyzing models in a running Rails application captures dynamically defined methods
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:230
+
+  50) Rubymap::RailsMapper ActiveRecord model analysis runtime model introspection when analyzing models in a running Rails application extracts database indexes and constraints
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:234
+
+  51) Rubymap::RailsMapper ActiveRecord model analysis runtime model introspection when analyzing models in a running Rails application extracts actual database schema information
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:219
+
+  52) Rubymap::RailsMapper ActiveRecord model analysis runtime model introspection when analyzing models in a running Rails application identifies actual association objects and their configurations
+     # Rails support not yet implemented
+     # ./spec/rails_mapper_spec.rb:226
+
+  53) Rubymap Error Handling output generation errors when output directory is not writable gracefully handles write permission errors
+      # Environment-dependent: filesystem permission behavior varies by OS
+      Failure/Error: expect(result[:error_summary]).not_to be_nil
+
+        expected: not nil
+             got: nil
+      # ./spec/error_handling_spec.rb:279:in `block (5 levels) in <top (required)>'
+      # ./spec/error_handling_spec.rb:261:in `block (4 levels) in <top (required)>'
+      # -e:7:in `<main>'
+
+  54) Rubymap Error Handling Rails-specific error scenarios when analyzing Rails-specific constructs handles database connection errors during runtime introspection
+     # Rails support not implemented
+     # ./spec/error_handling_spec.rb:251
+
+  55) Rubymap Error Handling Rails-specific error scenarios when analyzing Rails-specific constructs handles missing Rails constants gracefully
+     # Rails support not implemented
+     # ./spec/error_handling_spec.rb:247
+
+  56) Rubymap Error Handling Rails-specific error scenarios when Rails environment fails to boot handles Rails boot failures gracefully
+     # Rails support not implemented
+     # ./spec/error_handling_spec.rb:237
+
+  57) Rubymap Error Handling Rails-specific error scenarios when Rails environment fails to boot provides meaningful error messages for Rails issues
+     # Rails support not implemented
+     # ./spec/error_handling_spec.rb:241
+
+  58) LLM Emitter configuration and customization when filtering content for specific audiences supports different detail levels
+      # Feature: detail level filtering not yet implemented
+      Failure/Error: expect(detailed_chunks.size).to be > overview_chunks.size
+
+        expected: > 10
+             got:   10
+      # ./spec/emitters/llm_emitter_spec.rb:226:in `block (4 levels) in <top (required)>'
+      # -e:7:in `<main>'
+
+  59) LLM Emitter behaves like a deterministic emitter deterministic output generation when given identical input data generates consistent file paths and names
+     # emit_to_files not yet implemented for this emitter
+     # ./spec/emitters/shared_examples/deterministic_output.rb:36
+
+Finished in 8.41 seconds (files took 0.33873 seconds to load)
+1831 examples, 0 failures, 59 pending
+
+Randomized with seed 46787
+

@@ -22,7 +22,19 @@ module Rubymap
           extract_autoload(node)
         when :alias_method
           extract_alias(node)
+        when :has_many, :has_one, :belongs_to, :has_and_belongs_to_many
+          record_rails_dsl(node)
+        when :before_action, :after_action, :around_action,
+             :skip_before_action, :skip_after_action, :skip_around_action,
+             :before_filter, :after_filter, :around_filter,
+             :skip_before_filter, :skip_after_filter, :skip_around_filter
+          record_rails_dsl(node)
+        when :scope, :default_scope, :rescue_from, :delegate
+          record_rails_dsl(node)
         end
+
+        # Catch validates and validates_* variants that don't match explicit when clauses
+        record_rails_dsl(node) if node.name.to_s.start_with?("validates")
       end
 
       private
@@ -141,6 +153,54 @@ module Rubymap
         when Prism::SymbolNode then node.unescaped
         when Prism::StringNode then node.unescaped
         end
+      end
+
+      # Record a Rails DSL pattern (e.g., has_many, validates, before_action).
+      # Only records when context.current_class is set and NOT inside a method body.
+      def record_rails_dsl(node)
+        return unless context.current_class
+        return if context.current_method
+
+        args = extract_rails_dsl_arguments(node)
+
+        pattern = PatternInfo.new(
+          type: "rails_dsl",
+          method: node.name.to_s,
+          target: context.current_class,
+          location: node.location,
+          indicators: args
+        )
+
+        result.patterns << pattern
+      end
+
+      # Extract argument values from a Rails DSL call for pattern indicators.
+      def extract_rails_dsl_arguments(node)
+        return [] unless node.arguments&.arguments
+
+        node.arguments.arguments.map do |arg|
+          case arg
+          when Prism::SymbolNode then arg.unescaped
+          when Prism::StringNode then arg.unescaped
+          when Prism::KeywordHashNode
+            arg.elements.map do |el|
+              if el.key.respond_to?(:unescaped)
+                el.key.unescaped
+              elsif el.key.respond_to?(:name)
+                el.key.name.to_s
+              else
+                el.key.to_s
+              end
+            end
+          else
+            arg.respond_to?(:slice) ? arg.slice : arg.class.name
+          end
+        end.flatten
+      end
+
+      # Resolve a constant path node to a "::"-joined string.
+      def resolve_constant_path(node)
+        extract_constant_name(node)
       end
     end
   end

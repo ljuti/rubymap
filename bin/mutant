@@ -17,9 +17,9 @@ args.push("--usage", config["usage"])
 # Add integration settings
 if config["integration"]
   args.push("--integration", config["integration"]["name"])
-  
+
   # Add integration arguments if specified
-  if config["integration"]["arguments"]
+  if config.dig("integration", "arguments")
     config["integration"]["arguments"].each do |arg|
       args.push("--integration-argument", arg)
     end

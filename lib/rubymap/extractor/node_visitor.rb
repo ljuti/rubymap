@@ -8,6 +8,7 @@ require_relative "extractors/call_extractor"
 require_relative "extractors/constant_extractor"
 require_relative "extractors/class_variable_extractor"
 require_relative "extractors/alias_extractor"
+require_relative "extractors/method_body_visitor"
 
 module Rubymap
   class Extractor
@@ -19,6 +20,7 @@ module Rubymap
         @context = context
         @result = result
         @registry = NodeHandlerRegistry.new
+        @method_body_visitor = MethodBodyVisitor.new
         initialize_extractors
       end
 
@@ -61,15 +63,36 @@ module Rubymap
       end
 
       def handle_class(node)
-        @extractors[:class].extract(node) { visit_children(node) }
+        class_name = @extractors[:class].send(:extract_constant_name, node.constant_path)
+        @extractors[:class].extract(node) do
+          context.with_class(class_name) { visit_children(node) }
+        end
       end
 
       def handle_module(node)
-        @extractors[:module].extract(node) { visit_children(node) }
+        module_name = @extractors[:module].send(:extract_constant_name, node.constant_path)
+        @extractors[:module].extract(node) do
+          context.with_class(module_name) { visit_children(node) }
+        end
       end
 
       def handle_method(node)
         @extractors[:method].extract(node)
+
+        # Run body analysis via MethodBodyVisitor
+        context.with_method(node.name.to_s) do
+          body_result = @method_body_visitor.visit(node.body, node)
+
+          # Attach results to the MethodInfo just added by MethodExtractor
+          if (method_info = result.methods.last)
+            method_info.calls_made = body_result.calls
+            method_info.branches = body_result.branches
+            method_info.loops = body_result.loops
+            method_info.conditionals = body_result.conditionals
+            method_info.body_lines = body_result.body_lines
+          end
+        end
+
         visit_children(node)
       end
 
