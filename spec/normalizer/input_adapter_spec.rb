@@ -132,7 +132,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -144,7 +149,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -156,7 +166,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -168,7 +183,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -180,7 +200,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
 
@@ -192,7 +217,12 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
           modules: [],
           methods: [],
           method_calls: [],
-          mixins: []
+          mixins: [],
+          attributes: [],
+          dependencies: [],
+          patterns: [],
+          class_variables: [],
+          aliases: []
         })
       end
     end
@@ -239,5 +269,81 @@ RSpec.describe Rubymap::Normalizer::InputAdapter do
         expect(result[:modules]).to eq([])
       end
     end
+
+
+    context "deriving method_calls from methods" do
+      it "derives method_calls from methods' calls_made arrays" do
+        input = {
+          methods: [
+            {
+              name: "save",
+              owner: "User",
+              scope: "instance",
+              calls_made: [
+                {receiver: ["Rails", "logger"], method: "info"},
+                {method: "valid?"}
+              ]
+            },
+            {
+              name: "find",
+              owner: "User",
+              scope: "class",
+              calls_made: [
+                {receiver: ["ActiveRecord", "Base"], method: "find_by"}
+              ]
+            }
+          ]
+        }
+
+        result = adapter.adapt(input)
+
+        expect(result[:method_calls]).to include(
+          {from: "User#save", to: "Rails.logger.info", type: "method_call"},
+          {from: "User#save", to: "valid?", type: "method_call"},
+          {from: "User.find", to: "ActiveRecord.Base.find_by", type: "method_call"}
+        )
+        expect(result[:method_calls].size).to eq(3)
+      end
+
+      it "handles methods with empty calls_made" do
+        input = {
+          methods: [
+            {name: "empty_method", owner: "Test", calls_made: []}
+          ]
+        }
+
+        result = adapter.adapt(input)
+        expect(result[:method_calls]).to eq([])
+      end
+
+      it "handles methods without calls_made key" do
+        input = {
+          methods: [
+            {name: "simple", owner: "Test"}
+          ]
+        }
+
+        result = adapter.adapt(input)
+        expect(result[:method_calls]).to eq([])
+      end
+
+      it "merges hash-level method_calls with derived ones" do
+        input = {
+          methods: [
+            {name: "save", owner: "User", scope: "instance", calls_made: [{method: "valid?"}]}
+          ],
+          method_calls: [{from: "A", to: "B", type: "method_call"}]
+        }
+
+        result = adapter.adapt(input)
+
+        expect(result[:method_calls]).to include(
+          {from: "A", to: "B", type: "method_call"},
+          {from: "User#save", to: "valid?", type: "method_call"}
+        )
+        expect(result[:method_calls].size).to eq(2)
+      end
+    end
   end
 end
+
